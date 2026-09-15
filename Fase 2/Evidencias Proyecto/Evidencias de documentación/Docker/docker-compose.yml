@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: siget-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: siget_dev
+      POSTGRES_PASSWORD: siget_dev_2026
+      POSTGRES_DB: siget_db
+
+    ports:
+      - "127.0.0.1:5432:5432"
+
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ../BaseDeDatos/init_siget_bd.sql:/docker-entrypoint-initdb.d/01_init_siget_bd.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siget_dev -d siget_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
