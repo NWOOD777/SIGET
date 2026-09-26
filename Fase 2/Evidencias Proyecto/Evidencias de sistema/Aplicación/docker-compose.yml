@@ -13,11 +13,15 @@ services:
       - "127.0.0.1:5432:5432"
 
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
-      - ../BaseDeDatos/init_siget_bd.sql:/docker-entrypoint-initdb.d/01_init_siget_bd.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - "../Base de datos/init_siget_bd.sql:/docker-entrypoint-initdb.d/01_init_siget_bd.sql:ro"
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U siget_dev -d siget_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 5s
+
+volumes:
+  postgres_data:
