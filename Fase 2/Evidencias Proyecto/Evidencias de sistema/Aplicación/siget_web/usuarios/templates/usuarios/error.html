@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Error de Autenticación</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-error">
+    <div class="error-card">
+        <div class="brand-header">
+            <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+            <span>SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico</span>
+        </div>
+
+        <span class="badge-error">Acceso no autorizado</span>
+        <h1>Error de autenticación</h1>
+        
+        <p class="error-message">{{ mensaje }}</p>
+
+        <div class="actions">
+            <a href="{% url 'usuarios:auth_login' %}" class="btn btn-primary">Reintentar ingreso</a>
+            <a href="{% url 'inicio' %}" class="btn btn-secondary">Volver al inicio</a>
+        </div>
+    </div>
+</body>
+</html>

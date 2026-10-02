@@ -1,0 +1,137 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Inicio</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-dashboard">
+    <!-- Barra Lateral Izquierda (Usuario Solicitante) -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-brand">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-info">
+                    <h2>SIGET</h2>
+                    <p>Portal de autoservicio</p>
+                </div>
+            </div>
+
+            <!-- Identidad de usuario en sidebar -->
+            <div class="user-card">
+                <div class="avatar-circle">{{ iniciales }}</div>
+                <div class="user-meta">
+                    <div class="user-name">{{ nombre }}</div>
+                    <div class="user-role">Usuario solicitante</div>
+                </div>
+            </div>
+
+            <!-- Navegación principal del Usuario solicitante -->
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="{% url 'inicio' %}">
+                        <span>Inicio</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <span>Mis equipos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <span>Solicitudes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <span>Soporte / Tickets</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <span>Notificaciones</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <span>Mi perfil</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <a href="{% url 'usuarios:auth_logout' %}" class="btn-logout" id="btn-cerrar-sesion">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <div class="main-wrapper">
+        <header class="top-navbar">
+            <div class="page-heading">
+                <h1>Inicio</h1>
+                <p>Bienvenido/a, {{ nombre }}. Aquí está el resumen de tu actividad.</p>
+            </div>
+
+            <div class="top-user-pill">
+                <div class="top-avatar">{{ iniciales }}</div>
+                <span class="top-user-meta">{{ nombre }}</span>
+            </div>
+        </header>
+
+        <main class="content-area">
+            <!-- Fila de Indicadores KPI -->
+            <section class="kpi-grid">
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-num">—</div>
+                    <div class="kpi-label">Equipos asignados</div>
+                </div>
+                <div class="kpi-card kpi-amber">
+                    <div class="kpi-num">—</div>
+                    <div class="kpi-label">Solicitudes activas</div>
+                </div>
+                <div class="kpi-card kpi-sky">
+                    <div class="kpi-num">—</div>
+                    <div class="kpi-label">Tickets abiertos</div>
+                </div>
+                <div class="kpi-card kpi-rose">
+                    <div class="kpi-num">—</div>
+                    <div class="kpi-label">Notificaciones</div>
+                </div>
+            </section>
+
+            <!-- Secciones de Contenido Principal -->
+            <div class="dashboard-sections" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                <section class="session-card" style="margin-bottom: 0;">
+                    <div class="session-header">
+                        <h2>Mis equipos recientes</h2>
+                    </div>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Sin información disponible por ahora.</p>
+                </section>
+
+                <section class="session-card" style="margin-bottom: 0;">
+                    <div class="session-header">
+                        <h2>Solicitudes recientes</h2>
+                    </div>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Sin información disponible por ahora.</p>
+                </section>
+
+                <section class="session-card" style="margin-bottom: 0;">
+                    <div class="session-header">
+                        <h2>Tickets recientes</h2>
+                    </div>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Sin información disponible por ahora.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

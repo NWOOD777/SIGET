@@ -1,0 +1,12 @@
+"""
+URL configuration for siget project.
+"""
+from django.contrib import admin
+from django.urls import include, path
+from usuarios.views import inicio
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("usuarios.urls")),
+    path("", inicio, name="inicio"),
+]

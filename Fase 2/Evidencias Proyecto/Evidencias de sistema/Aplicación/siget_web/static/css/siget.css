@@ -1,0 +1,1290 @@
+/* ==========================================================================
+   SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico
+   Hoja de estilos global (siget.css)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Reset & Estilos Base
+   -------------------------------------------------------------------------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    color: #0f172a;
+    background-color: #f8fafc;
+}
+
+/* Modificadores de cuerpo por vista */
+body.page-auth {
+    display: flex;
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+
+body.page-dashboard {
+    display: flex;
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+body.page-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0e1726;
+    color: #f8fafc;
+    padding: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Vista de Autenticación / Login
+   -------------------------------------------------------------------------- */
+.auth-container {
+    display: flex;
+    width: 100vw;
+    min-height: 100vh;
+}
+
+/* Panel izquierdo - Brand oficial */
+.brand-panel {
+    width: 40%;
+    background: linear-gradient(145deg, #0e1726 0%, #172439 100%);
+    color: #f8fafc;
+    padding: 60px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brand-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-panel .logo-badge {
+    width: 44px;
+    height: 44px;
+    background: #ffffff;
+    color: #000000;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.brand-text h2 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+}
+
+.brand-text p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.brand-content {
+    margin: 40px 0;
+}
+
+.brand-content h1 {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #ffffff;
+    margin-bottom: 18px;
+}
+
+.brand-content p {
+    font-size: 16px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 36px;
+}
+
+.feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: #cbd5e1;
+}
+
+.feature-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.brand-footer {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Panel derecho - Login institucional */
+.login-panel {
+    width: 60%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    background-color: #f8fafc;
+}
+
+.login-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 44px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    margin-bottom: 28px;
+}
+
+.card-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.card-header p {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.auth-info-box {
+    background: #f1f5f9;
+    border-left: 4px solid #2563eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 28px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.btn-login {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.btn-login:hover {
+    background: #1d4ed8;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-login svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.login-footer {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* --------------------------------------------------------------------------
+   3. Panel Principal / Dashboard
+   -------------------------------------------------------------------------- */
+.sidebar {
+    width: 260px;
+    background-color: #0e1726;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+
+.sidebar-top {
+    padding: 24px 20px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.sidebar-brand .logo-badge {
+    width: 38px;
+    height: 38px;
+    background: #ffffff;
+    color: #000000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.brand-info h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.brand-info p {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Tarjeta de usuario en el sidebar */
+.user-card {
+    background: #172439;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    border: 1px solid #1e293b;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.user-meta {
+    overflow: hidden;
+}
+
+.user-meta .user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-meta .user-role {
+    font-size: 12px;
+    color: #38bdf8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Menú de navegación */
+.nav-menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.nav-item.active a {
+    background: #1e293b;
+    color: #38bdf8;
+    font-weight: 600;
+}
+
+.nav-item a:hover {
+    background: #172439;
+    color: #f8fafc;
+}
+
+/* Sidebar bottom - Logout */
+.sidebar-bottom {
+    padding: 20px;
+    border-top: 1px solid #172439;
+}
+
+.btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+
+/* Contenido principal */
+.main-wrapper {
+    margin-left: 260px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header superior */
+.top-navbar {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 16px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-heading h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.page-heading p {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.top-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px 6px 6px;
+    border-radius: 9999px;
+}
+
+.top-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.top-user-meta {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* Área de trabajo */
+.content-area {
+    padding: 32px 36px;
+    flex: 1;
+}
+
+/* Tarjetas de indicadores KPI */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.kpi-card.kpi-blue::before { background: #3b82f6; }
+.kpi-card.kpi-amber::before { background: #f59e0b; }
+.kpi-card.kpi-sky::before { background: #0ea5e9; }
+.kpi-card.kpi-rose::before { background: #f43f5e; }
+
+.kpi-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.kpi-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* Tarjeta de sesión activa y detalles de usuario */
+.session-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.session-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.session-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #16a34a;
+    border-radius: 50%;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.detail-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.detail-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.detail-val {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    word-break: break-all;
+}
+
+.role-chip {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0284c7;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. Vista de Error de Autenticación
+   -------------------------------------------------------------------------- */
+.error-card {
+    background: #172439;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    text-align: left;
+}
+
+.error-card .brand-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #1e293b;
+}
+
+.error-card .logo-badge {
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    color: #000000;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.error-card .brand-header span {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.badge-error {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+}
+
+.error-card h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.error-message {
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 14px 16px;
+    border-radius: 8px;
+    border-left: 3px solid #ef4444;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+}
+
+a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+a.btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+a.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+a.btn-secondary {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+}
+
+a.btn-secondary:hover {
+    background: #334155;
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   5. Media Queries Responsivos
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+    /* Auth */
+    .auth-container {
+        flex-direction: column;
+    }
+    .brand-panel, .login-panel {
+        width: 100%;
+    }
+    .brand-panel {
+        padding: 36px 24px;
+    }
+    .login-panel {
+        padding: 36px 20px;
+    }
+
+    /* Dashboard */
+    .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+    }
+    body.page-dashboard {
+        flex-direction: column;
+    }
+    .main-wrapper {
+        margin-left: 0;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. Vista de Recuperación de Acceso (E1-H2)
+   -------------------------------------------------------------------------- */
+.recover-link-container {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.btn-recover-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.btn-recover-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.recover-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-error {
+    font-size: 13px;
+    color: #dc2626;
+    margin-top: 2px;
+}
+
+.recover-notice {
+    background-color: #f1f5f9;
+    border-left: 3px solid #64748b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.45;
+}
+
+.btn-submit {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.recover-back-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.btn-back-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.btn-back-link:hover {
+    color: #0f172a;
+    text-decoration: underline;
+}
+
+.alert-box {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+}
+
+.alert-danger {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+/* --------------------------------------------------------------------------
+   7. Módulo Administrativo RBAC (E1-H3)
+   -------------------------------------------------------------------------- */
+.admin-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.section-header p {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* Grid de Roles */
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.role-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.role-box:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.role-title-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.role-title-wrapper h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.role-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.45;
+    margin-bottom: 16px;
+}
+
+.role-box-body {
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.perm-header {
+    margin-bottom: 8px;
+}
+
+.perm-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+}
+
+.perm-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.role-box-footer {
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.badge-perm {
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+}
+
+.badge-role {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.badge-users-count {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 11px;
+}
+
+.badge-active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badge-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.badge-muted {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+/* Tablas */
+.table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.data-table th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.roles-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Botones de acción */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.btn-action.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.btn-action.btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn-action.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-action.btn-outline {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.btn-action.btn-outline:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.btn-action.btn-danger-outline {
+    background: #ffffff;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.btn-action.btn-danger-outline:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.btn-action.btn-success-outline {
+    background: #ffffff;
+    border-color: #86efac;
+    color: #16a34a;
+}
+
+.btn-action.btn-success-outline:hover {
+    background: #f0fdf4;
+    border-color: #22c55e;
+}
+
+/* Layout Detalle 2 Columnas */
+.detail-two-col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.admin-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-title-header {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-title-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 13px;
+}
+
+.info-key {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.info-val {
+    color: #0f172a;
+}
+
+/* Formulario Checkboxes de Roles */
+.form-checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 0 24px 0;
+}
+
+.checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.checkbox-card:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.checkbox-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.form-actions-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Permisos Efectivos */
+.perm-detail-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.perm-detail-item {
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.perm-detail-desc {
+    font-size: 12px;
+    color: #475569;
+}
+
+.empty-perms-box {
+    padding: 24px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.perm-table-container {
+    overflow-x: auto;
+}
+
+.perm-code-title {
+    margin-bottom: 2px;
+}
+
+.perm-desc-text {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.role-header-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breadcrumb {
+    margin-bottom: 6px;
+}
+
+.breadcrumb a {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.font-semibold { font-weight: 600; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.text-sm { font-size: 12px; }
+.text-muted { color: #64748b; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
+
+

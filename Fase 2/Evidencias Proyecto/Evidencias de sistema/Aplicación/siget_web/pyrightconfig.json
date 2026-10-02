@@ -1,0 +1,12 @@
+{
+    "include": ["."],
+    "exclude": [
+        "**/__pycache__",
+        "**/migrations"
+    ],
+    "venvPath": "../../../../..",
+    "venv": ".venv",
+    "pythonVersion": "3.12",
+    "typeCheckingMode": "basic",
+    "reportMissingTypeStubs": false
+}
