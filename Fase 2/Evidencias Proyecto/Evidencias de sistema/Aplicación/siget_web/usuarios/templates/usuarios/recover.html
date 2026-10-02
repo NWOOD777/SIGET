@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Recuperar acceso</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-auth">
+    <div class="auth-container">
+        <!-- Panel Izquierdo: Branding y Características -->
+        <aside class="brand-panel">
+            <div class="brand-header">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-text">
+                    <h2>SIGET</h2>
+                    <p>Sistema Integral de Gestión de Equipos y Soporte Tecnológico</p>
+                </div>
+            </div>
+
+            <div class="brand-content">
+                <h1>Recuperación de acceso institucional.</h1>
+                <p>Gestiona el restablecimiento de tu contraseña a través del servicio de identidad institucional de Auth0 de manera segura.</p>
+                
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Instrucciones seguras por correo</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Gestión de credenciales delegada</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Sin almacenamiento local de contraseñas</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="brand-footer">
+                &copy; 2026 SIGET · Duoc UC. Todos los derechos reservados.
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Formulario de Recuperación -->
+        <main class="login-panel">
+            <div class="login-card">
+                <div class="card-header">
+                    <h2>Recuperar acceso</h2>
+                    <p>Ingresa tu correo institucional para recibir instrucciones de recuperación.</p>
+                </div>
+
+                {% if mensaje_exito %}
+                <div class="alert-box alert-success" id="msg-recuperar-exito" role="alert">
+                    {{ mensaje_exito }}
+                </div>
+                {% endif %}
+
+                {% if mensaje_error %}
+                <div class="alert-box alert-danger" id="msg-recuperar-error" role="alert">
+                    {{ mensaje_error }}
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'usuarios:auth_recover' %}" class="recover-form" novalidate>
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="id_correo" class="form-label">Correo electrónico</label>
+                        {{ form.correo }}
+                        {% if form.correo.errors %}
+                        <div class="form-error">
+                            {{ form.correo.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="recover-notice">
+                        <strong>Nota:</strong> Si inicias sesión con una cuenta de Google, debes gestionar tu acceso directamente con Google.
+                    </div>
+
+                    <button type="submit" class="btn-login btn-submit" id="btn-enviar-instrucciones">
+                        <span>Enviar instrucciones</span>
+                        <svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="recover-back-container">
+                    <a href="{% url 'inicio' %}" class="btn-back-link" id="link-volver-login">
+                        ← Volver al inicio de sesión
+                    </a>
+                </div>
+
+                <div class="login-footer">
+                    Acceso protegido mediante autenticación externa Auth0 · RBAC local SIGET
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

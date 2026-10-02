@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Portal no disponible</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-auth">
+    <div class="auth-container">
+        <!-- Panel Izquierdo: Branding -->
+        <aside class="brand-panel">
+            <div class="brand-header">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-text">
+                    <h2>SIGET</h2>
+                    <p>Portal de autoservicio</p>
+                </div>
+            </div>
+
+            <div class="brand-content">
+                <h1>Acceso no disponible en este canal.</h1>
+                <p>El Portal Web de SIGET está orientado exclusivamente a la atención y autoservicio de usuarios solicitantes.</p>
+            </div>
+
+            <div class="brand-footer">
+                &copy; 2026 SIGET · Duoc UC. Todos los derechos reservados.
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Notificación de acceso y Logout -->
+        <main class="login-panel">
+            <div class="login-card">
+                <div class="card-header">
+                    <h2>Portal no disponible</h2>
+                    <p id="msg-portal-no-disponible">Tu perfil no tiene acceso al Portal Web de autoservicio de SIGET.</p>
+                </div>
+
+                <div class="auth-info-box">
+                    Si necesitas soporte técnico o consultar sobre tus equipos institucionales, contacta a la mesa de ayuda.
+                </div>
+
+                <a href="{% url 'usuarios:auth_logout' %}" class="btn-login" id="btn-cerrar-sesion">
+                    <span>Cerrar sesión</span>
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                </a>
+
+                <div class="login-footer">
+                    SIGET · Sistema Integral de Gestión de Equipos y Soporte Tecnológico
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Iniciar sesión</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-auth">
+    <div class="auth-container">
+        <!-- Panel Izquierdo: Branding y Características -->
+        <aside class="brand-panel">
+            <div class="brand-header">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-text">
+                    <h2>SIGET</h2>
+                    <p>Portal de autoservicio</p>
+                </div>
+            </div>
+
+            <div class="brand-content">
+                <h1>Portal Web de autoservicio para usuarios solicitantes.</h1>
+                <p>Consulta tus equipos asignados, realiza solicitudes y da seguimiento a tus tickets de soporte desde un solo lugar.</p>
+                
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Consulta de equipos asignados</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Solicitudes de equipamiento</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>Seguimiento de tickets de soporte</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="brand-footer">
+                &copy; 2026 SIGET · Duoc UC. Todos los derechos reservados.
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Acceso Institucional -->
+        <main class="login-panel">
+            <div class="login-card">
+                <div class="card-header">
+                    <h2>Iniciar sesión</h2>
+                    <p>Accede al Portal de autoservicio con tus credenciales institucionales.</p>
+                </div>
+
+                <div class="auth-info-box">
+                    Autenticación delegada centralizada mediante Auth0. SIGET no almacena contraseñas locales.
+                </div>
+
+                <a href="{% url 'usuarios:auth_login' %}" class="btn-login" id="btn-iniciar-sesion">
+                    <span>Iniciar sesión institucional</span>
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
+
+                <div class="recover-link-container">
+                    <a href="{% url 'usuarios:auth_recover' %}" class="btn-recover-link" id="link-recuperar-acceso">
+                        Recuperar acceso
+                    </a>
+                </div>
+
+                <div class="login-footer">
+                    Acceso protegido mediante autenticación externa Auth0 · RBAC local SIGET
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
