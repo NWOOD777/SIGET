@@ -72,7 +72,6 @@ class EstadoActivoSerializer(serializers.ModelSerializer):
             "descripcion",
         ]
 
-
 class ActivoSerializer(serializers.ModelSerializer):
     modelo = serializers.CharField(
         source="id_modelo.nombre",
@@ -122,4 +121,37 @@ class ActivoSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id_activo",
             "fecha_registro",
+            "codigo_inventario",
+            "id_estado_activo",
         ]
+
+    def create(self, validated_data):
+
+        ultimo_activo = (
+            Activo.objects
+            .filter(codigo_inventario__startswith="ACT-")
+            .order_by("-codigo_inventario")
+            .first()
+        )
+
+        if ultimo_activo:
+            ultimo_numero = int(
+                ultimo_activo.codigo_inventario.replace("ACT-", "")
+            )
+
+            siguiente_numero = ultimo_numero + 1
+
+        else:
+            siguiente_numero = 1
+
+        validated_data["codigo_inventario"] = (
+            f"ACT-{siguiente_numero:04d}"
+        )
+
+        estado_disponible = EstadoActivo.objects.get(
+            nombre="Disponible"
+        )
+
+        validated_data["id_estado_activo"] = estado_disponible
+
+        return Activo.objects.create(**validated_data)

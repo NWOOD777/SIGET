@@ -190,7 +190,11 @@
                         </p>
                     </div>
 
-                    <button class="primary-button" type="button">
+                   <button
+                        class="primary-button"
+                        type="button"
+                        onclick="abrirModalRegistroActivo()"
+                    >
                         + Registrar activo
                     </button>
 
@@ -275,11 +279,275 @@
 
             </section>
 
+
+ <!-- Modal detalle de activo -->
+<div id="asset-modal" class="asset-modal" style="display: none;">
+
+    <div class="asset-modal-content">
+
+
+        <div class="asset-modal-header">
+
+            <div>
+                <h3 id="detail-codigo">
+                    -
+                </h3>
+
+                <p id="detail-marca-modelo-header">
+                    -
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="asset-modal-close"
+                onclick="cerrarModalActivo()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="asset-detail-grid">
+
+            <div class="asset-detail-item">
+                <span>Tipo</span>
+                <strong id="detail-categoria">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>N.º de serie</span>
+                <strong id="detail-serie">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>Estado</span>
+                <strong id="detail-estado">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>Usuario</span>
+                <strong id="detail-usuario">Sin información</strong>
+            </div>
+            
+            <div class="asset-detail-item">
+                <span>Marca / Modelo</span>
+                <strong id="detail-marca-modelo">-</strong>
+            </div>
+
+
+            <div class="asset-detail-item">
+                <span>Ubicación</span>
+                <strong id="detail-ubicacion">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>Fecha de registro</span>
+                <strong id="detail-fecha-registro">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>Garantía hasta</span>
+                <strong id="detail-garantia">-</strong>
+            </div>
+
+            <div class="asset-detail-item">
+                <span>Valor</span>
+                <strong id="detail-valor">-</strong>
+            </div>
+
+        </div>
+
+        <div class="asset-modal-actions">
+
+            <button type="button" class="modal-action">
+                Editar
+            </button>
+
+            <button type="button" class="modal-action">
+                Ver QR
+            </button>
+
+            <button type="button" class="modal-action">
+                Historial
+            </button>
+
+            <button type="button" class="modal-action danger">
+                Dar de baja
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Modal registrar activo -->
+<div id="register-asset-modal" class="asset-modal">
+
+    <div class="asset-modal-content">
+
+        <div class="asset-modal-header">
+
+            <div>
+                <h3>Registrar activo</h3>
+
+                <p>
+                    Registrar nuevo equipo tecnológico
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="asset-modal-close"
+                onclick="cerrarModalRegistroActivo()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <form id="register-asset-form">
+
+            <div class="asset-form-grid">
+
+
+
+                <!-- Número de serie -->
+                <div class="asset-form-item">
+
+                    <label for="register-serie">
+                        Número de serie
+                    </label>
+
+                    <input
+                        type="text"
+                        id="register-serie"
+                        name="numero_serie"
+                        placeholder="Ej: SN-0002"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Modelo -->
+                <div class="asset-form-item">
+
+                    <label for="register-modelo">
+                        Modelo
+                    </label>
+
+                    <select
+                        id="register-modelo"
+                        name="id_modelo"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccionar modelo
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Ubicación -->
+                <div class="asset-form-item">
+
+                    <label for="register-ubicacion">
+                        Ubicación
+                    </label>
+
+                    <select
+                        id="register-ubicacion"
+                        name="id_ubicacion"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccionar ubicación
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- Valor -->
+                <div class="asset-form-item">
+
+                    <label for="register-valor">
+                        Valor de adquisición
+                    </label>
+
+                    <input
+                        type="text"
+                        id="register-valor"
+                        name="valor_adquisicion"
+                        min="0"
+                        step="1"
+                        placeholder="Ej: 750.000"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Garantía -->
+                <div class="asset-form-item">
+
+                    <label for="register-garantia">
+                        Garantía hasta
+                    </label>
+
+                    <input
+                        type="date"
+                        id="register-garantia"
+                        name="fecha_garantia"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="asset-modal-actions">
+
+                <button
+                    type="button"
+                    class="modal-action"
+                    onclick="cerrarModalRegistroActivo()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="modal-action primary-register-button"
+                >
+                    Registrar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
         </main>
 
     </div>
 
     <script src="{% static 'js/soporte.js' %}"></script>
-    
+
 </body>
 </html>
