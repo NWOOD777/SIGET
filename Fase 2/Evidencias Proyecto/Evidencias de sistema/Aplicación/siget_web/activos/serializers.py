@@ -122,8 +122,15 @@ class ActivoSerializer(serializers.ModelSerializer):
             "id_activo",
             "fecha_registro",
             "codigo_inventario",
-            "id_estado_activo",
         ]
+
+    def validate_valor_adquisicion(self, value):
+        if value < 0:
+            raise serializers.ValidationError(
+                "El valor de adquisición no puede ser negativo."
+            )
+
+        return value
 
     def create(self, validated_data):
 

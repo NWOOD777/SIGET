@@ -1355,3 +1355,10 @@ input {
 .notification-overlay .support-notification.show {
     transform: translateY(0);
 }
+
+
+.edit-asset-modal-content {
+    width: 620px;
+    max-width: calc(100% - 40px);
+    min-height: 470px;
+}

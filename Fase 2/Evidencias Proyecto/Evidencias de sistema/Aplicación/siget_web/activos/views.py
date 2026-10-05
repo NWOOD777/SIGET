@@ -30,7 +30,7 @@ class ActivoListCreateView(APIView):
             "id_modelo__id_categoria",
             "id_ubicacion",
             "id_estado_activo",
-        ).all()
+        ).order_by("id_activo")
 
         search = request.GET.get("search", "").strip()
         tipo = request.GET.get("tipo", "").strip()
