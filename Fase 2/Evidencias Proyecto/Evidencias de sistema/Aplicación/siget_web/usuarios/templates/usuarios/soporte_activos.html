@@ -361,7 +361,11 @@
 
         <div class="asset-modal-actions">
 
-            <button type="button" class="modal-action">
+            <button
+                type="button"
+                class="modal-action"
+                onclick="abrirModalEditarActivo()"
+            >
                 Editar
             </button>
 
@@ -539,6 +543,119 @@
 
     </div>
 
+
+</div>
+
+<!-- Modal de edición de activo -->
+<div id="edit-asset-modal" class="asset-modal" style="display: none;">
+    <div class="asset-modal-content edit-asset-modal-content">
+
+        <div class="asset-modal-header">
+            <div>
+                <h3>Editar activo</h3>
+                <p id="edit-asset-subtitle">Modificar información del activo</p>
+            </div>
+
+            <button
+                type="button"
+                class="asset-modal-close"
+                onclick="cerrarModalEditarActivo()"
+            >
+                ×
+            </button>
+        </div>
+
+        <form id="edit-asset-form">
+
+            <div class="asset-form-grid">
+
+                <div class="asset-form-item">
+                    <label for="edit-serie">Número de serie</label>
+                    <input
+                        type="text"
+                        id="edit-serie"
+                        name="numero_serie"
+                        maxlength="100"
+                        required
+                    >
+                </div>
+
+                <div class="asset-form-item">
+                    <label for="edit-modelo">Modelo</label>
+                    <select
+                        id="edit-modelo"
+                        name="id_modelo"
+                        required
+                    >
+                        <option value="">Seleccionar modelo</option>
+                    </select>
+                </div>
+
+                <div class="asset-form-item">
+                    <label for="edit-ubicacion">Ubicación</label>
+                    <select
+                        id="edit-ubicacion"
+                        name="id_ubicacion"
+                        required
+                    >
+                        <option value="">Seleccionar ubicación</option>
+                    </select>
+                </div>
+
+                <div class="asset-form-item">
+                    <label for="edit-estado">Estado</label>
+                    <select
+                        id="edit-estado"
+                        name="id_estado_activo"
+                        required
+                    >
+                        <option value="">Seleccionar estado</option>
+                    </select>
+                </div>
+
+                <div class="asset-form-item">
+                    <label for="edit-valor">Valor de adquisición</label>
+                    <input
+                        type="text"
+                        id="edit-valor"
+                        name="valor_adquisicion"
+                        inputmode="numeric"
+                        required
+                    >
+                </div>
+
+                <div class="asset-form-item">
+                    <label for="edit-garantia">Garantía hasta</label>
+                    <input
+                        type="date"
+                        id="edit-garantia"
+                        name="fecha_garantia"
+                    >
+                </div>
+
+            </div>
+
+            <div class="asset-modal-actions">
+
+                <button
+                    type="button"
+                    class="modal-action"
+                    onclick="cerrarModalEditarActivo()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="modal-action primary-register-button"
+                >
+                    Guardar cambios
+                </button>
+
+            </div>
+
+        </form>
+    </div>
 </div>
 
 

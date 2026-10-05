@@ -9,6 +9,9 @@ console.log("SOPORTE.JS CARGADO");
 let activosData = [];
 let categoriasData = [];
 let estadosData = [];
+let activoEditandoId = null;
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -235,6 +238,8 @@ function verActivo(idActivo) {
         return;
     }
 
+    activoEditandoId = idActivo;
+
     // Tipo
     document.getElementById("detail-categoria").textContent =
         activo.categoria || "-";
@@ -299,13 +304,13 @@ function formatearFecha(fecha) {
         return "-";
     }
 
-    const fechaObj = new Date(fecha);
+    const partes = String(fecha).slice(0, 10).split("-");
 
-    if (isNaN(fechaObj.getTime())) {
+    if (partes.length !== 3) {
         return "-";
     }
 
-    return fechaObj.toLocaleDateString("es-CL");
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 
@@ -384,6 +389,8 @@ function verActivo(idActivo) {
         return;
     }
 
+    activoEditandoId = Number(activo.id_activo);
+
     // Marca y modelo debajo del título
     const marcaModeloHeader =
         document.getElementById("detail-marca-modelo-header");
@@ -457,22 +464,6 @@ function cerrarModalActivo() {
 
 
 // =========================================================
-// FORMATEAR FECHA
-// =========================================================
-
-function formatearFecha(fecha) {
-
-    if (!fecha) {
-        return "-";
-    }
-
-    const fechaObj = new Date(fecha);
-
-    return fechaObj.toLocaleDateString("es-CL");
-}
-
-
-// =========================================================
 // FORMATEAR VALOR
 // =========================================================
 
@@ -500,21 +491,93 @@ function formatearValorInput(valor) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const valorInput = document.getElementById("register-valor");
 
-    if (!valorInput) {
-        return;
-    }
+    const valoresInput = [
+        document.getElementById("register-valor"),
+        document.getElementById("edit-valor")
+    ];
 
-    valorInput.addEventListener("input", () => {
-        valorInput.value = formatearValorInput(valorInput.value);
+    valoresInput.forEach(input => {
+
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener("input", () => {
+            input.value = formatearValorInput(input.value);
+        });
+
     });
 });
 
 
+// =========================================================
+// MODAL MODIFICAR ACTIVO
+// =========================================================
 
+function abrirModalEditarActivo() {
+    const modal = document.getElementById("edit-asset-modal");
 
+    if (!modal) {
+        console.error("No se encontró el modal de edición.");
+        return;
+    }
 
+    if (!activoEditandoId) {
+        console.error("No hay un activo seleccionado para editar.");
+        return;
+    }
+
+    const activo = activosData.find(
+        activo => Number(activo.id_activo) === Number(activoEditandoId)
+    );
+
+    if (!activo) {
+        console.error(
+            "No se encontró el activo para editar:",
+            activoEditandoId
+        );
+        return;
+    }
+
+    document.getElementById("edit-serie").value =
+        activo.numero_serie || "";
+
+    cargarModelosEdicion(activo.id_modelo);
+    cargarUbicacionesEdicion(activo.id_ubicacion);
+    cargarEstadosEdicion(activo.id_estado_activo);
+
+    const valor = String(activo.valor_adquisicion || "")
+        .split(".")[0];
+
+    document.getElementById("edit-valor").value =
+        formatearValorInput(valor);
+    
+    console.log("Fecha garantía recibida:", activo.fecha_garantia);
+
+    document.getElementById("edit-garantia").value =
+        activo.fecha_garantia
+            ? String(activo.fecha_garantia).slice(0, 10)
+            : "";
+    console.log(
+        "Fecha asignada al input:",
+        document.getElementById("edit-garantia").value
+    );
+
+    const subtitle = document.getElementById("edit-asset-subtitle");
+
+    if (subtitle) {
+        subtitle.textContent =
+            `Modificar activo ${activo.codigo_inventario}`;
+    }
+    const detailModal = document.getElementById("asset-modal");
+
+    if (detailModal) {
+        detailModal.style.display = "none";
+    }
+
+    modal.style.display = "flex";
+}
 
 
 // =========================================================
@@ -541,6 +604,19 @@ function abrirModalRegistroActivo() {
 function cerrarModalRegistroActivo() {
 
     const modal = document.getElementById("register-asset-modal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.style.display = "none";
+}
+
+// =========================================================
+// CERRAR MODAL MODIFICAR ACTIVO
+// =========================================================
+function cerrarModalEditarActivo() {
+    const modal = document.getElementById("edit-asset-modal");
 
     if (!modal) {
         return;
@@ -772,3 +848,213 @@ function mostrarNotificacion(mensaje, tipo = "success") {
 
     }, 3500);
 }
+
+
+// =========================================================
+// Funcion para Edicion/Modificaicon conecte con bd api/activos
+// =========================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+    const editForm = document.getElementById("edit-asset-form");
+
+    if (!editForm) {
+        return;
+    }
+
+    editForm.addEventListener("submit", actualizarActivo);
+});
+
+// Actualizar Activo
+async function actualizarActivo(event) {
+    event.preventDefault();
+
+    if (!activoEditandoId) {
+        console.error("No hay un activo seleccionado para actualizar.");
+        return;
+    }
+
+    const datos = {
+        numero_serie: document.getElementById("edit-serie").value.trim(),
+        id_modelo: Number(
+            document.getElementById("edit-modelo").value
+        ),
+        id_ubicacion: Number(
+            document.getElementById("edit-ubicacion").value
+        ),
+        id_estado_activo: Number(
+            document.getElementById("edit-estado").value
+        ),
+        valor_adquisicion: document
+            .getElementById("edit-valor")
+            .value
+            .replace(/\./g, ""),
+        fecha_garantia:
+            document.getElementById("edit-garantia").value || null
+    };
+
+    console.log("Datos para actualizar:", datos);
+
+    try {
+        const response = await fetch(
+            `/api/activos/${activoEditandoId}/`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        const resultado = await response.json();
+
+        if (!response.ok) {
+            console.error(
+                "Error al actualizar activo:",
+                resultado
+            );
+
+            mostrarNotificacion(
+                "No fue posible actualizar el activo.",
+                "error"
+            );
+
+            return;
+        }
+
+        console.log("Activo actualizado:", resultado);
+
+        mostrarNotificacion(
+            "Activo actualizado correctamente.",
+            "success"
+        );
+
+        cerrarModalEditarActivo();
+
+        await cargarActivos();
+
+    } catch (error) {
+        console.error(
+            "Error al actualizar activo:",
+            error
+        );
+
+        mostrarNotificacion(
+            "Ocurrió un error al conectar con el servidor.",
+            "error"
+        );
+    }
+}
+
+
+async function cargarModelosEdicion(idModeloSeleccionado) {
+    const selectModelo = document.getElementById("edit-modelo");
+
+    if (!selectModelo) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/activos/modelos/");
+
+        if (!response.ok) {
+            throw new Error("No se pudieron obtener los modelos.");
+        }
+
+        const modelos = await response.json();
+
+        selectModelo.innerHTML = `
+            <option value="">Seleccionar modelo</option>
+        `;
+
+        modelos.forEach(modelo => {
+            const option = document.createElement("option");
+
+            option.value = modelo.id_modelo;
+            option.textContent = modelo.nombre;
+
+            selectModelo.appendChild(option);
+        });
+
+        selectModelo.value = String(idModeloSeleccionado);
+
+    } catch (error) {
+        console.error("Error al cargar modelos para edición:", error);
+    }
+}
+
+async function cargarUbicacionesEdicion(idUbicacionSeleccionada) {
+    const selectUbicacion = document.getElementById("edit-ubicacion");
+
+    if (!selectUbicacion) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/activos/ubicaciones/");
+
+        if (!response.ok) {
+            throw new Error("No se pudieron obtener las ubicaciones.");
+        }
+
+        const ubicaciones = await response.json();
+
+        selectUbicacion.innerHTML = `
+            <option value="">Seleccionar ubicación</option>
+        `;
+
+        ubicaciones.forEach(ubicacion => {
+            const option = document.createElement("option");
+
+            option.value = ubicacion.id_ubicacion;
+            option.textContent = ubicacion.nombre_area;
+
+            selectUbicacion.appendChild(option);
+        });
+
+        selectUbicacion.value = String(idUbicacionSeleccionada);
+
+    } catch (error) {
+        console.error("Error al cargar ubicaciones para edición:", error);
+    }
+}
+
+async function cargarEstadosEdicion(idEstadoSeleccionado) {
+    const selectEstado = document.getElementById("edit-estado");
+
+    if (!selectEstado) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/activos/estados/");
+
+        if (!response.ok) {
+            throw new Error("No se pudieron obtener los estados.");
+        }
+
+        const estados = await response.json();
+
+        selectEstado.innerHTML = `
+            <option value="">Seleccionar estado</option>
+        `;
+
+        estados.forEach(estado => {
+            const option = document.createElement("option");
+
+            option.value = estado.id_estado_activo;
+            option.textContent = estado.nombre;
+
+            selectEstado.appendChild(option);
+        });
+
+        selectEstado.value = String(idEstadoSeleccionado);
+
+    } catch (error) {
+        console.error("Error al cargar estados para edición:", error);
+    }
+}
+
+
+
+
