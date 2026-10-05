@@ -1,0 +1,279 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Soporte TI - SIGET</title>
+
+    <link rel="stylesheet" href="{% static 'css/soporte.css' %}">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="sidebar-header">
+                <div class="logo">S</div>
+
+                <div class="brand">
+                    <span class="brand-title">SIGET</span>
+                    <span class="brand-subtitle">Soporte TI</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <div class="nav-section">
+                    <span class="nav-section-title">PRINCIPAL</span>
+
+                    <a href="#" class="nav-item active">
+                        <span class="nav-icon">⌂</span>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">GESTIÓN</span>
+
+                    <a href="{% url 'usuarios:soporte_activos' %}" class="nav-item">
+                        <span class="nav-icon">▣</span>
+                        <span>Activos</span>
+                    </a>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">☷</span>
+                        <span>Solicitudes</span>
+                    </a>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">↩</span>
+                        <span>Devoluciones</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">SOPORTE</span>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">□</span>
+                        <span>Tickets</span>
+                    </a>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">⚙</span>
+                        <span>Reparaciones</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">INVENTARIO</span>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">◇</span>
+                        <span>Repuestos</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">HERRAMIENTAS</span>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">▦</span>
+                        <span>Códigos QR</span>
+                    </a>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">♢</span>
+                        <span>Notificaciones</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">ANÁLISIS</span>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">▥</span>
+                        <span>Reportes</span>
+                    </a>
+                </div>
+
+
+                <div class="nav-section">
+                    <span class="nav-section-title">ADMIN</span>
+
+                    <a href="#" class="nav-item">
+                        <span class="nav-icon">♙</span>
+                        <span>Usuarios y Roles</span>
+                    </a>
+                </div>
+
+            </nav>
+
+
+            <!-- USUARIO -->
+            <div class="sidebar-user">
+
+                <div class="user-avatar">
+                    {{ iniciales }}
+                </div>
+
+                <div class="user-info">
+                    <strong>{{ nombre }}</strong>
+                    <span>Soporte TI</span>
+                </div>
+
+                <button class="logout-button" title="Cerrar sesión">
+                    ↪
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- CONTENIDO -->
+        <main class="main">
+
+            <!-- TOPBAR -->
+            <header class="topbar">
+
+                <div class="topbar-title">
+                    <h1>Sistema de Gestión de Equipos Tecnológicos</h1>
+                    <span>Portal de Soporte TI</span>
+                </div>
+
+
+                <div class="topbar-actions">
+
+                    <div class="search-box">
+                        <span>⌕</span>
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            id="global-search"
+                        >
+                    </div>
+
+                    <button class="notification-button" title="Notificaciones">
+                        ♢
+                        <span class="notification-badge">3</span>
+                    </button>
+
+                    <div class="organization">
+                        <span class="organization-icon">E</span>
+
+                        <div>
+                            <strong>empresa</strong>
+                            <span>Soporte TI</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- CONTENIDO PRINCIPAL -->
+            <section class="content">
+
+                <div class="page-header">
+
+                    <div>
+                        <h2>Dashboard</h2>
+                        <p>Resumen general de la gestión tecnológica.</p>
+                    </div>
+
+                </div>
+
+
+                <!-- TARJETAS -->
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon">▣</div>
+
+                        <div>
+                            <span class="stat-label">Activos</span>
+                            <strong class="stat-value">0</strong>
+                        </div>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-icon">☷</div>
+
+                        <div>
+                            <span class="stat-label">Solicitudes</span>
+                            <strong class="stat-value">0</strong>
+                        </div>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-icon">□</div>
+
+                        <div>
+                            <span class="stat-label">Tickets abiertos</span>
+                            <strong class="stat-value">0</strong>
+                        </div>
+                    </div>
+
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⚙</div>
+
+                        <div>
+                            <span class="stat-label">En reparación</span>
+                            <strong class="stat-value">0</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- PANEL -->
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <h3>Actividad reciente</h3>
+                            <p>Información reciente del sistema.</p>
+                        </div>
+                    </div>
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">◌</div>
+
+                        <h3>Sin actividad reciente</h3>
+
+                        <p>
+                            La actividad del sistema aparecerá aquí.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="{% static 'js/soporte.js' %}"></script>
+
+</body>
+</html>

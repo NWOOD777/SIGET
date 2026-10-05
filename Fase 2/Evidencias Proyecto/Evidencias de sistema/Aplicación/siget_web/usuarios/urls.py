@@ -9,4 +9,8 @@ urlpatterns = [
     path("auth/callback/", views.auth_callback, name="auth_callback"),
     path("auth/logout/", views.auth_logout, name="auth_logout"),
     path("auth/recover/", views.auth_recover, name="auth_recover"),
+
+    # Portal de Soporte TI
+    path("soporte/", views.soporte, name="soporte"),
+    path("soporte/activos/", views.soporte_activos, name="soporte_activos"),
 ]
