@@ -170,6 +170,17 @@ def inicio(request: HttpRequest) -> HttpResponse:
     - Con sesión pero sin rol 'Usuario solicitante' en PostgreSQL: responde HTTP 403 con
       vista controlada (portal_no_disponible.html).
     """
+
+    return render(
+        request,
+        "usuarios/inicio.html",
+        {
+            "nombre": "Usuario de prueba",
+            "iniciales": "UP",
+        },
+    )
+
+    """
     usuario = obtener_usuario_actual(request)
     if not usuario:
         if not request.session.get("siget_usuario_id"):
@@ -212,7 +223,7 @@ def inicio(request: HttpRequest) -> HttpResponse:
         "iniciales": iniciales,
     }
     return render(request, "usuarios/inicio.html", context)
-
+"""
 
 def auth_recover(request: HttpRequest) -> HttpResponse:
     """
@@ -255,3 +266,29 @@ def auth_recover(request: HttpRequest) -> HttpResponse:
     return render(request, "usuarios/recover.html", context)
 
 
+def soporte(request: HttpRequest) -> HttpResponse:
+    """
+    Portal de Soporte TI de SIGET.
+    """
+    return render(
+        request,
+        "usuarios/soporte.html",
+        {
+            "nombre": "Soporte Prueba ",
+            "iniciales": "SP",
+        },
+    )
+
+
+def soporte_activos(request: HttpRequest) -> HttpResponse:
+    """
+    Vista de gestión de activos del Portal de Soporte TI.
+    """
+    return render(
+        request,
+        "usuarios/soporte_activos.html",
+        {
+            "nombre": "Soporte Prueba",
+            "iniciales": "SP",
+        },
+    )

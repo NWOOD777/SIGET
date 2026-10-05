@@ -693,6 +693,25 @@ INSERT INTO categoria_activo (nombre, descripcion) VALUES
 INSERT INTO marca (nombre) VALUES
 ('Dell'), ('HP'), ('Lenovo'), ('Epson'), ('Samsung');
 
+
+
+
+-- Modelos de activos
+INSERT INTO modelo_activo (id_marca, id_categoria, nombre) VALUES
+(1, 1, 'Latitude 5520'),
+(2, 1, 'ProBook 450'),
+(3, 1, 'ThinkPad E14'),
+(1, 2, 'OptiPlex 7090'),
+(2, 2, 'ProDesk 400'),
+(3, 2, 'ThinkCentre M70'),
+(4, 3, 'PowerLite X49'),
+(2, 4, 'LaserJet Pro'),
+(5, 5, 'S24R350'),
+(5, 5, 'ViewFinity S24');
+
+
+
+
 INSERT INTO ubicacion (nombre_area, edificio, piso) VALUES
 ('Departamento TI', 'Edificio Central', 'Piso 2'),
 ('Bodega TI', 'Edificio Central', 'Piso 1'),
