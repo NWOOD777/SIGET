@@ -13,7 +13,6 @@ from django.urls import reverse
 
 from usuarios.forms import RecuperarAccesoForm
 from usuarios.services import (
-    ROL_TECNICO,
     ROL_USUARIO_SOLICITANTE,
     AuthRecoverApiError,
     AuthRecoverConfigError,
@@ -23,7 +22,6 @@ from usuarios.services import (
     ErrorVinculacionError,
     UsuarioInactivoError,
     UsuarioNoEncontradoError,
-    es_administrador,
     get_oauth,
     iniciar_sesion_siget,
     obtener_usuario_actual,
@@ -270,84 +268,3 @@ def auth_recover(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "usuarios/recover.html", context)
 
-
-def soporte(request: HttpRequest) -> HttpResponse:
-    """
-    Portal de Soporte TI de SIGET.
-    Requiere autenticación y rol Técnico de soporte o Administrador del sistema.
-    """
-    usuario = obtener_usuario_actual(request)
-    if not usuario:
-        if not request.session.get("siget_usuario_id"):
-            return redirect("inicio")
-        return render(
-            request,
-            "usuarios/portal_no_disponible.html",
-            {"mensaje": "Su cuenta no se encuentra activa o no existe en el sistema."},
-            status=403,
-        )
-
-    if not (usuario_tiene_rol(usuario, ROL_TECNICO) or es_administrador(usuario)):
-        return render(
-            request,
-            "usuarios/error.html",
-            {
-                "mensaje": "Acceso no autorizado: Se requiere rol de soporte o administración para acceder a este recurso.",
-                "status_code": 403,
-            },
-            status=403,
-        )
-
-    nombre = f"{usuario.nombres} {usuario.apellidos}".strip() or "Soporte TI"
-    partes = nombre.split()
-    iniciales = f"{partes[0][0]}{partes[1][0]}".upper() if len(partes) >= 2 else "SP"
-
-    return render(
-        request,
-        "usuarios/soporte.html",
-        {
-            "nombre": nombre,
-            "iniciales": iniciales,
-        },
-    )
-
-
-def soporte_activos(request: HttpRequest) -> HttpResponse:
-    """
-    Vista de gestión de activos del Portal de Soporte TI.
-    Requiere autenticación y rol Técnico de soporte o Administrador del sistema.
-    """
-    usuario = obtener_usuario_actual(request)
-    if not usuario:
-        if not request.session.get("siget_usuario_id"):
-            return redirect("inicio")
-        return render(
-            request,
-            "usuarios/portal_no_disponible.html",
-            {"mensaje": "Su cuenta no se encuentra activa o no existe en el sistema."},
-            status=403,
-        )
-
-    if not (usuario_tiene_rol(usuario, ROL_TECNICO) or es_administrador(usuario)):
-        return render(
-            request,
-            "usuarios/error.html",
-            {
-                "mensaje": "Acceso no autorizado: Se requiere rol de soporte o administración para acceder a este recurso.",
-                "status_code": 403,
-            },
-            status=403,
-        )
-
-    nombre = f"{usuario.nombres} {usuario.apellidos}".strip() or "Soporte TI"
-    partes = nombre.split()
-    iniciales = f"{partes[0][0]}{partes[1][0]}".upper() if len(partes) >= 2 else "SP"
-
-    return render(
-        request,
-        "usuarios/soporte_activos.html",
-        {
-            "nombre": nombre,
-            "iniciales": iniciales,
-        },
-    )

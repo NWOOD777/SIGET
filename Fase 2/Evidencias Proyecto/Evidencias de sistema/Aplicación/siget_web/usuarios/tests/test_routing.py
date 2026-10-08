@@ -65,3 +65,19 @@ class UrlsRoutingTests(SimpleTestCase):
             Resolver404
         ):
             resolve("/auth/admin/")
+
+    def test_11_rutas_soporte_web_ya_no_existen(self):
+        """
+        Valida que las rutas web operativas de soporte (/soporte/, /soporte/activos/)
+        fueron retiradas de la Web de autoservicio según la arquitectura oficial
+        (canal definitivo: consola de escritorio PySide6).
+        """
+        rutas_soporte = [
+            "/soporte/",
+            "/soporte/activos/",
+        ]
+        for ruta in rutas_soporte:
+            with self.subTest(ruta=ruta):
+                with self.assertRaises(Resolver404):
+                    resolve(ruta)
+
