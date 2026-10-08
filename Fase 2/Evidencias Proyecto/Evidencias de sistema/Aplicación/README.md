@@ -53,16 +53,21 @@ El backend y la plataforma Web cuentan actualmente con las siguientes capacidade
   - Prevención de escalada de privilegios: las comprobaciones ignoran modificaciones manuales en la sesión (`session["roles"]`), validando siempre contra la base de datos.
 
 ### Gestión de Activos TI (E2-H4 / E2-H5 Backend)
-- **Registrar Activo TI (E2-H4)**:
-  - Endpoint `POST /api/activos/` protegido con RBAC, exclusivo para el **Administrador del sistema**.
+- **Delimitación de Canales y Arquitectura**:
+  - **Backend / API REST**: Implementado y verificado en Django REST Framework (`/api/activos/*`). Concentra la persistencia relacional, validaciones de negocio y autorización RBAC transversal.
+  - **Interfaz Definitiva**: Corresponde a la **Aplicación de Escritorio PySide6** (planificada para el Sprint correspondiente). La plataforma Web no expone vistas ni plantillas HTML operativas de gestión de inventario, manteniéndose exclusivamente orientada al autoservicio del **Usuario solicitante**.
+- **Registrar Activo TI (E2-H4 Backend)**:
+  - Endpoint `POST /api/activos/` protegido con RBAC en PostgreSQL, exclusivo para el **Administrador del sistema**.
   - Validación de pertenencia a catálogos oficiales (`modelo_activo`, `ubicacion`, `estado_activo`).
   - Validación de unicidad de número de serie y valor de adquisición no negativo.
-- **Modificar Activo TI (E2-H5)**:
+  - Generación automática de código institucional secuencial (`ACT-XXXX`).
+- **Modificar Activo TI (E2-H5 Backend)**:
   - Endpoints `GET`, `PUT` y `PATCH /api/activos/<pk>/` protegidos con RBAC para el **Administrador del sistema**.
   - Protección de campos inmutables (`codigo_inventario`, `id_activo`) que impiden su alteración en peticiones de edición.
   - Actualización atómica de atributos operativos con validación de serie no duplicada frente a otros activos.
 - **Consulta de Activos y Catálogos**:
-  - `GET /api/activos/` y `GET /api/activos/catalogos/` habilitados para **Técnico de soporte** y **Administrador del sistema**.
+  - `GET /api/activos/` y endpoints de catálogos (`categorias/`, `marcas/`, `modelos/`, `ubicaciones/`, `estados/`) habilitados para **Técnico de soporte** y **Administrador del sistema**.
+
 
 ---
 
@@ -416,7 +421,7 @@ python manage.py primer_admin \
 
 La suite de pruebas automatizadas valida la integridad de autenticación, recuperación de acceso, seguridad de canal Web, lógica de autorización RBAC, consistencia transaccional y operaciones de inventario de activos.
 
-Actualmente el proyecto cuenta con **146 pruebas automatizadas** (124 en la aplicación `usuarios` y 22 en la aplicación `activos`), todas aprobadas exitosamente.
+Actualmente el proyecto cuenta con **147 pruebas automatizadas** (125 en la aplicación `usuarios` y 22 en la aplicación `activos`), todas aprobadas exitosamente.
 
 ### Ejecución en Contenedor Docker
 ```bash
