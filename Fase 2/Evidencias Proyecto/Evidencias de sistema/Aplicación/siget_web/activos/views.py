@@ -6,23 +6,33 @@ from rest_framework.views import APIView
 from .models import (
     Activo,
     CategoriaActivo,
+    EstadoActivo,
     Marca,
     ModeloActivo,
     Ubicacion,
-    EstadoActivo,
 )
-
+from .permissions import PuedeAdministrarActivos, PuedeConsultarActivos
 from .serializers import (
     ActivoSerializer,
     CategoriaActivoSerializer,
+    EstadoActivoSerializer,
     MarcaSerializer,
     ModeloActivoSerializer,
     UbicacionSerializer,
-    EstadoActivoSerializer,
 )
 
 
 class ActivoListCreateView(APIView):
+    """
+    Lista activos TI (GET) y registra nuevos activos (POST - E2-H4).
+    - GET requiere rol Técnico de soporte o Administrador (o permiso CATALOGO_CONSULTAR).
+    - POST requiere exclusivamente rol Administrador del sistema.
+    """
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [PuedeAdministrarActivos()]
+        return [PuedeConsultarActivos()]
 
     def get(self, request):
         activos = Activo.objects.select_related(
@@ -45,14 +55,10 @@ class ActivoListCreateView(APIView):
             )
 
         if tipo:
-            activos = activos.filter(
-                id_modelo__id_categoria__nombre=tipo
-            )
+            activos = activos.filter(id_modelo__id_categoria__nombre=tipo)
 
         if estado:
-            activos = activos.filter(
-                id_estado_activo__nombre=estado
-            )
+            activos = activos.filter(id_estado_activo__nombre=estado)
 
         serializer = ActivoSerializer(activos, many=True)
 
@@ -76,6 +82,16 @@ class ActivoListCreateView(APIView):
 
 
 class ActivoDetailView(APIView):
+    """
+    Detalle (GET) y modificación de activos TI (PUT / PATCH - E2-H5).
+    - GET requiere rol Técnico de soporte o Administrador.
+    - PUT/PATCH requiere exclusivamente rol Administrador del sistema.
+    """
+
+    def get_permissions(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return [PuedeAdministrarActivos()]
+        return [PuedeConsultarActivos()]
 
     def get_object(self, pk):
         return Activo.objects.select_related(
@@ -115,9 +131,7 @@ class ActivoDetailView(APIView):
         if serializer.is_valid():
             activo = serializer.save()
 
-            return Response(
-                ActivoSerializer(activo).data
-            )
+            return Response(ActivoSerializer(activo).data)
 
         return Response(
             serializer.errors,
@@ -142,9 +156,7 @@ class ActivoDetailView(APIView):
         if serializer.is_valid():
             activo = serializer.save()
 
-            return Response(
-                ActivoSerializer(activo).data
-            )
+            return Response(ActivoSerializer(activo).data)
 
         return Response(
             serializer.errors,
@@ -153,32 +165,25 @@ class ActivoDetailView(APIView):
 
 
 class CategoriaActivoListView(APIView):
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         categorias = CategoriaActivo.objects.all()
 
-        return Response(
-            CategoriaActivoSerializer(
-                categorias,
-                many=True
-            ).data
-        )
+        return Response(CategoriaActivoSerializer(categorias, many=True).data)
 
 
 class MarcaListView(APIView):
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         marcas = Marca.objects.all()
 
-        return Response(
-            MarcaSerializer(
-                marcas,
-                many=True
-            ).data
-        )
+        return Response(MarcaSerializer(marcas, many=True).data)
 
 
 class ModeloActivoListView(APIView):
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         modelos = ModeloActivo.objects.select_related(
@@ -186,35 +191,22 @@ class ModeloActivoListView(APIView):
             "id_categoria",
         ).all()
 
-        return Response(
-            ModeloActivoSerializer(
-                modelos,
-                many=True
-            ).data
-        )
+        return Response(ModeloActivoSerializer(modelos, many=True).data)
 
 
 class UbicacionListView(APIView):
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         ubicaciones = Ubicacion.objects.all()
 
-        return Response(
-            UbicacionSerializer(
-                ubicaciones,
-                many=True
-            ).data
-        )
+        return Response(UbicacionSerializer(ubicaciones, many=True).data)
 
 
 class EstadoActivoListView(APIView):
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         estados = EstadoActivo.objects.all()
 
-        return Response(
-            EstadoActivoSerializer(
-                estados,
-                many=True
-            ).data
-        )
+        return Response(EstadoActivoSerializer(estados, many=True).data)

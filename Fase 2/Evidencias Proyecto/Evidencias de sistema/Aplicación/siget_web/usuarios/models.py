@@ -186,3 +186,54 @@ class RolPermiso(models.Model):
 
     def __str__(self):
         return f"{self.rol} - {self.permiso}"
+
+
+class BitacoraAuditoria(models.Model):
+    id_auditoria = models.AutoField(primary_key=True)
+
+    id_usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="id_usuario",
+        related_name="eventos_auditoria",
+    )
+
+    modulo = models.CharField(
+        max_length=50,
+    )
+
+    accion = models.CharField(
+        max_length=100,
+    )
+
+    entidad_afectada = models.CharField(
+        max_length=100,
+    )
+
+    id_registro_afectado = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    detalle_evento = models.TextField()
+
+    direccion_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        unpack_ipv4=True,
+    )
+
+    fecha_evento = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    class Meta:
+        managed = False
+        db_table = "bitacora_auditoria"
+        db_table_comment = "Bitácora protegida para trazabilidad de eventos críticos y acciones administrativas."
+
+    def __str__(self):
+        return f"[{self.fecha_evento}] {self.modulo} - {self.accion} ({self.entidad_afectada}:{self.id_registro_afectado})"
+

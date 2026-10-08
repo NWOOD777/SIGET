@@ -3,7 +3,7 @@ Utilidades, mocks y clases base compartidas para las pruebas del módulo usuario
 """
 
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 
@@ -85,6 +85,9 @@ def crear_mock_usuario(
     user.apellidos = apellidos
     user.correo = correo
     user.activo = activo
+    from django.utils import timezone
+
+    user.fecha_creacion = timezone.now()
     user.save = Mock()
     user.asignaciones_rol = Mock()
     user.asignaciones_rol.all.return_value = []
@@ -180,24 +183,32 @@ class RbacTestBase(SimpleTestCase):
             codigo="USUARIOS_ADMINISTRAR",
         )
 
-        patcher_atomic = patch(
-            "usuarios.services.transaction.atomic"
-        )
+        patcher_atomic = patch("usuarios.services.transaction.atomic")
         self.mock_atomic = patcher_atomic.start()
 
-        (
-            self.mock_atomic
-            .return_value
-            .__enter__
-            .return_value
-        ) = None
-        (
-            self.mock_atomic
-            .return_value
-            .__exit__
-            .return_value
-        ) = None
+        (self.mock_atomic.return_value.__enter__.return_value) = None
+        (self.mock_atomic.return_value.__exit__.return_value) = None
 
-        self.addCleanup(
-            patcher_atomic.stop
-        )
+        self.addCleanup(patcher_atomic.stop)
+
+
+def obtener_data_dict(response: Any) -> dict[str, Any]:
+    """
+    Retorna response.data asegurando que sea un diccionario tipado para tests.
+    """
+    from rest_framework.response import Response
+
+    assert isinstance(response, Response)
+    assert isinstance(response.data, dict)
+    return response.data
+
+
+def obtener_data_list(response: Any) -> list[Any]:
+    """
+    Retorna response.data asegurando que sea una lista tipada para tests.
+    """
+    from rest_framework.response import Response
+
+    assert isinstance(response, Response)
+    assert isinstance(response.data, list)
+    return response.data

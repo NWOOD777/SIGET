@@ -612,7 +612,7 @@ CREATE INDEX idx_auditoria_fecha ON bitacora_auditoria(fecha_evento DESC);
 CREATE INDEX idx_auditoria_entidad ON bitacora_auditoria(entidad_afectada, id_registro_afectado);
 
 -- ============================================================================
--- 9. SEMILLAS DE PRUEBA
+-- 9. SEMILLAS DE DATOS MAESTROS Y CONFIGURACIÓN RBAC
 -- ============================================================================
 
 -- Roles RBAC oficiales
@@ -620,19 +620,6 @@ INSERT INTO rol (nombre, descripcion) VALUES
 ('Usuario solicitante', 'Portal Web: catálogo, solicitudes de asignación, tickets y seguimiento'),
 ('Técnico de soporte', 'Escritorio: entregas, devoluciones, tickets asignados, diagnósticos y órdenes de trabajo'),
 ('Administrador del sistema', 'Administración de usuarios, activos, solicitudes, asignación de tickets, reportería y auditoría');
-
--- Usuarios base vinculados a proveedor externo (datos de demostración)
-INSERT INTO usuario
-(identificador_externo, proveedor_identidad, rut, nombres, apellidos, correo)
-VALUES
-('siget-admin-demo', 'PROVEEDOR_EXTERNO', '11.754.478-8', 'Admin', 'SIGET', 'admin@siget.cl'),
-('siget-tecnico-demo', 'PROVEEDOR_EXTERNO', '21.020.957-3', 'Técnico', 'SIGET', 'tecnico@siget.cl'),
-('siget-solicitante-demo', 'PROVEEDOR_EXTERNO', '21.762.522-K', 'Usuario', 'Solicitante', 'solicitante@siget.cl');
-
-INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
-(1, 3),
-(2, 2),
-(3, 1);
 
 -- Prioridades y SLA
 INSERT INTO prioridad_ticket (nombre, nivel_urgencia, descripcion) VALUES

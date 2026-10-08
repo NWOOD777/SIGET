@@ -2,6 +2,7 @@
 Vistas de autenticación e inicio para SIGET.
 Implementa login, callback, logout mediante Auth0 y la vista de inicio del sistema.
 """
+
 import logging
 from urllib.parse import urlencode
 
@@ -12,15 +13,17 @@ from django.urls import reverse
 
 from usuarios.forms import RecuperarAccesoForm
 from usuarios.services import (
+    ROL_TECNICO,
+    ROL_USUARIO_SOLICITANTE,
     AuthRecoverApiError,
     AuthRecoverConfigError,
     AuthRecoverConnectionError,
     ClaimInvalidoError,
     CorreoNoVerificadoError,
     ErrorVinculacionError,
-    ROL_USUARIO_SOLICITANTE,
     UsuarioInactivoError,
     UsuarioNoEncontradoError,
+    es_administrador,
     get_oauth,
     iniciar_sesion_siget,
     obtener_usuario_actual,
@@ -32,7 +35,9 @@ from usuarios.services import (
 logger = logging.getLogger(__name__)
 
 
-def render_auth_error(request: HttpRequest, mensaje: str, status: int = 403) -> HttpResponse:
+def render_auth_error(
+    request: HttpRequest, mensaje: str, status: int = 403
+) -> HttpResponse:
     """
     Retorna una vista de error amigable y controlada mediante template Django sin exponer datos sensibles.
     """
@@ -53,10 +58,8 @@ def auth_login(request: HttpRequest) -> HttpResponse:
         oauth = get_oauth()
         redirect_uri = request.build_absolute_uri(reverse("usuarios:auth_callback"))
         return oauth.auth0.authorize_redirect(request, redirect_uri)
-    except Exception as exc:
-        logger.exception(
-            "Error al iniciar autorización OAuth con Auth0"
-        )
+    except Exception:
+        logger.exception("Error al iniciar autorización OAuth con Auth0")
         return render_auth_error(
             request,
             mensaje="El servicio de autenticación no se encuentra disponible temporalmente.",
@@ -72,7 +75,9 @@ def auth_callback(request: HttpRequest) -> HttpResponse:
     # 1. Comprobar rechazo / cancelación en Auth0
     error = request.GET.get("error")
     if error:
-        error_desc = request.GET.get("error_description", "Inicio de sesión cancelado o denegado.")
+        error_desc = request.GET.get(
+            "error_description", "Inicio de sesión cancelado o denegado."
+        )
         logger.warning("Auth0 retornó error: %s - %s", error, error_desc)
         return render_auth_error(
             request,
@@ -85,7 +90,9 @@ def auth_callback(request: HttpRequest) -> HttpResponse:
         oauth = get_oauth()
         token = oauth.auth0.authorize_access_token(request)
     except Exception as exc:
-        logger.error("Error al validar token de acceso con Auth0: %s", type(exc).__name__)
+        logger.error(
+            "Error al validar token de acceso con Auth0: %s", type(exc).__name__
+        )
         return render_auth_error(
             request,
             mensaje="No fue posible validar la respuesta de autenticación con el proveedor.",
@@ -130,7 +137,9 @@ def auth_callback(request: HttpRequest) -> HttpResponse:
     except ErrorVinculacionError as exc:
         return render_auth_error(request, mensaje=str(exc), status=500)
     except Exception as exc:
-        logger.error("Error inesperado en vinculación de usuario: %s", type(exc).__name__)
+        logger.error(
+            "Error inesperado en vinculación de usuario: %s", type(exc).__name__
+        )
         return render_auth_error(
             request,
             mensaje="Ocurrió un error inesperado al procesar la identidad del usuario.",
@@ -169,17 +178,6 @@ def inicio(request: HttpRequest) -> HttpResponse:
       de autoservicio (inicio.html).
     - Con sesión pero sin rol 'Usuario solicitante' en PostgreSQL: responde HTTP 403 con
       vista controlada (portal_no_disponible.html).
-    """
-
-    return render(
-        request,
-        "usuarios/inicio.html",
-        {
-            "nombre": "Usuario de prueba",
-            "iniciales": "UP",
-        },
-    )
-
     """
     usuario = obtener_usuario_actual(request)
     if not usuario:
@@ -223,7 +221,7 @@ def inicio(request: HttpRequest) -> HttpResponse:
         "iniciales": iniciales,
     }
     return render(request, "usuarios/inicio.html", context)
-"""
+
 
 def auth_recover(request: HttpRequest) -> HttpResponse:
     """
@@ -249,8 +247,15 @@ def auth_recover(request: HttpRequest) -> HttpResponse:
                     "recibirás instrucciones para recuperar el acceso."
                 )
                 form = RecuperarAccesoForm()
-            except (AuthRecoverConnectionError, AuthRecoverApiError, AuthRecoverConfigError) as exc:
-                logger.error("Error en servicio de recuperación de acceso: %s", type(exc).__name__)
+            except (
+                AuthRecoverConnectionError,
+                AuthRecoverApiError,
+                AuthRecoverConfigError,
+            ) as exc:
+                logger.error(
+                    "Error en servicio de recuperación de acceso: %s",
+                    type(exc).__name__,
+                )
                 mensaje_error = (
                     "No fue posible procesar la solicitud en este momento. "
                     "Por favor, intenta nuevamente más tarde."
@@ -269,13 +274,40 @@ def auth_recover(request: HttpRequest) -> HttpResponse:
 def soporte(request: HttpRequest) -> HttpResponse:
     """
     Portal de Soporte TI de SIGET.
+    Requiere autenticación y rol Técnico de soporte o Administrador del sistema.
     """
+    usuario = obtener_usuario_actual(request)
+    if not usuario:
+        if not request.session.get("siget_usuario_id"):
+            return redirect("inicio")
+        return render(
+            request,
+            "usuarios/portal_no_disponible.html",
+            {"mensaje": "Su cuenta no se encuentra activa o no existe en el sistema."},
+            status=403,
+        )
+
+    if not (usuario_tiene_rol(usuario, ROL_TECNICO) or es_administrador(usuario)):
+        return render(
+            request,
+            "usuarios/error.html",
+            {
+                "mensaje": "Acceso no autorizado: Se requiere rol de soporte o administración para acceder a este recurso.",
+                "status_code": 403,
+            },
+            status=403,
+        )
+
+    nombre = f"{usuario.nombres} {usuario.apellidos}".strip() or "Soporte TI"
+    partes = nombre.split()
+    iniciales = f"{partes[0][0]}{partes[1][0]}".upper() if len(partes) >= 2 else "SP"
+
     return render(
         request,
         "usuarios/soporte.html",
         {
-            "nombre": "Soporte Prueba ",
-            "iniciales": "SP",
+            "nombre": nombre,
+            "iniciales": iniciales,
         },
     )
 
@@ -283,12 +315,39 @@ def soporte(request: HttpRequest) -> HttpResponse:
 def soporte_activos(request: HttpRequest) -> HttpResponse:
     """
     Vista de gestión de activos del Portal de Soporte TI.
+    Requiere autenticación y rol Técnico de soporte o Administrador del sistema.
     """
+    usuario = obtener_usuario_actual(request)
+    if not usuario:
+        if not request.session.get("siget_usuario_id"):
+            return redirect("inicio")
+        return render(
+            request,
+            "usuarios/portal_no_disponible.html",
+            {"mensaje": "Su cuenta no se encuentra activa o no existe en el sistema."},
+            status=403,
+        )
+
+    if not (usuario_tiene_rol(usuario, ROL_TECNICO) or es_administrador(usuario)):
+        return render(
+            request,
+            "usuarios/error.html",
+            {
+                "mensaje": "Acceso no autorizado: Se requiere rol de soporte o administración para acceder a este recurso.",
+                "status_code": 403,
+            },
+            status=403,
+        )
+
+    nombre = f"{usuario.nombres} {usuario.apellidos}".strip() or "Soporte TI"
+    partes = nombre.split()
+    iniciales = f"{partes[0][0]}{partes[1][0]}".upper() if len(partes) >= 2 else "SP"
+
     return render(
         request,
         "usuarios/soporte_activos.html",
         {
-            "nombre": "Soporte Prueba",
-            "iniciales": "SP",
+            "nombre": nombre,
+            "iniciales": iniciales,
         },
     )
