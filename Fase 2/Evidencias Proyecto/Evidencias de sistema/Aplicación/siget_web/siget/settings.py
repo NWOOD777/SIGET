@@ -150,13 +150,26 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # AUTH0
 
-AUTH0_DOMAIN = env("AUTH0_DOMAIN")
-AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
-AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
-AUTH0_DB_CONNECTION = "Username-Password-Authentication"
+AUTH0_DOMAIN = env.str("AUTH0_DOMAIN")
+AUTH0_CLIENT_ID = env.str("AUTH0_CLIENT_ID")
+AUTH0_CLIENT_SECRET = env.str("AUTH0_CLIENT_SECRET")
+AUTH0_DB_CONNECTION = env.str(
+    "AUTH0_DB_CONNECTION", default="Username-Password-Authentication"
+)
 
-AUTH0_ISSUER = f"https://{AUTH0_DOMAIN}/"
-AUTH0_METADATA_URL = f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration"
+AUTH0_MGMT_CLIENT_ID = env.str("AUTH0_MGMT_CLIENT_ID", default=AUTH0_CLIENT_ID)
+AUTH0_MGMT_CLIENT_SECRET = env.str(
+    "AUTH0_MGMT_CLIENT_SECRET", default=AUTH0_CLIENT_SECRET
+)
+AUTH0_MGMT_AUDIENCE = env.str(
+    "AUTH0_MGMT_AUDIENCE",
+    default=f"https://{AUTH0_DOMAIN}/api/v2/" if AUTH0_DOMAIN else "",
+)
+
+AUTH0_ISSUER = f"https://{AUTH0_DOMAIN}/" if AUTH0_DOMAIN else ""
+AUTH0_METADATA_URL = (
+    f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration" if AUTH0_DOMAIN else ""
+)
 
 LOGIN_URL = "/auth/login/"
 LOGOUT_REDIRECT_URL = "/"
