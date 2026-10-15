@@ -44,24 +44,43 @@ class ActivoListCreateView(APIView):
 
         search = request.GET.get("search", "").strip()
         tipo = request.GET.get("tipo", "").strip()
+        ubicacion = request.GET.get("ubicacion", "").strip()
         estado = request.GET.get("estado", "").strip()
 
         if search:
-            activos = activos.filter(
+            criterios = (
                 Q(codigo_inventario__icontains=search)
                 | Q(numero_serie__icontains=search)
                 | Q(id_modelo__nombre__icontains=search)
                 | Q(id_modelo__id_marca__nombre__icontains=search)
             )
 
+            if search.isdigit():
+                criterios |= Q(id_activo=int(search))
+
+            activos = activos.filter(criterios)
+
         if tipo:
-            activos = activos.filter(id_modelo__id_categoria__nombre=tipo)
+            activos = activos.filter(
+                id_modelo__id_categoria__nombre__iexact=tipo
+            )
+
+        if ubicacion:
+            if ubicacion.isdigit():
+                activos = activos.filter(
+                    id_ubicacion__id_ubicacion=int(ubicacion)
+                )
+            else:
+                activos = activos.filter(
+                    id_ubicacion__nombre_area__iexact=ubicacion
+                )
 
         if estado:
-            activos = activos.filter(id_estado_activo__nombre=estado)
+            activos = activos.filter(
+                id_estado_activo__nombre__iexact=estado
+            )
 
         serializer = ActivoSerializer(activos, many=True)
-
         return Response(serializer.data)
 
     def post(self, request):
