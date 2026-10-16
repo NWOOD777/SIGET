@@ -71,6 +71,9 @@ class AsignacionesTestBase(SimpleTestCase):
         lock_patch = patch("siget.db.connection")
         lock_patch.start()
         self.addCleanup(lock_patch.stop)
+        historial_patch = patch("asignaciones.services.HistorialEstadoActivo.objects.create")
+        historial_patch.start()
+        self.addCleanup(historial_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios

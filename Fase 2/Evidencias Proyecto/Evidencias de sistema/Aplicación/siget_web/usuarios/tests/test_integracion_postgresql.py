@@ -21,7 +21,7 @@ from usuarios.services import UsuarioInactivoError, vincular_o_obtener_usuario
 
 
 @override_settings(ALLOWED_HOSTS=["testserver", "localhost", "127.0.0.1"], SIGET_PUBLIC_URL="")
-class IntegracionPostgreSQLTests(TransactionTestCase):
+class PostgreSQLTestBase(TransactionTestCase):
     @classmethod
     def _fixture_setup(cls):
         getattr(super(), "_fixture_setup")()
@@ -72,6 +72,8 @@ class IntegracionPostgreSQLTests(TransactionTestCase):
         self.assertEqual(r.status_code, 201, r.data)
         return activo, r.data["id_asignacion"]
 
+
+class IntegracionPostgreSQLTests(PostgreSQLTestBase):
     def test_ddl_y_catalogos_reales(self):
         with connection.cursor() as cursor:
             cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name NOT LIKE 'django_%' AND table_name NOT LIKE 'auth_%'")

@@ -141,3 +141,35 @@ class DevolucionActivo(models.Model):
 
     def __str__(self):
         return f"Devolucion #{self.id_devolucion} (Asignacion #{self.id_asignacion.id_asignacion})"
+
+
+class HistorialEstadoActivo(models.Model):
+    id_historial_estado = models.AutoField(primary_key=True)
+
+    id_activo = models.ForeignKey(
+        Activo,
+        on_delete=models.CASCADE,
+        db_column="id_activo",
+        related_name="historial_estados",
+    )
+
+    id_estado_activo = models.ForeignKey(
+        "activos.EstadoActivo",
+        on_delete=models.RESTRICT,
+        db_column="id_estado_activo",
+    )
+
+    id_usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        db_column="id_usuario",
+        null=True,
+        blank=True,
+    )
+
+    fecha_cambio = models.DateTimeField(default=timezone.now)
+    observacion = models.TextField(null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "historial_estado_activo"

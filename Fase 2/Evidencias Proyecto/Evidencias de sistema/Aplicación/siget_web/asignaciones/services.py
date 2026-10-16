@@ -14,6 +14,7 @@ from asignaciones.models import (
     DevolucionActivo,
     EstadoAsignacion,
     EstadoSolicitudAsignacion,
+    HistorialEstadoActivo,
     SolicitudAsignacion,
 )
 from tickets.models import Ticket
@@ -375,7 +376,8 @@ def registrar_devolucion_asignacion(
     bloquear_operacion(70404, asignacion.pk)
     bloquear_operacion(70403, getattr(asignacion, "id_activo_id"))
     asignacion.refresh_from_db()
-    if asignacion.id_estado_asignacion.nombre != ESTADO_ASIGNACION_ACTIVA:
+    if (asignacion.id_estado_asignacion.nombre != ESTADO_ASIGNACION_ACTIVA
+        or asignacion.fecha_finalizacion is not None):
         raise exceptions.ValidationError({
             "detail": "No existe una asignación activa asociada al equipo."
         })
@@ -469,6 +471,18 @@ def registrar_devolucion_asignacion(
             condicion_fisica=condicion_fisica,
             motivo_devolucion=motivo_devolucion.strip() if motivo_devolucion else None,
             observaciones=observaciones.strip() if observaciones else None,
+        )
+
+        HistorialEstadoActivo.objects.create(
+            id_activo=activo,
+            id_estado_activo=estado_resultante,
+            id_usuario=tecnico,
+            fecha_cambio=devolucion.fecha_devolucion,
+            observacion=(
+                f"Devolución de la asignación {asignacion.pk}. "
+                f"Condición física: {condicion_fisica}. "
+                f"Evaluación inicial E4-H11: {estado_resultante.nombre}."
+            ),
         )
 
         detalle_auditoria = (
