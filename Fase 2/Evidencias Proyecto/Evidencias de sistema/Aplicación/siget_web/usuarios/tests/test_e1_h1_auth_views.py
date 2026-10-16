@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from django.test import RequestFactory, SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from usuarios.models import UsuarioRol
@@ -28,6 +28,7 @@ from usuarios.views import (
 from .helpers import asignar_mock_session, crear_mock_usuario
 
 
+@override_settings(SIGET_PUBLIC_URL="")
 class Auth0VistasTests(SimpleTestCase):
     """
     Pruebas de integración sobre los endpoints /auth/*

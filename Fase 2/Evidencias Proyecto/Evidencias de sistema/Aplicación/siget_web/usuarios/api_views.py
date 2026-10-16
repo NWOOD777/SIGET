@@ -4,6 +4,7 @@ Diseñadas para consumo por clientes administrativos autorizados (PySide6).
 """
 
 import logging
+from siget.http import direccion_ip_cliente
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -42,11 +43,7 @@ logger = logging.getLogger(__name__)
 
 def _obtener_ip(request: Request) -> str | None:
     """Extrae la dirección IP del cliente desde la petición."""
-    meta = getattr(request._request, "META", {})
-    x_forwarded = meta.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded:
-        return str(x_forwarded).split(",")[0].strip()
-    return meta.get("REMOTE_ADDR")
+    return direccion_ip_cliente(request)
 
 
 class UsuarioListAPIView(APIView):

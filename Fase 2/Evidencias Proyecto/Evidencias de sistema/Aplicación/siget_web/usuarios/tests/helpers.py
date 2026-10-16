@@ -136,6 +136,12 @@ class RbacTestBase(SimpleTestCase):
     """
 
     def setUp(self) -> None:
+        auth_patch = patch("usuarios.authentication.obtener_usuario_actual", return_value=None)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+        lock_patch = patch("siget.db.connection")
+        lock_patch.start()
+        self.addCleanup(lock_patch.stop)
         self.factory = RequestFactory()
 
         self.admin_user = crear_mock_usuario(

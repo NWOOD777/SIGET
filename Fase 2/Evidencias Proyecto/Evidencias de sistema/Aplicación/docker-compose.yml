@@ -32,12 +32,14 @@ services:
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
+      SIGET_DDL_PATH: /opt/siget/schema/init_siget_bd.sql
 
     ports:
       - "127.0.0.1:8000:8000"
 
     volumes:
       - ./siget_web:/app
+      - "../Base de datos/init_siget_bd.sql:/opt/siget/schema/init_siget_bd.sql:ro"
 
     depends_on:
       postgres:

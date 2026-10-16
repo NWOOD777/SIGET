@@ -84,7 +84,7 @@ class ActivoListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ActivoSerializer(data=request.data)
+        serializer = ActivoSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
             activo = serializer.save()
@@ -145,6 +145,7 @@ class ActivoDetailView(APIView):
         serializer = ActivoSerializer(
             activo,
             data=request.data,
+            context={"request": request},
         )
 
         if serializer.is_valid():
@@ -169,6 +170,7 @@ class ActivoDetailView(APIView):
         serializer = ActivoSerializer(
             activo,
             data=request.data,
+            context={"request": request},
             partial=True,
         )
 

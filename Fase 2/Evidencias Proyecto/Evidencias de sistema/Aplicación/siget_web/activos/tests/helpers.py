@@ -3,7 +3,7 @@ Utilidades, mocks y clases base para pruebas del módulo de activos.
 """
 
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 from usuarios.tests.helpers import (
@@ -29,6 +29,21 @@ class ActivosTestBase(SimpleTestCase):
 
     def setUp(self):
         super().setUp()
+        auth_patch = patch("usuarios.authentication.obtener_usuario_actual", return_value=None)
+        auth_patch.start()
+        self.addCleanup(auth_patch.stop)
+        lock_patch = patch("siget.db.connection")
+        lock_patch.start()
+        self.addCleanup(lock_patch.stop)
+        atomic_patch = patch("django.db.transaction.atomic")
+        atomic_patch.start()
+        self.addCleanup(atomic_patch.stop)
+        audit_patch = patch("activos.serializers.registrar_auditoria")
+        audit_patch.start()
+        self.addCleanup(audit_patch.stop)
+        code_patch = patch("activos.serializers.siguiente_codigo", return_value="ACT-0011")
+        code_patch.start()
+        self.addCleanup(code_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios de prueba

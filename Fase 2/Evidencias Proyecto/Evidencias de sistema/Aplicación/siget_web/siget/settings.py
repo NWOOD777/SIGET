@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "usuarios",
     "activos",
     "asignaciones",
+    "tickets",
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,7 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD"),
         "HOST": env("POSTGRES_HOST"),
         "PORT": env("POSTGRES_PORT"),
+        "TEST": {"NAME": env.str("POSTGRES_TEST_DB", default="test_" + env.str("POSTGRES_DB"))},
     }
 }
 
@@ -173,3 +175,13 @@ AUTH0_METADATA_URL = (
 
 LOGIN_URL = "/auth/login/"
 LOGOUT_REDIRECT_URL = "/"
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["usuarios.authentication.SigetSessionAuthentication"],
+    "EXCEPTION_HANDLER": "siget.exceptions.api_exception_handler",
+}
+
+TEST_RUNNER = "siget.testing.PostgreSQLTestRunner"
+
+SIGET_PUBLIC_URL = env.str("SIGET_PUBLIC_URL", default="").rstrip("/")

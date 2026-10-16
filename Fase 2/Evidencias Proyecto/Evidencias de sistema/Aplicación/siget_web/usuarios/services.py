@@ -11,6 +11,7 @@ import requests
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpRequest
+from django.middleware.csrf import rotate_token
 from django.shortcuts import redirect, render
 
 from usuarios.models import (
@@ -189,6 +190,8 @@ def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
 
     # PASO C: Vinculación si existe correo y fue verificado por Auth0
     if usuario:
+        if not usuario.activo:
+            raise UsuarioInactivoError("Su cuenta de usuario se encuentra inactiva. Contacte al administrador.")
         if email_verified is not True:
             raise CorreoNoVerificadoError(
                 "El correo electrónico institucional debe estar verificado en Auth0 "
@@ -237,6 +240,7 @@ def iniciar_sesion_siget(request, usuario: Usuario, sub: str) -> None:
     )
 
     request.session.cycle_key()
+    rotate_token(request)
 
     request.session["siget_usuario_id"] = usuario.id_usuario
     request.session["auth0_sub"] = sub
@@ -1254,8 +1258,10 @@ def aprovisionar_usuario(
             "Fallo al persistir usuario en PostgreSQL tras creación en Auth0: %s. Ejecutando compensación.",
             type(exc).__name__,
         )
+        compensada = False
         try:
             eliminar_usuario_auth0(auth0_sub)
+            compensada = True
         except Exception as del_exc:
             logger.critical(
                 "Fallo crítico en compensación: No se pudo eliminar usuario '%s' en Auth0: %s",
@@ -1263,7 +1269,8 @@ def aprovisionar_usuario(
                 del_exc,
             )
         raise ErrorAprovisionamientoPostgreSQLError(
-            "Error al persistir el usuario en la base de datos local. Se revirtió la cuenta en Auth0."
+            "Error al persistir el usuario en la base de datos local. "
+            + ("Se revirtió la cuenta en Auth0." if compensada else "No se pudo revertir la cuenta externa; se requiere revisión administrativa en Auth0.")
         ) from exc
 
     # 3. Disparar invitación inicial 'Configure su contraseña' (E1-H3)
@@ -1400,8 +1407,10 @@ def bootstrap_primer_admin(
             "Fallo al persistir primer administrador en PostgreSQL tras creación en Auth0: %s. Ejecutando compensación.",
             type(exc).__name__,
         )
+        compensada = False
         try:
             eliminar_usuario_auth0(auth0_sub)
+            compensada = True
         except Exception as del_exc:
             logger.critical(
                 "Fallo crítico en compensación de bootstrap: No se pudo eliminar usuario '%s' en Auth0: %s",
@@ -1409,7 +1418,8 @@ def bootstrap_primer_admin(
                 del_exc,
             )
         raise ErrorAprovisionamientoPostgreSQLError(
-            "Error al persistir el usuario en la base de datos local. Se revirtió la cuenta en Auth0."
+            "Error al persistir el usuario en la base de datos local. "
+            + ("Se revirtió la cuenta en Auth0." if compensada else "No se pudo revertir la cuenta externa; se requiere revisión administrativa en Auth0.")
         ) from exc
 
     # 6. Disparar invitación inicial 'Configure su contraseña' (E1-H3)

@@ -10,6 +10,7 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from usuarios.forms import RecuperarAccesoForm
 from usuarios.services import (
@@ -52,6 +53,10 @@ def auth_login(request: HttpRequest) -> HttpResponse:
     Inicia el flujo de autenticación OAuth 2.0 / OpenID Connect con Auth0.
     Solicita scopes: openid profile email.
     """
+    public_url = settings.SIGET_PUBLIC_URL
+    if public_url and request.build_absolute_uri("/").rstrip("/") != public_url:
+        # Alinear el host ANTES de crear state/nonce y su cookie de sesión.
+        return redirect(public_url + reverse("usuarios:auth_login"))
     try:
         oauth = get_oauth()
         redirect_uri = request.build_absolute_uri(reverse("usuarios:auth_callback"))
@@ -106,12 +111,9 @@ def auth_callback(request: HttpRequest) -> HttpResponse:
         )
 
     # 3. Extracción de claims
+    # Authlib valida firma, issuer, audience y nonce durante el intercambio.
+    # No reconstruir claims desde un token sin la identidad ya validada.
     claims = token.get("userinfo")
-    if not claims:
-        try:
-            claims = oauth.auth0.parse_id_token(request, token)
-        except Exception:
-            claims = None
 
     if not claims or not isinstance(claims, dict):
         logger.error("Claims de identidad ausentes en token de Auth0.")
@@ -167,6 +169,7 @@ def auth_logout(request: HttpRequest) -> HttpResponse:
     return redirect(logout_url)
 
 
+@ensure_csrf_cookie
 def inicio(request: HttpRequest) -> HttpResponse:
     """
     Página inicial de SIGET — Portal Web de autoservicio del Usuario solicitante.

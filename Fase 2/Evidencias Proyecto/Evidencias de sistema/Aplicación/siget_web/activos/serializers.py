@@ -1,4 +1,9 @@
+from django.db import transaction
 from rest_framework import serializers
+from siget.db import bloquear_operacion, siguiente_codigo
+from siget.http import direccion_ip_cliente
+from usuarios.services import registrar_auditoria
+from usuarios.models import Usuario
 
 from .models import (
     Activo,
@@ -139,26 +144,54 @@ class ActivoSerializer(serializers.ModelSerializer):
 
         return value
 
-    def create(self, validated_data):
+    def validate(self, attrs):
+        compra = attrs.get("fecha_compra", getattr(self.instance, "fecha_compra", None))
+        garantia = attrs.get("fecha_garantia", getattr(self.instance, "fecha_garantia", None))
+        if compra and garantia and garantia < compra:
+            raise serializers.ValidationError({"fecha_garantia": ["La garantía no puede finalizar antes de la compra."]})
+        if self.instance is not None:
+            from asignaciones.models import Asignacion
+            estado = attrs.get("id_estado_activo")
+            modelo = attrs.get("id_modelo")
+            if estado is not None or modelo is not None:
+                abierta = Asignacion.objects.filter(id_activo=self.instance, fecha_finalizacion__isnull=True).exists()
+                if abierta and estado is not None and estado.pk != self.instance.id_estado_activo.pk:
+                    raise serializers.ValidationError({"id_estado_activo": ["Registre la devolución antes de cambiar el estado de un activo asignado."]})
+                if abierta and modelo is not None and modelo.pk != self.instance.id_modelo.pk:
+                    raise serializers.ValidationError({"id_modelo": ["No se puede cambiar el modelo mientras existe una asignación activa."]})
+                if not abierta and estado is not None and estado.nombre == "Asignado":
+                    raise serializers.ValidationError({"id_estado_activo": ["El estado Asignado se establece al registrar una entrega."]})
+        return attrs
 
-        ultimo_activo = (
-            Activo.objects.filter(codigo_inventario__startswith="ACT-")
-            .order_by("-codigo_inventario")
-            .first()
+    def _auditar(self, activo, accion):
+        request = self.context.get("request")
+        usuario = getattr(request, "user", None)
+        registrar_auditoria(
+            usuario=usuario if isinstance(usuario, Usuario) else None,
+            modulo="ACTIVOS", accion=accion, entidad_afectada="activo",
+            id_registro_afectado=activo.pk,
+            detalle_evento=f"{accion}: {activo.codigo_inventario}.",
+            direccion_ip=direccion_ip_cliente(request) if request is not None else None,
         )
 
-        if ultimo_activo:
-            ultimo_numero = int(ultimo_activo.codigo_inventario.replace("ACT-", ""))
+    def create(self, validated_data):
+        with transaction.atomic():
+            bloquear_operacion(70406)
+            validated_data["codigo_inventario"] = siguiente_codigo("activo", "ACT")
+            try:
+                estado = EstadoActivo.objects.get(nombre="Disponible")
+            except EstadoActivo.DoesNotExist:
+                raise serializers.ValidationError({"id_estado_activo": ["Estado Disponible no configurado."]})
+            validated_data["id_estado_activo"] = estado
+            activo = Activo.objects.create(**validated_data)
+            self._auditar(activo, "ACTIVO_CREADO")
+            return activo
 
-            siguiente_numero = ultimo_numero + 1
-
-        else:
-            siguiente_numero = 1
-
-        validated_data["codigo_inventario"] = f"ACT-{siguiente_numero:04d}"
-
-        estado_disponible = EstadoActivo.objects.get(nombre="Disponible")
-
-        validated_data["id_estado_activo"] = estado_disponible
-
-        return Activo.objects.create(**validated_data)
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            bloquear_operacion(70403, instance.pk)
+            instance.refresh_from_db()
+            self.validate(validated_data)
+            activo = super().update(instance, validated_data)
+            self._auditar(activo, "ACTIVO_MODIFICADO")
+            return activo
