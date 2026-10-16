@@ -195,7 +195,7 @@ El motivo es obligatorio. Las solicitudes ya resueltas no pueden aprobarse o rec
 
 ### Filtros de consulta
 
-`GET /api/solicitudes-asignacion/` admite `estado` y `categoria` por identificador o nombre; `search` busca en motivo, categoría o identificador de solicitud. El Administrador y el Técnico también pueden filtrar por `usuario`, usando identificador, correo, RUT, nombres o apellidos. El alcance del Solicitante siempre se limita a sus registros.
+`GET /api/solicitudes-asignacion/` admite `estado` y `categoria` por identificador o nombre; `search` busca en motivo, categoría o identificador de solicitud. El Administrador y el Técnico también pueden filtrar por `usuario`, usando identificador, correo, RUT, nombres o apellidos. El alcance del Solicitante siempre se limita a sus registros. Para revisar las solicitudes pendientes se utiliza `/api/solicitudes-asignacion/?estado=Pendiente`.
 
 ## Entregas, asignaciones y devoluciones
 
@@ -255,7 +255,7 @@ La respuesta contiene `id_asignacion`, `id_solicitud`, `solicitud`, `id_activo`,
 | `observaciones` | Opcional; descripción de la condición recibida. |
 | `id_ticket_asociado` | Opcional; ticket activo del mismo equipo y solicitante, cuando existe falla o daño. |
 
-La devolución cierra la asignación y registra la recepción y el resultado de la evaluación:
+La recepción y la evaluación inicial se completan en la misma operación. Una devolución ya registrada no admite una segunda evaluación mediante esta ruta. La devolución cierra la asignación y registra el resultado:
 
 | Condición recibida | Estado del activo | Soporte |
 | --- | --- | --- |
