@@ -280,6 +280,18 @@ class IntegracionPostgreSQLTests(PostgreSQLTestBase):
         self.assertTrue(Permiso.objects.filter(pk=permiso.pk).exists())
         self.assertEqual(self.cliente(self.tecnico).post(f"/api/usuarios/{self.tecnico.pk}/roles/", {"roles": ["Administrador del sistema"]}, format="json").status_code, 403)
 
+    def test_metodos_de_permisos_rbac_respetan_su_ruta(self):
+        c = self.cliente(self.admin)
+        rol = Rol.objects.get(nombre="Usuario solicitante")
+        permiso = Permiso.objects.get(codigo="CATALOGO_CONSULTAR")
+        lista = f"/api/usuarios/roles/{rol.pk}/permisos/"
+        detalle = f"{lista}{permiso.pk}/"
+        self.assertEqual(c.delete(lista).status_code, 405)
+        self.assertEqual(c.post(detalle, {"id_permiso": permiso.pk}, format="json").status_code, 405)
+        self.assertTrue(RolPermiso.objects.filter(rol=rol, permiso=permiso).exists())
+        self.assertEqual(c.options(lista)["Allow"], "POST, OPTIONS")
+        self.assertEqual(c.options(detalle)["Allow"], "DELETE, OPTIONS")
+
     def test_retiro_del_unico_rol_y_cambios_de_rol(self):
         c = self.cliente(self.admin)
         rol = Rol.objects.get(nombre="Usuario solicitante")

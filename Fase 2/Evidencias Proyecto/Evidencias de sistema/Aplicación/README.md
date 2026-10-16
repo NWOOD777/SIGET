@@ -120,6 +120,8 @@ http://localhost:8000/
 
 SIGET utiliza Django REST Framework para exponer los servicios necesarios para usuarios, activos, asignaciones, devoluciones y tickets.
 
+Consultar [API_DOCS.md](API_DOCS.md) para las rutas disponibles, permisos, datos de entrada, respuestas y ejemplos de uso.
+
 ---
 
 ## Pruebas

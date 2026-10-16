@@ -18,6 +18,6 @@ urlpatterns = [
 
     # Gestión de catálogo RBAC (Roles y Permisos)
     path("roles/", api_views.RolListAPIView.as_view(), name="rol_list"),
-    path("roles/<int:id_rol>/permisos/", api_views.RolPermisoManageAPIView.as_view(), name="rol_permiso_add"),
-    path("roles/<int:id_rol>/permisos/<int:id_permiso>/", api_views.RolPermisoManageAPIView.as_view(), name="rol_permiso_delete"),
+    path("roles/<int:id_rol>/permisos/", api_views.RolPermisoManageAPIView.as_view(http_method_names=["post", "options"]), name="rol_permiso_add"),
+    path("roles/<int:id_rol>/permisos/<int:id_permiso>/", api_views.RolPermisoManageAPIView.as_view(http_method_names=["delete", "options"]), name="rol_permiso_delete"),
 ]
