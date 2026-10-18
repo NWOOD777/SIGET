@@ -60,13 +60,14 @@ def solicitar_equipo(request):
         else:
             return redirect("asignaciones_web:confirmacion", pk=solicitud.pk)
 
+    categorias_disponibles = form.campo_categoria.queryset
     return render(
         request,
         "asignaciones/solicitar.html",
         {
             "form": form,
             "usuario": usuario,
-            "hay_disponibilidad": form.fields["id_categoria"].queryset.exists(),
+            "hay_disponibilidad": categorias_disponibles is not None and categorias_disponibles.exists(),
         },
     )
 

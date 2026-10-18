@@ -1,4 +1,4 @@
-"""Activos opcionales del portal E5-H13; persistencia real solo en test_siget_db."""
+"""Activos opcionales del portal E5-H13; persistencia real en una base temporal test_."""
 
 from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
@@ -22,7 +22,7 @@ from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 class TicketActivoPortalPostgreSQLTests(PostgreSQLTestBase):
     def setUp(self):
         super().setUp()
-        self.assertEqual(connection.settings_dict["NAME"], "test_siget_db")
+        self.assertTrue(str(connection.settings_dict["NAME"]).startswith("test_"))
         self.propia = self.asignacion(self.solicitante)
         self.ajena = self.asignacion(self.otro)
         self.finalizada = self.asignacion(self.solicitante, finalizada=True)
@@ -50,10 +50,16 @@ class TicketActivoPortalPostgreSQLTests(PostgreSQLTestBase):
 
     def test_formulario_solo_ofrece_asignaciones_activas_propias(self):
         form = TicketCreateForm(usuario=self.solicitante)
-        self.assertEqual(list(form.fields["id_activo"].queryset), [self.propia.id_activo])
-        self.assertEqual(list(TicketCreateForm().fields["id_activo"].queryset), [])
+        queryset = form.campo_activo.queryset
+        assert queryset is not None
+        self.assertEqual(list(queryset), [self.propia.id_activo])
+        sin_usuario = TicketCreateForm().campo_activo.queryset
+        assert sin_usuario is not None
+        self.assertEqual(list(sin_usuario), [])
         self.solicitante.activo = False
-        self.assertEqual(list(TicketCreateForm(usuario=self.solicitante).fields["id_activo"].queryset), [])
+        inactivo = TicketCreateForm(usuario=self.solicitante).campo_activo.queryset
+        assert inactivo is not None
+        self.assertEqual(list(inactivo), [])
 
     def test_get_muestra_codigo_modelo_y_opcion_sin_equipo(self):
         response = self.cliente(self.solicitante).get(self.url)

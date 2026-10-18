@@ -9,7 +9,7 @@ from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICI
 
 from asignaciones.models import Asignacion, EstadoAsignacion
 from asignaciones.views import AsignacionDetailView, AsignacionListCreateView, EstadoAsignacionListView
-from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_list
+from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_dict, obtener_data_list
 
 
 class ConsultarAsignacionesE3H9Tests(AsignacionesTestBase):
@@ -192,7 +192,7 @@ class ConsultarAsignacionesE3H9Tests(AsignacionesTestBase):
                     consulta.return_value.get.return_value = self.asignacion_activa
                     response = AsignacionDetailView.as_view()(request, pk=200)
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.data["id_asignacion"], 200)
+                self.assertEqual(obtener_data_dict(response)["id_asignacion"], 200)
                 consulta.return_value.get.assert_called_once_with(pk=200)
 
     def test_detalle_inexistente_devuelve_404(self):
@@ -203,7 +203,7 @@ class ConsultarAsignacionesE3H9Tests(AsignacionesTestBase):
             consulta.return_value.get.side_effect = Asignacion.DoesNotExist
             response = AsignacionDetailView.as_view()(request, pk=99999)
         self.assertEqual(response.status_code, 404)
-        self.assertIn("detail", response.data)
+        self.assertIn("detail", obtener_data_dict(response))
 
     def test_detalle_ajeno_devuelve_403(self):
         request = crear_request_con_sesion(
@@ -254,8 +254,8 @@ class ConsultarAsignacionesE3H9Tests(AsignacionesTestBase):
             ]
             response = EstadoAsignacionListView.as_view()(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([item["nombre"] for item in response.data], ["Activa", "Finalizada"])
-        self.assertEqual(set(response.data[0]), {"id_estado_asignacion", "nombre", "descripcion"})
+        self.assertEqual([item["nombre"] for item in obtener_data_list(response)], ["Activa", "Finalizada"])
+        self.assertEqual(set(obtener_data_list(response)[0]), {"id_estado_asignacion", "nombre", "descripcion"})
         consulta.return_value.order_by.assert_called_once_with("id_estado_asignacion")
 
     def test_filtros_numericos_se_combinan_en_el_listado_administrativo(self):

@@ -1,5 +1,7 @@
 """Formulario de entrada del portal para E5-H13."""
 
+from typing import cast
+
 from django import forms
 
 from activos.models import Activo
@@ -43,8 +45,12 @@ class TicketCreateForm(forms.Form):
         },
     )
 
+    @property
+    def campo_activo(self) -> ActivoTicketChoiceField:
+        return cast(ActivoTicketChoiceField, self.fields["id_activo"])
+
     def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Sin identidad explícita no se ofrecen activos. ModelChoiceField
         # consulta este queryset al validar el ID recibido en cada POST.
-        self.fields["id_activo"].queryset = activos_reportables_por_usuario(usuario)
+        self.campo_activo.queryset = activos_reportables_por_usuario(usuario)

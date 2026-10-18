@@ -33,13 +33,14 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
 
         self.assertFalse(form.is_bound)
         self.assertEqual(set(form.fields), {"id_categoria", "motivo"})
-        self.assertTrue(form.fields["id_categoria"].required)
+        self.assertTrue(form.campo_categoria.required)
         self.assertTrue(form.fields["motivo"].required)
 
     def test_selector_filtra_disponibilidad_y_ordena_categorias_sin_duplicarlas(self):
         # Se inspecciona el SQL generado, sin ejecutarlo. IN evita repetir una
         # categoría aunque existan varios activos disponibles de esa categoría.
-        queryset = SolicitudAsignacionForm().fields["id_categoria"].queryset
+        queryset = SolicitudAsignacionForm().campo_categoria.queryset
+        assert queryset is not None
         sql, params = queryset.query.sql_with_params()
 
         self.assertIn(ESTADO_ACTIVO_DISPONIBLE, params)
@@ -54,7 +55,7 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
             data={"id_categoria": "1", "motivo": "  Trabajo de desarrollo  "},
         )
         with patch.object(
-            form.fields["id_categoria"].queryset, "get", return_value=self.categoria,
+            form.campo_categoria.queryset, "get", return_value=self.categoria,
         ) as obtener:
             self.assertTrue(form.is_valid(), form.errors)
 
@@ -76,7 +77,7 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
                     data={"id_categoria": "1", "motivo": motivo},
                 )
                 with patch.object(
-                    form.fields["id_categoria"].queryset, "get", return_value=self.categoria,
+                    form.campo_categoria.queryset, "get", return_value=self.categoria,
                 ):
                     self.assertFalse(form.is_valid())
                 self.assertEqual(form.errors.as_data()["motivo"][0].code, "required")
@@ -89,7 +90,7 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
                     data={"id_categoria": categoria, "motivo": "Necesito equipo"},
                 )
                 with patch.object(
-                    form.fields["id_categoria"].queryset,
+                    form.campo_categoria.queryset,
                     "get",
                     side_effect=CategoriaActivo.DoesNotExist,
                 ):
@@ -111,7 +112,7 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
         form = SolicitudAsignacionForm(
             data={"id_categoria": "1", "motivo": "Necesito equipo"},
         )
-        form.fields["id_categoria"].queryset = CategoriaActivo.objects.none()
+        form.campo_categoria.queryset = CategoriaActivo.objects.none()
 
         self.assertFalse(form.is_valid())
         self.assertEqual(form.errors.as_data()["id_categoria"][0].code, "invalid_choice")
@@ -168,11 +169,12 @@ class SolicitudAsignacionWebTests(SimpleTestCase):
         # Se valida con el formulario real. Se simulan las lecturas del catálogo
         # para mantener SimpleTestCase sin PostgreSQL.
         form = SolicitudAsignacionForm(data=data)
-        campo = form.fields["id_categoria"]
+        campo = form.campo_categoria
         campo.queryset = CategoriaActivo.objects.none()
-        campo.choices = [("", "Seleccione una categoría")]
+        opciones = [("", "Seleccione una categoría")]
         if self.hay_disponibilidad:
-            campo.choices = list(campo.choices) + [("1", "Notebook")]
+            opciones.append(("1", "Notebook"))
+        campo.choices = opciones
         existe = patch.object(
             campo.queryset, "exists", side_effect=lambda: self.hay_disponibilidad,
         )
@@ -373,7 +375,7 @@ class SolicitudAsignacionIntegracionPortalTests(SimpleTestCase):
         usuario = Usuario(id_usuario=3, nombres="Ana", apellidos="Pérez", activo=True)
         url = reverse("asignaciones_web:solicitar")
         form = SolicitudAsignacionForm()
-        form.fields["id_categoria"].queryset = CategoriaActivo.objects.none()
+        form.campo_categoria.queryset = CategoriaActivo.objects.none()
 
         with (
             patch("usuarios.views.obtener_usuario_actual", return_value=usuario),

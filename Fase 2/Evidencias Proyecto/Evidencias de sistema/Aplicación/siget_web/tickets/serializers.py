@@ -98,5 +98,9 @@ class TicketReadSerializer(serializers.ModelSerializer):
 class TicketCreateSerializer(serializers.Serializer):
     asunto = serializers.CharField(max_length=200, required=True, allow_blank=False)
     descripcion = serializers.CharField(required=True, allow_blank=False)
-    id_prioridad = serializers.IntegerField(required=False, allow_null=True)
-    id_activo = serializers.IntegerField(required=False, allow_null=True)
+    id_prioridad = serializers.IntegerField(
+        required=False, allow_null=True, min_value=1, max_value=2147483647,
+    )
+    id_activo = serializers.IntegerField(
+        required=False, allow_null=True, min_value=1, max_value=2147483647,
+    )

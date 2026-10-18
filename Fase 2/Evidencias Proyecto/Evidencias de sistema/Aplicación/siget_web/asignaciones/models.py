@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.utils import timezone
 
@@ -73,6 +75,10 @@ class EstadoAsignacion(models.Model):
 
 
 class Asignacion(models.Model):
+    if TYPE_CHECKING:
+        # Django genera este identificador a partir de la ForeignKey.
+        id_activo_id: int
+
     id_asignacion = models.AutoField(primary_key=True)
     id_solicitud = models.OneToOneField(
         SolicitudAsignacion,

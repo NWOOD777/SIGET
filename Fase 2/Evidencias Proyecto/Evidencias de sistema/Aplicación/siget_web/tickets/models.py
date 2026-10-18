@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.utils import timezone
 
@@ -53,6 +55,10 @@ class EstadoTicket(models.Model):
 
 
 class Ticket(models.Model):
+    if TYPE_CHECKING:
+        # Django genera este identificador a partir de la ForeignKey.
+        id_activo_id: int | None
+
     id_ticket = models.AutoField(primary_key=True)
     codigo_ticket = models.CharField(max_length=50, unique=True)
     id_usuario_solicitante = models.ForeignKey(

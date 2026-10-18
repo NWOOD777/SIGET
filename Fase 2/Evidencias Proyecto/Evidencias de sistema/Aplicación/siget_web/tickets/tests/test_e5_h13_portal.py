@@ -29,8 +29,8 @@ class TicketCreateFormTests(SimpleTestCase):
 
         self.assertFalse(form.is_bound)
         self.assertEqual(set(form.fields), {"asunto", "descripcion", "id_activo"})
-        self.assertFalse(form.fields["id_activo"].required)
-        self.assertEqual(form.fields["id_activo"].empty_label, "Sin equipo específico")
+        self.assertFalse(form.campo_activo.required)
+        self.assertEqual(form.campo_activo.empty_label, "Sin equipo específico")
 
     def test_entrada_valida(self):
         form = TicketCreateForm(
@@ -111,7 +111,7 @@ class TicketCreateFormTests(SimpleTestCase):
     def test_etiqueta_del_activo_incluye_codigo_y_modelo(self):
         activo = Activo(id_activo=10, codigo_inventario="ACT-0010", id_modelo=ModeloActivo(nombre="Notebook de prueba"))
         self.assertEqual(
-            TicketCreateForm().fields["id_activo"].label_from_instance(activo),
+            TicketCreateForm().campo_activo.label_from_instance(activo),
             "ACT-0010 — Notebook de prueba",
         )
 
@@ -126,7 +126,7 @@ class TicketCreateFormTests(SimpleTestCase):
         form = TicketCreateForm(
             data={"asunto": "Falla", "descripcion": "Detalle", "id_activo": "10"}, usuario=usuario,
         )
-        with patch.object(form.fields["id_activo"].queryset, "get", return_value=activo) as obtener:
+        with patch.object(form.campo_activo.queryset, "get", return_value=activo) as obtener:
             self.assertTrue(form.is_valid(), form.errors)
         obtener.assert_called_once_with(pk="10")
         self.assertEqual(form.cleaned_data["id_activo"], activo)
@@ -387,7 +387,7 @@ class TicketWebTests(SimpleTestCase):
         form = TicketCreateForm(data={**self.datos, "id_activo": "10"}, usuario=self.usuario)
         with (
             patch("tickets.web_views.TicketCreateForm", return_value=form) as construir,
-            patch.object(form.fields["id_activo"].queryset, "get", return_value=activo),
+            patch.object(form.campo_activo.queryset, "get", return_value=activo),
             patch("tickets.web_views.transaction.atomic"),
             patch("tickets.web_views.bloquear_operacion") as bloquear,
             patch("tickets.web_views.activos_reportables_por_usuario") as selector,
@@ -406,7 +406,7 @@ class TicketWebTests(SimpleTestCase):
         form = TicketCreateForm(data={**self.datos, "id_activo": "10"}, usuario=self.usuario)
         with (
             patch("tickets.web_views.TicketCreateForm", return_value=form),
-            patch.object(form.fields["id_activo"].queryset, "get", return_value=activo),
+            patch.object(form.campo_activo.queryset, "get", return_value=activo),
             patch("tickets.web_views.transaction.atomic"),
             patch("tickets.web_views.bloquear_operacion") as bloquear,
             patch("tickets.web_views.activos_reportables_por_usuario") as selector,
