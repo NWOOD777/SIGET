@@ -297,6 +297,14 @@ Los tres roles oficiales pueden registrar tickets a su nombre. El Solicitante co
 
 `asunto` es obligatorio y admite hasta 200 caracteres. `descripcion` es obligatoria. `id_activo` e `id_prioridad` son opcionales y admiten `null`; si se informan, deben corresponder a registros existentes. La prioridad predeterminada es `Medio` en el catálogo inicial.
 
+Si se informa `id_activo`, el Usuario solicitante solo puede asociar un activo que tenga mediante una asignación en estado `Activa` y con `fecha_finalizacion` en `null`. El permiso `TICKET_CREAR` permite crear tickets, pero no concede acceso global a los activos: sin rol interno se aplica la misma restricción. El Administrador del sistema y el Técnico de soporte mantienen su alcance por rol y pueden asociar cualquier activo existente, sin exigir una asignación propia activa.
+
+Para un usuario sin rol interno, un activo no autorizado devuelve HTTP `403` con el mensaje genérico `No tiene autorización para reportar ese activo.`, sin crear el ticket ni registrar auditoría de creación. Omitir `id_activo` o enviarlo como `null` permite registrar un ticket sin equipo específico.
+
+En las creaciones manuales con activo, tanto por API como por el portal, la autorización aplicable se verifica nuevamente dentro de una transacción, después de adquirir el bloqueo existente del activo (`70403`) y antes del bloqueo de tickets. La creación permanece dentro de esa misma transacción para coordinarse con las devoluciones concurrentes que utilizan este mecanismo. En la API, los roles internos conservan el alcance descrito anteriormente.
+
+La creación automática de tickets durante una devolución mantiene su comportamiento independiente mediante el servicio existente: puede asociar el activo aunque la asignación ya esté `Finalizada`. La restricción de asignación activa para la creación manual no se aplica a ese flujo automático.
+
 El ticket se crea `Abierto`, con código asignado por el sistema y sin técnico asignado. Se impide un ticket activo con el mismo asunto, activo y solicitante. El registro de un ticket por sí solo no cambia el estado del equipo.
 
 La respuesta contiene `id_ticket`, `codigo_ticket`, `id_usuario_solicitante`, `solicitante`, `id_tecnico_asignado`, `tecnico_asignado`, `id_activo`, `activo`, `id_estado_ticket`, `estado`, `id_prioridad`, `prioridad`, `asunto`, `descripcion`, `fecha_creacion` y `fecha_resolucion`. Los datos de técnico y resolución son inicialmente `null`; los del activo también pueden ser `null` si el ticket no está asociado a un equipo.

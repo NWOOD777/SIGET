@@ -201,7 +201,7 @@ class IntegracionPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(activo.id_estado_activo.nombre, "Disponible")
 
     def test_tickets_distinguen_incidentes_y_bloquean_repetidos(self):
-        a = self.activo()
+        a, _ = self.entregar()
         c = self.cliente(self.solicitante)
         for asunto in ["Pantalla", "VPN"]:
             self.assertEqual(c.post("/api/tickets/", {"asunto": asunto, "descripcion": asunto, "id_activo": a.pk}, format="json").status_code, 201)

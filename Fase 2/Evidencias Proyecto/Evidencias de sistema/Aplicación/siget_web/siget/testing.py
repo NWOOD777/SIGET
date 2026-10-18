@@ -26,6 +26,8 @@ class PostgreSQLTestRunner(DiscoverRunner):
         if not str(nombre).startswith("test_"):
             raise RuntimeError("POSTGRES_TEST_DB debe comenzar con test_.")
         configuracion = super().setup_databases(**kwargs)
+        if not configuracion:
+            return configuracion
         try:
             cargar_esquema_pruebas()
         except Exception:

@@ -1,7 +1,11 @@
 """
 Vistas API REST para Service Desk y Tickets de Soporte (E5-H13).
 """
+from contextlib import nullcontext
+
+from django.db import transaction
 from django.db.models import Q
+from siget.db import bloquear_operacion
 from siget.http import direccion_ip_cliente
 from rest_framework import exceptions, status
 from rest_framework.request import Request
@@ -22,6 +26,7 @@ from tickets.serializers import (
     TicketReadSerializer,
 )
 from tickets.services import crear_ticket
+from tickets.selectors import activos_reportables_por_usuario
 from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
@@ -122,14 +127,22 @@ class TicketListCreateView(APIView):
         assert isinstance(data, dict)
         ip = direccion_ip_cliente(request)
 
-        ticket = crear_ticket(
-            solicitante=usuario,
-            asunto=str(data["asunto"]),
-            descripcion=str(data["descripcion"]),
-            id_prioridad=data.get("id_prioridad"),
-            id_activo=data.get("id_activo"),
-            ip_origen=ip,
-        )
+        id_activo = data.get("id_activo")
+        with transaction.atomic() if id_activo is not None else nullcontext():
+            if id_activo is not None:
+                # Mismo orden que entrega/devolución: activo -> tickets.
+                bloquear_operacion(70403, id_activo)
+                es_interno = es_administrador(usuario) or usuario_tiene_rol(usuario, ROL_TECNICO)
+                if not es_interno and not activos_reportables_por_usuario(usuario).filter(pk=id_activo).exists():
+                    raise exceptions.PermissionDenied("No tiene autorización para reportar ese activo.")
+            ticket = crear_ticket(
+                solicitante=usuario,
+                asunto=str(data["asunto"]),
+                descripcion=str(data["descripcion"]),
+                id_prioridad=data.get("id_prioridad"),
+                id_activo=id_activo,
+                ip_origen=ip,
+            )
 
         return Response(TicketReadSerializer(ticket).data, status=status.HTTP_201_CREATED)
 

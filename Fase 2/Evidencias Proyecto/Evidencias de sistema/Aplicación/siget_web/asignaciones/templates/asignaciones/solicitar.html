@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Solicitar equipo</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-dashboard">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-brand">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-info"><h2>SIGET</h2><p>Portal de autoservicio</p></div>
+            </div>
+            <div class="user-card">
+                <div class="user-meta">
+                    <div class="user-name">{{ usuario.nombres }} {{ usuario.apellidos }}</div>
+                    <div class="user-role">Usuario solicitante</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+                <li class="nav-item active"><a href="{% url 'asignaciones_web:solicitar' %}" aria-current="page">Solicitar equipo</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-bottom"><a href="{% url 'usuarios:auth_logout' %}" class="btn-logout">Cerrar sesión</a></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="top-navbar">
+            <div class="page-heading"><h1>Solicitar equipo</h1><p>Selecciona una categoría con equipos disponibles.</p></div>
+        </header>
+        <main class="content-area">
+            <section class="session-card" aria-labelledby="titulo-solicitud">
+                <div class="session-header"><h2 id="titulo-solicitud">Nueva solicitud de asignación</h2></div>
+                <p>La solicitud quedará pendiente de evaluación. El equipo específico se seleccionará en la entrega; este envío no reserva un equipo.</p>
+                {% for error in form.non_field_errors %}
+                <div class="alert-box alert-danger" role="alert">{{ error }}</div>
+                {% endfor %}
+                {% if not hay_disponibilidad %}
+                <div class="alert-box" role="status">Actualmente no hay categorías con equipos disponibles.</div>
+                {% endif %}
+                <form method="post" action="{% url 'asignaciones_web:solicitar' %}" novalidate>
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ form.id_categoria.id_for_label }}" class="form-label">{{ form.id_categoria.label }}</label>
+                        {{ form.id_categoria }}
+                        {% for error in form.id_categoria.errors %}<div class="form-error" role="alert">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.motivo.id_for_label }}" class="form-label">{{ form.motivo.label }}</label>
+                        {{ form.motivo }}
+                        {% for error in form.motivo.errors %}<div class="form-error" role="alert">{{ error }}</div>{% endfor %}
+                    </div>
+                    <button type="submit" class="btn-login btn-submit"{% if not hay_disponibilidad %} disabled{% endif %}>Enviar solicitud</button>
+                </form>
+                <a href="{% url 'inicio' %}" class="btn-back-link">Volver al inicio</a>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

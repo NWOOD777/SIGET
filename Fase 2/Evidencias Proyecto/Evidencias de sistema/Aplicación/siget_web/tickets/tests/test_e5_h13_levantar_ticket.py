@@ -36,6 +36,12 @@ class LevantarTicketE5H13Tests(SimpleTestCase):
         code_patch = patch("tickets.services.generar_codigo_ticket", return_value="TCK-0001")
         code_patch.start()
         self.addCleanup(code_patch.stop)
+        # Estos casos ejercitan creación/duplicados con un activo ya autorizado;
+        # la política de autorización tiene escenarios independientes.
+        selector_patch = patch("tickets.views.activos_reportables_por_usuario")
+        self.activos_reportables = selector_patch.start()
+        self.activos_reportables.return_value.filter.return_value.exists.return_value = True
+        self.addCleanup(selector_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios
@@ -233,8 +239,8 @@ class LevantarTicketE5H13Tests(SimpleTestCase):
             self.factory,
             "POST",
             "/api/tickets/",
-            usuario_id=3,
-            roles=[ROL_USUARIO_SOLICITANTE],
+            usuario_id=2,
+            roles=[ROL_TECNICO],
             data={
                 "asunto": "Falla en monitor",
                 "descripcion": "No da video",
@@ -244,7 +250,7 @@ class LevantarTicketE5H13Tests(SimpleTestCase):
         view = TicketListCreateView.as_view()
 
         with (
-            patch("tickets.permissions.obtener_usuario_actual", return_value=self.solicitante_user),
+            patch("tickets.permissions.obtener_usuario_actual", return_value=self.tecnico_user),
             patch("tickets.permissions.usuario_tiene_rol", return_value=True),
             patch("tickets.services.PrioridadTicket.objects.filter") as mock_pri_filter,
             patch("tickets.services.Activo.objects.get", side_effect=Activo.DoesNotExist),

@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - Confirmación de ticket</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+</head>
+<body class="page-dashboard">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-brand">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-info"><h2>SIGET</h2><p>Portal de autoservicio</p></div>
+            </div>
+            <div class="user-card">
+                <div class="user-meta">
+                    <div class="user-name">{{ usuario.nombres }} {{ usuario.apellidos }}</div>
+                    <div class="user-role">Usuario solicitante</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+                <li class="nav-item"><a href="{% url 'tickets_web:crear' %}">Soporte / Tickets</a></li>
+            </ul>
+        </div>
+        <div class="sidebar-bottom"><a href="{% url 'usuarios:auth_logout' %}" class="btn-logout">Cerrar sesión</a></div>
+    </aside>
+    <div class="main-wrapper">
+        <header class="top-navbar"><div class="page-heading"><h1>Confirmación de ticket</h1></div></header>
+        <main class="content-area">
+            <section class="session-card" aria-labelledby="titulo-confirmacion">
+                <div class="session-header"><h2 id="titulo-confirmacion">Ticket registrado</h2></div>
+                <div class="alert-box alert-success" role="status">Tu ticket fue registrado correctamente.</div>
+                <dl>
+                    <dt>Código del ticket</dt><dd>{{ ticket.codigo_ticket }}</dd>
+                    <dt>Asunto</dt><dd>{{ ticket.asunto }}</dd>
+                    <dt>Estado</dt><dd>{{ ticket.id_estado_ticket.nombre }}</dd>
+                    <dt>Prioridad</dt><dd>{{ ticket.id_prioridad.nombre }}</dd>
+                </dl>
+                <a href="{% url 'inicio' %}" class="btn-back-link">Volver al inicio</a>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
