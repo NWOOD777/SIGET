@@ -77,6 +77,8 @@ class UserSession:
 
     def clear(self):
         """Limpia completamente el estado de la sesión en memoria."""
+        from siget_desktop.auth.cache import eliminar_cache
+        eliminar_cache()
         self.generation += 1
         self.access_token = None
         self.id_token = None

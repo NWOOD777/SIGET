@@ -73,6 +73,11 @@ python -m siget_desktop.main
 
 El [flujo de autenticación](api_docs/uso_general.md#mecanismos-de-autenticación) y los permisos de cada operación se describen en la documentación de las APIs.
 
+### Sesión del escritorio
+
+Al cerrar la ventana se conserva el token de acceso vigente en el directorio local de datos del usuario que determina el sistema operativo mediante Qt. La caché es privada al usuario y contiene únicamente el token, su vencimiento y la identificación del entorno. No guarda contraseñas, roles ni permisos. Al abrir la aplicación se consulta nuevamente la identidad y el acceso en Django. «Cerrar sesión», la expiración o el rechazo de la cuenta eliminan la caché. Una sesión vencida requiere iniciar sesión nuevamente.
+
+
 ## Pruebas
 
 ### Backend

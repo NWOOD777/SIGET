@@ -7,12 +7,14 @@ y la sincronización de la sesión con el backend Django (/api/usuarios/me/).
 from __future__ import annotations
 
 import logging
+import time
 import urllib.parse
 import webbrowser
 from typing import Callable
 
 import requests
 
+from siget_desktop.auth.cache import eliminar_cache, guardar_cache, leer_cache
 from siget_desktop.auth.pkce import PkceContext
 from siget_desktop.auth.server import CallbackResult, esperar_retorno_oauth
 from siget_desktop.auth.session import current_session
@@ -139,7 +141,31 @@ class AuthManager:
                 "ni Administrador del sistema para operar la aplicación de Escritorio."
             )
 
+        guardar_cache()
         return user_info
+
+    def restaurar_sesion(self, cancel_event=None) -> dict | None:
+        """Revalida en Django antes de recuperar el acceso a las pantallas."""
+        saved = leer_cache()
+        if saved is None:
+            return None
+        token, expiry = saved
+        try:
+            profile = self._sincronizar_perfil_con_backend(token)
+        except AuthForbiddenError:
+            eliminar_cache()
+            raise
+        if cancel_event is not None and cancel_event.is_set():
+            raise AuthCancelledError("Restauración de sesión cancelada.")
+        if not profile.get("acceso_escritorio"):
+            eliminar_cache()
+            raise AuthForbiddenError("La cuenta ya no tiene acceso al escritorio.")
+        if expiry <= time.time() + 30:
+            eliminar_cache()
+            return None
+        current_session.set_tokens(token, max(0, int(expiry - time.time())))
+        current_session.update_user_info(profile)
+        return profile
 
     def _intercambiar_codigo(self, code: str, code_verifier: str) -> dict:
         """Realiza POST /oauth/token con PKCE verifier."""
@@ -188,6 +214,7 @@ class AuthManager:
             ) from exc
 
         if resp.status_code == 401:
+            eliminar_cache()
             raise AuthProviderError("El token de acceso fue rechazado por el backend Django.")
         if resp.status_code == 403:
             raise AuthForbiddenError(

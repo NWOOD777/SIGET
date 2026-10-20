@@ -278,7 +278,9 @@ class MainWindow(QMainWindow):
             self._cerrar_sesion()
 
     def closeEvent(self, event):
-        self._cerrar_sesion()
+        from siget_desktop.auth.cache import guardar_cache
+        guardar_cache()
+        self._sesion_activa = False
         from PySide6.QtWidgets import QApplication
         app = QApplication.instance()
         if app is not None:
