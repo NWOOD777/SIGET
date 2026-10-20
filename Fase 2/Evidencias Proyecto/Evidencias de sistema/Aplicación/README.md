@@ -1,170 +1,101 @@
 # SIGET — Aplicación
 
-Este directorio contiene la implementación de la aplicación **SIGET**, incluyendo el backend Django, Plataforma Web, APIs REST, configuración Docker y pruebas automatizadas.
+Esta carpeta contiene el backend, el portal Web y el cliente de escritorio. La descripción del proyecto, sus perfiles, tecnologías y arquitectura se encuentran en el [README principal](../../../../README.md).
 
-Para la descripción general, objetivos y arquitectura global del proyecto, consultar el [README principal](../../../../README.md).
-
----
-
-## Arquitectura de la aplicación
-
-La aplicación utiliza un backend central desarrollado con **Django 5.2** y **Django REST Framework**, conectado a **PostgreSQL 17**.
-
-Actualmente contempla:
-
-- **Plataforma Web:** canal de autoservicio para el Usuario solicitante.
-- **API REST:** servicios de negocio utilizados por los distintos módulos de SIGET.
-- **Aplicación de Escritorio:** cliente PySide6 para Técnicos de soporte y Administradores.
-- **Auth0:** autenticación mediante OpenID Connect / OAuth 2.0.
-- **RBAC:** autorización mediante roles y permisos almacenados en PostgreSQL.
-
----
-
-## Módulos
-
-El backend está organizado principalmente en:
+## Organización del código
 
 ```text
-siget_web/
-├── siget/          # Configuración principal de Django
-├── usuarios/       # Autenticación, usuarios y RBAC
-├── activos/        # Gestión de activos TI
-├── asignaciones/   # Solicitudes, asignaciones y devoluciones
-├── tickets/        # Mesa de ayuda y tickets
-├── templates/      # Plantillas Web
-├── static/         # Recursos estáticos
-├── manage.py
-└── requirements.txt
+Aplicación/
+├── siget_web/
+│   ├── siget/          # Configuración de Django
+│   ├── usuarios/       # Identidad y RBAC
+│   ├── activos/        # Inventario
+│   ├── asignaciones/   # Solicitudes, entregas y devoluciones
+│   ├── tickets/        # Service Desk
+│   ├── templates/
+│   ├── static/
+│   └── manage.py
+├── siget_desktop/
+│   ├── auth/           # Acceso y sesión del cliente
+│   ├── api/            # Consumo del backend compartido
+│   ├── ui/             # Ventanas y vistas
+│   ├── tests/
+│   ├── config.py
+│   └── main.py
+├── api_docs/            # Contratos por API y endpoint
+├── configuracion.md     # Variables y registro de clientes
+├── .env.example
+├── requirements.txt
+└── docker-compose.yml
 ```
 
-Los módulos implementan servicios relacionados con:
+## Preparación
 
-- Autenticación y recuperación de acceso.
-- Administración de usuarios, roles y permisos.
-- Gestión de activos TI.
-- Solicitudes y asignaciones de equipos.
-- Entregas y devoluciones.
-- Mesa de ayuda y tickets de soporte.
-- Auditoría de operaciones.
+Los comandos de esta guía se ejecutan desde la carpeta `Aplicación`, salvo que se indique otra ubicación.
 
----
+Se requiere Docker Engine y Docker Compose v2 para levantar el backend y PostgreSQL. El escritorio requiere Python 3.12 o superior y un entorno gráfico local.
 
-## Requisitos
+Antes de iniciar, completar la [configuración compartida](configuracion.md).
 
-- Docker Engine.
-- Docker Compose v2.
+### Dependencias locales
 
-Opcionalmente, para ejecución sin Docker:
-
-- Python 3.12+.
-- PostgreSQL 17.
-
----
-
-## Variables de entorno
-
-Crear el archivo `.env` desde la plantilla incluida:
+Web y Escritorio utilizan un único `requirements.txt`. Para ejecutar el escritorio y las herramientas de revisión, crear un entorno virtual `.venv` en la raíz de SIGET y activarlo. Desde `Aplicación`, instalar:
 
 ```bash
-cp .env.example .env
+python -m pip install -r requirements.txt
 ```
 
-La configuración incluye variables para:
+La imagen Docker instala estas dependencias durante su construcción.
 
-- Django.
-- PostgreSQL.
-- Auth0.
-- Auth0 Management API.
-
-> `.env` contiene credenciales privadas y no debe incorporarse al repositorio.
-
-La lista completa de variables y ejemplos se encuentra en `.env.example`.
-
----
-
-## Ejecución con Docker
-
-### Iniciar
+## Backend y PostgreSQL con Docker
 
 ```bash
 docker compose up -d --build
 ```
 
-### Consultar estado
+El portal queda disponible en `http://localhost:8000/`. Para consultar el estado, ver registros y detener los servicios:
 
 ```bash
 docker compose ps
-```
-
-### Logs
-
-```bash
 docker compose logs -f
-```
-
-### Detener
-
-```bash
 docker compose down
 ```
 
-La Plataforma Web estará disponible en:
+La base se inicializa desde [init_siget_bd.sql](../Base%20de%20datos/init_siget_bd.sql) al crear un volumen vacío. Los datos permanecen en el volumen de PostgreSQL al detener los servicios.
 
-```text
-http://localhost:8000/
+## Ejecutar el escritorio
+
+Con el backend en ejecución y el entorno virtual activo:
+
+```bash
+python -m siget_desktop.main
 ```
 
----
-
-## API REST
-
-SIGET utiliza Django REST Framework para exponer los servicios necesarios para usuarios, activos, asignaciones, devoluciones y tickets.
-
-Consultar [API_DOCS.md](API_DOCS.md) para las rutas disponibles, permisos, datos de entrada, respuestas y ejemplos de uso.
-
----
+El [flujo de autenticación](api_docs/uso_general.md#mecanismos-de-autenticación) y los permisos de cada operación se describen en la documentación de las APIs.
 
 ## Pruebas
 
-Comprobar la configuración de Django:
+### Backend
 
 ```bash
 docker compose exec web python manage.py check
-```
-
-Ejecutar la suite completa:
-
-```bash
 docker compose exec web python manage.py test
 ```
 
-Las pruebas cubren lógica de negocio, permisos, persistencia, APIs e integración entre módulos.
+La suite comprueba reglas de negocio, permisos, persistencia y endpoints sobre PostgreSQL.
 
----
+### Escritorio
 
-## Base de datos
-
-SIGET utiliza PostgreSQL como base de datos relacional.
-
-El esquema e inicialización se encuentran en:
-
-```text
-../Base de datos/init_siget_bd.sql
+```bash
+python -m unittest discover -s siget_desktop/tests -p "test_*.py"
 ```
 
-La base de datos contiene el modelo relacional, catálogos maestros, configuración RBAC y relaciones utilizadas por los módulos de la aplicación.
+Las pruebas gráficas utilizan `QT_QPA_PLATFORM=offscreen` y pueden ejecutarse sin una pantalla interactiva.
 
----
+### Revisión estática
 
-## Seguridad
+La función, configuración y comandos de Ruff y Pyright se explican en [Revisión estática de la aplicación](../../../../README.md#revisión-estática-de-la-aplicación).
 
-La aplicación implementa:
+## Documentación de las APIs
 
-- Autenticación delegada mediante Auth0.
-- OAuth 2.0 / OpenID Connect.
-- Autorización RBAC en PostgreSQL.
-- Variables de entorno para secretos y credenciales.
-- Validación de permisos en el backend.
-- Auditoría de operaciones relevantes.
-
-Las credenciales de Auth0, PostgreSQL y Django nunca deben incorporarse al repositorio.
+El [índice de APIs](api_docs/README.md) reúne los contratos del backend y de las integraciones externas. Cada endpoint documenta sus métodos, permisos, entradas y respuestas.

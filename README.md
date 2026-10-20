@@ -10,14 +10,6 @@ Proyecto desarrollado para la asignatura **Capstone de Ingeniería en Informáti
 
 ---
 
-## Objetivo
-
-Desarrollar una solución que permita centralizar la información relacionada con los activos tecnológicos y los procesos de soporte TI, mejorando su **control, trazabilidad y seguimiento**.
-
-SIGET busca facilitar la interacción entre usuarios solicitantes, técnicos de soporte y administradores mediante una solución centralizada para la gestión de equipamiento y soporte tecnológico.
-
----
-
 ## Usuarios del sistema
 
 | Perfil | Responsabilidad |
@@ -30,66 +22,14 @@ SIGET busca facilitar la interacción entre usuarios solicitantes, técnicos de 
 
 ## Componentes principales
 
-### Plataforma Web
+| Componente | Función |
+|---|---|
+| Plataforma Web | Autoservicio del Usuario solicitante. |
+| Aplicación de Escritorio PySide6 | Operaciones del Técnico de soporte y del Administrador. |
+| Backend Django / Django REST Framework | Reglas de negocio, permisos y servicios REST compartidos. |
+| PostgreSQL | Persistencia de usuarios, activos, asignaciones, soporte y trazabilidad. |
 
-Orientada principalmente al **Usuario solicitante**.
-
-Permite:
-
-- Iniciar sesión y recuperar acceso.
-- Consultar equipos asignados.
-- Realizar solicitudes de equipos.
-- Consultar el estado de solicitudes.
-- Registrar tickets de soporte.
-- Consultar información e historial de equipos.
-- Revisar notificaciones y datos de perfil.
-
-### Aplicación de Escritorio
-
-Orientada a **Técnicos de soporte** y **Administradores del sistema**.
-
-Contempla:
-
-- Administración de activos tecnológicos.
-- Gestión de solicitudes y asignaciones.
-- Aprobación y rechazo de solicitudes.
-- Registro de entregas y devoluciones.
-- Gestión de tickets de soporte.
-- Diagnósticos y reparaciones.
-- Mantenimientos.
-- Administración de usuarios, roles y permisos.
-- Trazabilidad, auditoría y reportes.
-
-### Backend / API REST
-
-El backend centraliza las reglas de negocio y permite la comunicación entre los componentes de SIGET.
-
-Está desarrollado con **Python, Django y Django REST Framework** y se encarga de:
-
-- Procesar las operaciones del sistema.
-- Aplicar reglas de negocio.
-- Gestionar autenticación y autorización.
-- Administrar el acceso a datos.
-- Exponer servicios REST.
-- Registrar operaciones relevantes para auditoría.
-
-### Base de Datos
-
-SIGET utiliza **PostgreSQL** como sistema gestor de base de datos relacional.
-
-El modelo contempla información relacionada con:
-
-- Usuarios, roles y permisos.
-- Activos tecnológicos.
-- Solicitudes y asignaciones.
-- Devoluciones.
-- Estados de equipos.
-- Tickets y mensajes.
-- Reparaciones y mantenimientos.
-- Repuestos.
-- Notificaciones.
-- Auditoría.
-- Historial y trazabilidad.
+Los endpoints disponibles y las integraciones pendientes se distinguen en el [alcance de las APIs](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/api_docs/alcance_y_pendientes.md).
 
 ---
 
@@ -120,22 +60,6 @@ El modelo contempla información relacionada con:
 ```
 
 La **Plataforma Web** y la **Aplicación de Escritorio** utilizan un backend centralizado que concentra la lógica de negocio, autorización y acceso a los datos.
-
----
-
-## Módulos principales
-
-- Gestión de usuarios y autenticación.
-- Gestión de roles y permisos.
-- Gestión de activos tecnológicos.
-- Gestión de solicitudes y asignaciones.
-- Gestión de devoluciones y trazabilidad.
-- Mesa de Ayuda y tickets de soporte.
-- Gestión de reparación y mantenimiento.
-- Gestión de repuestos e insumos técnicos.
-- Notificaciones y seguimiento.
-- Auditoría y reportes.
-- Integración de APIs y seguridad.
 
 ---
 
@@ -173,6 +97,9 @@ SIGET/
 │       └── Evidencias de sistema/
 │           ├── Aplicación/
 │           │   ├── siget_web/
+│           │   ├── siget_desktop/
+│           │   ├── requirements.txt
+│           │   ├── api_docs/
 │           │   ├── docker-compose.yml
 │           │   └── README.md
 │           │
@@ -183,156 +110,55 @@ SIGET/
 │   ├── Evidencias Grupales/
 │   └── Evidencias Individuales/
 │
+├── ruff.toml
+├── pyrightconfig.json
 └── README.md
 ```
 
-> La estructura anterior es una representación resumida del repositorio. Los archivos específicos de código, pruebas, documentación y evidencias se encuentran organizados dentro de sus respectivas carpetas.
+> La estructura anterior es una representación resumida del repositorio. Las carpetas de fases contienen el código y las evidencias académicas. Los archivos `ruff.toml` y `pyrightconfig.json` de la raíz configuran la revisión compartida del backend y del cliente de escritorio, descrita en [Revisión estática de la aplicación](#revisión-estática-de-la-aplicación).
 
 ---
 
-## Documentación del proyecto
+## Documentación y aplicación
 
-La documentación principal del proyecto se encuentra en:
+| Recurso | Ubicación |
+|---|---|
+| Ejecución, dependencias y pruebas | [README de la aplicación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/README.md) |
+| Variables de entorno y registro de clientes | [Configuración de la aplicación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/configuracion.md) |
+| Contratos y endpoints | [Índice de las APIs](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/api_docs/README.md) |
+| Modelo e inicialización de PostgreSQL | [init_siget_bd.sql](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Base%20de%20datos/init_siget_bd.sql) |
+| Arquitectura y diagramas | [Arquitectura](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Arquitectura/) |
+| Requisitos, historias, backlog y documentación académica | [Evidencias de documentación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/) |
+| Registros de trabajo por Sprint | [Scrum](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Scrum/) |
 
-```text
-Fase 2/
-└── Evidencias Proyecto/
-    └── Evidencias de documentación/
+### Revisión estática de la aplicación
+
+La aplicación utiliza Ruff y Pyright para revisar el código Python del backend Django/DRF y del cliente de escritorio PySide6. Sus configuraciones se mantienen en la raíz para aplicar los mismos criterios a ambos componentes y facilitar su revisión desde el repositorio completo.
+
+| Archivo | Función |
+|---|---|
+| [ruff.toml](ruff.toml) | Orden de imports, imports y variables sin usar, nombres indefinidos y errores básicos. Utiliza reglas estables y una configuración moderada. |
+| [pyrightconfig.json](pyrightconfig.json) | Análisis básico de tipos, uso de valores opcionales y resolución de imports en el backend y el escritorio, incluidas sus pruebas. |
+
+Los controles consideran Python 3.12 y excluyen las migraciones generadas por Django. Ruff conserva una excepción puntual para el arranque directo del escritorio, que ajusta su ruta antes de importar el paquete. Los imports y las variables sin usar siguen revisándose en ese archivo.
+
+Después de [instalar las dependencias compartidas](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/README.md#dependencias-locales), ejecutar desde la raíz de SIGET con `.venv` activo:
+
+```bash
+ruff check .
+pyright
 ```
 
-Incluye documentación relacionada con:
+Para corregir automáticamente el orden de imports y otros casos seguros se utiliza `ruff check . --fix`. Estas revisiones complementan las pruebas automatizadas de la aplicación.
 
-- Arquitectura de la solución.
-- Casos de uso.
-- Historias de usuario.
-- Product Backlog.
-- Requisitos no funcionales.
-- Modelo de datos.
-- Mockups.
-- Roles y responsabilidades.
-- Gestión Scrum.
-- Registros de Sprint.
-
-### Arquitectura
-
-Los diagramas y documentación de arquitectura se encuentran en:
-
-```text
-Fase 2/Evidencias Proyecto/Evidencias de documentación/Arquitectura/
-```
-
-La documentación contempla distintas vistas de la solución:
-
-- Vista de Despliegue.
-- Vista de Escenario.
-- Vista Física.
-- Vista Lógica.
-- Vista de Proceso.
-
----
-
-## Evidencias del sistema
-
-El código fuente y la base de datos utilizados como evidencia del desarrollo se encuentran en:
-
-```text
-Fase 2/
-└── Evidencias Proyecto/
-    └── Evidencias de sistema/
-        ├── Aplicación/
-        └── Base de datos/
-```
-
-### Aplicación
-
-La implementación de la solución se encuentra en:
-
-```text
-Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/
-```
-
-Incluye:
-
-- Backend Django.
-- Plataforma Web.
-- APIs REST.
-- Módulos funcionales.
-- Pruebas automatizadas.
-- Configuración Docker.
-- Variables de entorno de ejemplo.
-- Documentación técnica de ejecución.
-
-La configuración técnica y ejecución de la aplicación se encuentra detallada en:
-
-**[README de la aplicación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/README.md)**
-
-### Base de datos
-
-El script de inicialización de PostgreSQL se encuentra en:
-
-```text
-Fase 2/Evidencias Proyecto/Evidencias de sistema/Base de datos/init_siget_bd.sql
-```
-
-Contiene la estructura relacional y datos necesarios para inicializar la base de datos utilizada por SIGET.
-
----
 
 ## Metodología de trabajo
 
-El proyecto se desarrolla utilizando **Scrum**, organizando el trabajo mediante Sprints e historias de usuario.
-
-La gestión del proyecto contempla:
-
-- Product Backlog.
-- Sprint Backlog.
-- Historias de usuario.
-- Criterios de aceptación.
-- Daily Standup.
-- Retrospectivas.
-- Registro de actividades y horas.
-- Control de versiones mediante Git y GitHub.
-- Pruebas.
-- Documentación.
-- Evidencias de desarrollo.
-
-Los registros correspondientes a cada Sprint se almacenan dentro de:
-
-```text
-Fase 2/Evidencias Proyecto/Evidencias de documentación/Scrum/
-```
-
----
+El equipo utiliza Scrum, con historias de usuario, criterios de aceptación, Product Backlog y Sprint Backlog. Las reuniones diarias, retrospectivas y registros de actividades se conservan en la carpeta Scrum enlazada arriba; Git y GitHub mantienen el historial del desarrollo.
 
 ## Evidencias académicas
 
-El repositorio también mantiene las evidencias requeridas durante las distintas fases del Capstone.
-
-### Fase 1
-
-Contiene:
-
-- Evidencias grupales.
-- Evidencias individuales.
-- Presentación inicial del proyecto.
-
-### Fase 2
-
-Contiene:
-
-- Evidencias grupales.
-- Evidencias individuales.
-- Evidencias de documentación.
-- Evidencias del sistema implementado.
-
-### Fase 3
-
-Contiene:
-
-- Evidencias grupales.
-- Evidencias individuales.
-
----
+Las carpetas `Fase 1`, `Fase 2` y `Fase 3` organizan las evidencias grupales e individuales de cada etapa. La segunda fase reúne además la documentación y el sistema implementado, según la estructura del repositorio.
 
 **Duoc UC — Escuela de Informática y Telecomunicaciones**  
 **Ingeniería en Informática — Capstone**
