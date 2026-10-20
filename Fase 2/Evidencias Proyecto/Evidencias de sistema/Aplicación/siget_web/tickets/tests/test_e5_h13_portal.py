@@ -14,7 +14,6 @@ from tickets.models import Ticket
 from usuarios.models import Usuario
 from usuarios.services import ROL_USUARIO_SOLICITANTE
 
-
 # Enrutamiento aislado para las pruebas de vistas de la Etapa 2.
 urlpatterns = [
     path("tickets/", include("tickets.web_urls")),
@@ -506,8 +505,11 @@ class TicketIntegracionPortalTests(SimpleTestCase):
 
     def test_rutas_api_conservan_destinos_sin_conflictos_con_web(self):
         from tickets.views import (
-            EstadoTicketListView, PrioridadListView, SLAListView,
-            TicketDetailView, TicketListCreateView,
+            EstadoTicketListView,
+            PrioridadListView,
+            SLAListView,
+            TicketDetailView,
+            TicketListCreateView,
         )
 
         for url, vista in (

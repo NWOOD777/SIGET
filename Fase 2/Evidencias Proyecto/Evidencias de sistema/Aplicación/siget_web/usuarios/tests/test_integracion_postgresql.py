@@ -1,8 +1,7 @@
 """Regresión real de las tarjetas Sprint 4/5. Solo Auth0 se simula en su frontera."""
-from typing import Any, cast
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
 from threading import Barrier
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 from django.db import DatabaseError, connection, connections
@@ -12,7 +11,12 @@ from rest_framework.test import APIClient
 
 from activos.models import Activo, CategoriaActivo, EstadoActivo, Marca, ModeloActivo, Ubicacion
 from asignaciones.models import Asignacion, DevolucionActivo, SolicitudAsignacion
-from asignaciones.services import aprobar_solicitud_asignacion, crear_solicitud_asignacion, rechazar_solicitud_asignacion, registrar_entrega_asignacion
+from asignaciones.services import (
+    aprobar_solicitud_asignacion,
+    crear_solicitud_asignacion,
+    rechazar_solicitud_asignacion,
+    registrar_entrega_asignacion,
+)
 from siget.testing import cargar_esquema_pruebas
 from tickets.models import Ticket
 from tickets.services import crear_ticket

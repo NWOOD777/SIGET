@@ -13,8 +13,8 @@ from django.urls import reverse
 
 from usuarios.models import UsuarioRol
 from usuarios.services import (
-    CorreoNoVerificadoError,
     ROL_USUARIO_SOLICITANTE,
+    CorreoNoVerificadoError,
     UsuarioInactivoError,
     UsuarioNoEncontradoError,
 )
@@ -25,6 +25,7 @@ from usuarios.views import (
     inicio,
     render_auth_error,
 )
+
 from .helpers import asignar_mock_session, crear_mock_usuario
 
 

@@ -8,12 +8,12 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_http_methods
 from rest_framework.exceptions import ValidationError
 
-from siget.http import direccion_ip_cliente
 from siget.db import bloquear_operacion
+from siget.http import direccion_ip_cliente
 from tickets.forms import TicketCreateForm
 from tickets.models import Ticket
-from tickets.services import crear_ticket
 from tickets.selectors import activos_reportables_por_usuario
+from tickets.services import crear_ticket
 from usuarios.services import (
     ROL_USUARIO_SOLICITANTE,
     obtener_usuario_actual,

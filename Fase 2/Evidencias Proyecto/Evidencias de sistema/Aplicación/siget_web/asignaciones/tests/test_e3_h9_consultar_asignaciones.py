@@ -5,10 +5,11 @@ Cubre consulta general, búsqueda por usuario, búsqueda por equipo, resultados 
 from unittest.mock import patch
 
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
 
 from asignaciones.models import Asignacion, EstadoAsignacion
 from asignaciones.views import AsignacionDetailView, AsignacionListCreateView, EstadoAsignacionListView
+from usuarios.services import ROL_ADMINISTRADOR, ROL_USUARIO_SOLICITANTE
+
 from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_dict, obtener_data_list
 
 

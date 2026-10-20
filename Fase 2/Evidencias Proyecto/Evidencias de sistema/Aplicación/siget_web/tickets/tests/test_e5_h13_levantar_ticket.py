@@ -3,21 +3,20 @@ Pruebas para E5-H13: Levantar ticket Service Desk.
 Cubre registro exitoso, campos obligatorios, activo relacionado, duplicados activos,
 alcance por rol en consultas y RBAC.
 """
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from django.test import RequestFactory, SimpleTestCase
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
-from usuarios.tests.helpers import SafeMock, crear_mock_usuario
 
-from activos.models import Activo, CategoriaActivo, Marca, ModeloActivo
-from tickets.models import EstadoTicket, PrioridadTicket, Ticket
-from tickets.views import TicketDetailView, TicketListCreateView
+from activos.models import Activo
 from asignaciones.tests.helpers import (
     crear_request_con_sesion,
     obtener_data_dict,
-    obtener_data_list,
 )
+from tickets.models import EstadoTicket, PrioridadTicket, Ticket
+from tickets.views import TicketListCreateView
+from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
+from usuarios.tests.helpers import SafeMock, crear_mock_usuario
 
 
 class LevantarTicketE5H13Tests(SimpleTestCase):

@@ -3,7 +3,6 @@ Vistas API REST para solicitudes de asignación, asignaciones y devoluciones.
 Implementa E3-H7, E3-H8, E3-H9, E3-H20, E4-H10 y E4-H11.
 """
 from django.db.models import Q
-from siget.http import direccion_ip_cliente
 from rest_framework import exceptions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -25,8 +24,8 @@ from asignaciones.permissions import (
     _obtener_usuario_siget,
 )
 from asignaciones.serializers import (
-    AsignacionReadSerializer,
     AsignacionCreateSerializer,
+    AsignacionReadSerializer,
     DevolucionActivoCreateSerializer,
     DevolucionActivoReadSerializer,
     EntregaAsignacionSerializer,
@@ -43,7 +42,8 @@ from asignaciones.services import (
     registrar_devolucion_asignacion,
     registrar_entrega_asignacion,
 )
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, es_administrador, usuario_tiene_rol
+from siget.http import direccion_ip_cliente
+from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
 def _extraer_ip(request: Request) -> str | None:

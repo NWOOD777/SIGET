@@ -3,10 +3,9 @@ from unittest.mock import patch
 
 from django.db.models import Q
 
-from usuarios.services import ROL_TECNICO
-
 from activos.models import Activo
 from activos.views import ActivoListCreateView
+from usuarios.services import ROL_TECNICO
 
 from .helpers import (
     ActivosTestBase,

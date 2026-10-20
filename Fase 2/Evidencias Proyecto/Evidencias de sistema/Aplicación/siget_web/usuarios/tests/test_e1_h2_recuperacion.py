@@ -3,8 +3,8 @@ Pruebas unitarias para E1-H2: Recuperación de acceso mediante Auth0.
 """
 
 from unittest.mock import MagicMock, patch
-import requests
 
+import requests
 from django.conf import settings
 from django.test import Client, SimpleTestCase
 from django.urls import reverse

@@ -1,7 +1,7 @@
 """Activos opcionales del portal E5-H13; persistencia real en una base temporal test_."""
 
-from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from threading import Event
 from unittest.mock import patch
 
@@ -11,10 +11,10 @@ from django.utils import timezone
 
 from activos.models import EstadoActivo
 from asignaciones.models import Asignacion, EstadoAsignacion, EstadoSolicitudAsignacion, SolicitudAsignacion
+from asignaciones.services import registrar_devolucion_asignacion
+from siget.db import bloquear_operacion
 from tickets.forms import TicketCreateForm
 from tickets.models import Ticket
-from siget.db import bloquear_operacion
-from asignaciones.services import registrar_devolucion_asignacion
 from usuarios.models import BitacoraAuditoria, Permiso, Rol, RolPermiso, UsuarioRol
 from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 

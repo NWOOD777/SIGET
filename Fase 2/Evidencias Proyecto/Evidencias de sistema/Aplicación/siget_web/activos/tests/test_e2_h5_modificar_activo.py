@@ -10,15 +10,15 @@ from unittest.mock import patch
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
+
+from activos.models import Activo
+from activos.serializers import ActivoSerializer
+from activos.views import ActivoDetailView
 from usuarios.services import (
     ROL_ADMINISTRADOR,
     ROL_TECNICO,
     ROL_USUARIO_SOLICITANTE,
 )
-
-from activos.models import Activo
-from activos.serializers import ActivoSerializer
-from activos.views import ActivoDetailView
 
 from .helpers import (
     ActivosTestBase,

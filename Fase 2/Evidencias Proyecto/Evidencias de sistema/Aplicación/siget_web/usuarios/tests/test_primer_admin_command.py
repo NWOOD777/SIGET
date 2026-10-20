@@ -31,7 +31,6 @@ from usuarios.services import (
     ROL_ADMINISTRADOR,
     Auth0ManagementError,
     AuthRecoverConnectionError,
-    DuplicadoUsuarioError,
 )
 
 from .helpers import RbacTestBase, crear_mock_usuario

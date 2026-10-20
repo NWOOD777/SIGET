@@ -5,10 +5,10 @@ Cubre escenarios funcionales, criterios de aceptación, RBAC, sesión manipulada
 from unittest.mock import patch
 
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
 
-from asignaciones.models import SolicitudAsignacion
 from asignaciones.views import SolicitudAsignacionListCreateView
+from usuarios.services import ROL_USUARIO_SOLICITANTE
+
 from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_dict
 
 

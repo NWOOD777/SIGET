@@ -5,9 +5,9 @@ Valida la autorización directamente contra PostgreSQL.
 from django.http import HttpRequest
 from rest_framework import exceptions, permissions
 from rest_framework.request import Request
+
 from usuarios.models import Usuario
 from usuarios.services import (
-    ROL_ADMINISTRADOR,
     ROL_TECNICO,
     ROL_USUARIO_SOLICITANTE,
     es_administrador,

@@ -3,8 +3,7 @@ Serializadores DRF para Service Desk y Tickets de Soporte (E5-H13).
 """
 from rest_framework import serializers
 
-from activos.models import Activo
-from tickets.models import EstadoTicket, PrioridadTicket, SLA, Ticket
+from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
 
 
 class PrioridadTicketSerializer(serializers.ModelSerializer):

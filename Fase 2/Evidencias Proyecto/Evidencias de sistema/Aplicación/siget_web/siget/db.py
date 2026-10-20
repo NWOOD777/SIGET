@@ -13,6 +13,7 @@ def bloquear_operacion(dominio: int, identificador: int = 0) -> None:
 def transaccion_operacion(func):
     """Agrupa validaciones, bloqueos y escrituras en una sola transacción."""
     from functools import wraps
+
     from django.db import transaction
 
     @wraps(func)

@@ -2,13 +2,12 @@
 Servicios de dominio para el módulo Service Desk y Tickets de Soporte (E5-H13).
 Gestiona persistencia atómica, generación de código secuencial, reglas de negocio y auditoría.
 """
-from typing import Any
-from siget.db import bloquear_operacion, transaccion_operacion, siguiente_codigo
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import exceptions
 
 from activos.models import Activo
+from siget.db import bloquear_operacion, siguiente_codigo, transaccion_operacion
 from tickets.models import EstadoTicket, PrioridadTicket, Ticket
 from usuarios.models import Usuario
 from usuarios.services import registrar_auditoria

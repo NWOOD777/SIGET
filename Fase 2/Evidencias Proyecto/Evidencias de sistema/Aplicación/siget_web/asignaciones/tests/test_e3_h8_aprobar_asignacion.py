@@ -5,13 +5,14 @@ Cubre aprobación, rechazo, validación de estado previo, solicitud inexistente,
 from unittest.mock import patch
 
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
 
 from asignaciones.models import SolicitudAsignacion
 from asignaciones.views import (
     SolicitudAsignacionAprobarView,
     SolicitudAsignacionRechazarView,
 )
+from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO
+
 from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_dict
 
 

@@ -8,8 +8,12 @@ from django.utils import timezone
 
 from activos.models import Activo, EstadoActivo, ModeloActivo
 from asignaciones.models import (
-    Asignacion, DevolucionActivo, EstadoAsignacion, EstadoSolicitudAsignacion,
-    HistorialEstadoActivo, SolicitudAsignacion,
+    Asignacion,
+    DevolucionActivo,
+    EstadoAsignacion,
+    EstadoSolicitudAsignacion,
+    HistorialEstadoActivo,
+    SolicitudAsignacion,
 )
 from usuarios.models import BitacoraAuditoria, Permiso, Rol, RolPermiso, UsuarioRol
 from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase

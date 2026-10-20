@@ -2,8 +2,6 @@
 Servicios de dominio para el módulo de Asignaciones y Devoluciones de SIGET.
 Implementa reglas de negocio, transaccionalidad PostgreSQL, control de estados y trazabilidad.
 """
-from typing import Any
-from siget.db import bloquear_operacion, transaccion_operacion
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import exceptions
@@ -17,6 +15,7 @@ from asignaciones.models import (
     HistorialEstadoActivo,
     SolicitudAsignacion,
 )
+from siget.db import bloquear_operacion, transaccion_operacion
 from tickets.models import Ticket
 from tickets.services import crear_ticket
 from usuarios.models import Usuario

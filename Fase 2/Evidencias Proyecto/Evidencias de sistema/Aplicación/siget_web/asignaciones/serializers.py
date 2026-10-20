@@ -1,10 +1,8 @@
 """
 Serializadores DRF para solicitudes de asignación, asignaciones y devoluciones.
 """
-from django.utils import timezone
 from rest_framework import serializers
 
-from activos.models import Activo, CategoriaActivo, EstadoActivo
 from asignaciones.models import (
     Asignacion,
     DevolucionActivo,

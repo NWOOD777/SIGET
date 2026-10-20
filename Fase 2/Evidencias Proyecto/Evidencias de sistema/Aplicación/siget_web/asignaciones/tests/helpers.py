@@ -2,19 +2,9 @@
 Utilidades, fixtures simuladas y helpers para pruebas del módulo asignaciones.
 """
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from django.test import RequestFactory, SimpleTestCase
-from usuarios.tests.helpers import (
-    SafeMock,
-    asignar_mock_session,
-    crear_mock_usuario,
-)
-from usuarios.services import (
-    ROL_ADMINISTRADOR,
-    ROL_TECNICO,
-    ROL_USUARIO_SOLICITANTE,
-)
 
 from activos.models import Activo, CategoriaActivo, EstadoActivo, Marca, ModeloActivo
 from asignaciones.models import (
@@ -23,6 +13,16 @@ from asignaciones.models import (
     EstadoAsignacion,
     EstadoSolicitudAsignacion,
     SolicitudAsignacion,
+)
+from usuarios.services import (
+    ROL_ADMINISTRADOR,
+    ROL_TECNICO,
+    ROL_USUARIO_SOLICITANTE,
+)
+from usuarios.tests.helpers import (
+    SafeMock,
+    asignar_mock_session,
+    crear_mock_usuario,
 )
 
 

@@ -5,29 +5,29 @@ from contextlib import nullcontext
 
 from django.db import transaction
 from django.db.models import Q
-from siget.db import bloquear_operacion
-from siget.http import direccion_ip_cliente
 from rest_framework import exceptions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from tickets.models import EstadoTicket, PrioridadTicket, SLA, Ticket
+from siget.db import bloquear_operacion
+from siget.http import direccion_ip_cliente
+from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
 from tickets.permissions import (
     PuedeConsultarTickets,
     PuedeCrearTicket,
     _obtener_usuario_siget,
 )
+from tickets.selectors import activos_reportables_por_usuario
 from tickets.serializers import (
     EstadoTicketSerializer,
-    SLASerializer,
     PrioridadTicketSerializer,
+    SLASerializer,
     TicketCreateSerializer,
     TicketReadSerializer,
 )
 from tickets.services import crear_ticket
-from tickets.selectors import activos_reportables_por_usuario
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, es_administrador, usuario_tiene_rol
+from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
 class TicketListCreateView(APIView):

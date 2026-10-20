@@ -6,10 +6,11 @@ duplicidad, RBAC y cierre de asignación.
 from unittest.mock import patch
 
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
 
-from asignaciones.models import Asignacion, DevolucionActivo
+from asignaciones.models import Asignacion
 from asignaciones.views import AsignacionDevolucionView
+from usuarios.services import ROL_TECNICO, ROL_USUARIO_SOLICITANTE
+
 from .helpers import (
     AsignacionesTestBase,
     crear_mock_devolucion,

@@ -1,0 +1,28 @@
+# Reglas estables para Django/DRF y PySide6.
+target-version = "py312"
+preview = false
+unsafe-fixes = false
+line-length = 150
+extend-exclude = ["**/migrations/**"]
+
+src = [
+    "Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación",
+    "Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/siget_web",
+]
+
+[lint]
+select = [
+    "E4", "E7", "E9", # Imports y errores básicos, sin imponer longitud de línea.
+    "F",               # Imports y variables sin usar, nombres indefinidos y redefiniciones.
+    "I",               # Orden de imports.
+    "B006",            # Argumentos mutables compartidos entre llamadas.
+    "B007",            # Variables de bucle sin usar.
+    "B018",            # Expresiones que no producen ningún efecto.
+    "RUF100",          # Supresiones noqa que ya no son necesarias.
+]
+[lint.isort]
+known-first-party = ["siget", "usuarios", "activos", "asignaciones", "tickets", "siget_desktop"]
+
+[lint.per-file-ignores]
+# El arranque directo ajusta sys.path antes de importar el paquete de escritorio.
+"Fase 2/Evidencias Proyecto/Evidencias de sistema/Aplicación/siget_desktop/main.py" = ["E402"]

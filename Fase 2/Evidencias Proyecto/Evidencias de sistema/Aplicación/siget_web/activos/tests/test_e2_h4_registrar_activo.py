@@ -9,14 +9,14 @@ from unittest.mock import patch
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
+
+from activos.models import Activo, EstadoActivo
+from activos.views import ActivoListCreateView
 from usuarios.services import (
     ROL_ADMINISTRADOR,
     ROL_TECNICO,
     ROL_USUARIO_SOLICITANTE,
 )
-
-from activos.models import Activo, EstadoActivo
-from activos.views import ActivoListCreateView
 
 from .helpers import (
     ActivosTestBase,

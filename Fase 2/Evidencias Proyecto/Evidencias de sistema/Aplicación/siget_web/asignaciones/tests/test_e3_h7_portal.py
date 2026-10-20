@@ -15,7 +15,6 @@ from asignaciones.services import ESTADO_ACTIVO_DISPONIBLE
 from usuarios.models import Usuario
 from usuarios.services import ROL_USUARIO_SOLICITANTE
 
-
 # Enrutamiento aislado para las pruebas de las vistas de la Etapa 2.
 urlpatterns = [
     path("solicitudes/", include("asignaciones.web_urls")),

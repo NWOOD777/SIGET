@@ -5,8 +5,8 @@ from django.urls import path
 
 from tickets.views import (
     EstadoTicketListView,
-    SLAListView,
     PrioridadListView,
+    SLAListView,
     TicketDetailView,
     TicketListCreateView,
 )

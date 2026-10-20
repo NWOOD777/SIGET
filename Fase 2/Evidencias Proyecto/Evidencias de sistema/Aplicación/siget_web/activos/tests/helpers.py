@@ -6,11 +6,6 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 from django.test import RequestFactory, SimpleTestCase
-from usuarios.tests.helpers import (
-    SafeMock,
-    asignar_mock_session,
-    crear_mock_usuario,
-)
 
 from activos.models import (
     Activo,
@@ -19,6 +14,11 @@ from activos.models import (
     Marca,
     ModeloActivo,
     Ubicacion,
+)
+from usuarios.tests.helpers import (
+    SafeMock,
+    asignar_mock_session,
+    crear_mock_usuario,
 )
 
 

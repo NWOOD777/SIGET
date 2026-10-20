@@ -6,11 +6,12 @@ Cubre evaluación en 'Buen estado' (pasa a Disponible), 'Con falla técnica' y '
 from unittest.mock import Mock, patch
 
 from rest_framework import status
-from usuarios.services import ROL_TECNICO
 
-from asignaciones.models import Asignacion, DevolucionActivo
+from asignaciones.models import Asignacion
 from asignaciones.views import AsignacionDevolucionView
 from tickets.models import Ticket
+from usuarios.services import ROL_TECNICO
+
 from .helpers import (
     AsignacionesTestBase,
     crear_mock_devolucion,

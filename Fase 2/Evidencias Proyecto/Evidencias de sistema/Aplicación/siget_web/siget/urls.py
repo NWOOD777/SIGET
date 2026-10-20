@@ -3,6 +3,7 @@ URL configuration for siget project.
 """
 from django.contrib import admin
 from django.urls import include, path
+
 from usuarios.views import inicio
 
 urlpatterns = [

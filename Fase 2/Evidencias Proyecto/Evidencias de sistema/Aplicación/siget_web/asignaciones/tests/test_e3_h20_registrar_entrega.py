@@ -6,10 +6,11 @@ disponibilidad de activo, RBAC y transaccionalidad.
 from unittest.mock import patch
 
 from rest_framework import status
-from usuarios.services import ROL_ADMINISTRADOR, ROL_TECNICO, ROL_USUARIO_SOLICITANTE
 
-from asignaciones.models import Asignacion, SolicitudAsignacion
+from asignaciones.models import SolicitudAsignacion
 from asignaciones.views import SolicitudAsignacionEntregarView
+from usuarios.services import ROL_TECNICO, ROL_USUARIO_SOLICITANTE
+
 from .helpers import AsignacionesTestBase, crear_request_con_sesion, obtener_data_dict
 
 

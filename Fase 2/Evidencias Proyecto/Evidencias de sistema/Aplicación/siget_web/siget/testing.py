@@ -1,6 +1,7 @@
 """Inicializa el DDL administrado fuera de Django solamente en bases de pruebas."""
-from pathlib import Path
 import os
+from pathlib import Path
+
 from django.conf import settings
 from django.db import connection
 from django.test.runner import DiscoverRunner

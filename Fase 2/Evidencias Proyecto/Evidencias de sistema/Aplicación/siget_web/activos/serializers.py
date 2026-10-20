@@ -1,9 +1,10 @@
 from django.db import transaction
 from rest_framework import serializers
+
 from siget.db import bloquear_operacion, siguiente_codigo
 from siget.http import direccion_ip_cliente
-from usuarios.services import registrar_auditoria
 from usuarios.models import Usuario
+from usuarios.services import registrar_auditoria
 
 from .models import (
     Activo,
