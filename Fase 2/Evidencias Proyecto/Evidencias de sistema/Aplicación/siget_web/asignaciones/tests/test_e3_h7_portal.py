@@ -17,6 +17,7 @@ from usuarios.services import ROL_USUARIO_SOLICITANTE
 
 # Enrutamiento aislado para las pruebas de las vistas de la Etapa 2.
 urlpatterns = [
+    path("tickets/", include("tickets.web_urls")),
     path("solicitudes/", include("asignaciones.web_urls")),
     path("", include("usuarios.urls")),
     path("", lambda request: HttpResponse("Inicio"), name="inicio"),
@@ -379,6 +380,7 @@ class SolicitudAsignacionIntegracionPortalTests(SimpleTestCase):
         with (
             patch("usuarios.views.obtener_usuario_actual", return_value=usuario),
             patch("usuarios.views.usuario_tiene_rol", return_value=True),
+            patch("usuarios.views.resumen_usuario", return_value={}),
             patch("asignaciones.web_views.obtener_usuario_actual", return_value=usuario),
             patch("asignaciones.web_views.usuario_tiene_rol", return_value=True),
             patch("asignaciones.web_views.SolicitudAsignacionForm", return_value=form),

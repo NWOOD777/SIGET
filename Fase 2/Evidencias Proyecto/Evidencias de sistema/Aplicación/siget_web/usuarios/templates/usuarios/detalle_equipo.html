@@ -1,0 +1,12 @@
+{% extends 'usuarios/base_portal.html' %}
+{% block titulo %}Detalle de equipo{% endblock %}{% block encabezado %}Detalle de equipo{% endblock %}
+{% block contenido %}<section class="session-card"><div class="session-header"><h2>{{ asignacion.id_activo.codigo_inventario }}</h2></div>
+<dl class="portal-datos"><dt>Modelo</dt><dd>{{ asignacion.id_activo.id_modelo.id_marca.nombre }} {{ asignacion.id_activo.id_modelo.nombre }}</dd>
+<dt>Número de serie</dt><dd>{{ asignacion.id_activo.numero_serie }}</dd>
+<dt>Estado del equipo</dt><dd>{{ asignacion.id_activo.id_estado_activo.nombre }}</dd>
+<dt>Estado de asignación</dt><dd>{{ asignacion.id_estado_asignacion.nombre }}</dd>
+<dt>Fecha de entrega</dt><dd>{{ asignacion.fecha_entrega|date:'d/m/Y H:i' }}</dd>
+<dt>Devolución prevista</dt><dd>{{ asignacion.fecha_devolucion_prevista|date:'d/m/Y'|default:'Sin fecha definida' }}</dd>
+{% if asignacion.fecha_finalizacion %}<dt>Asignación finalizada</dt><dd>{{ asignacion.fecha_finalizacion|date:'d/m/Y H:i' }}</dd>{% endif %}</dl>
+<a class="btn-action btn-outline" href="{% url 'usuarios:mis_equipos' %}">Volver a Mis equipos</a>
+{% if not asignacion.fecha_finalizacion %}<a class="btn-action btn-primary" href="{% url 'tickets_web:nuevo' %}">Solicitar soporte</a>{% endif %}</section>{% endblock %}

@@ -9,6 +9,7 @@ from asignaciones.forms import SolicitudAsignacionForm
 from asignaciones.models import SolicitudAsignacion
 from asignaciones.services import crear_solicitud_asignacion
 from siget.http import direccion_ip_cliente
+from usuarios.portal import identidad_portal
 from usuarios.services import (
     ROL_USUARIO_SOLICITANTE,
     obtener_usuario_actual,
@@ -66,7 +67,7 @@ def solicitar_equipo(request):
         "asignaciones/solicitar.html",
         {
             "form": form,
-            "usuario": usuario,
+            "usuario": usuario, **identidad_portal(usuario),
             "hay_disponibilidad": categorias_disponibles is not None and categorias_disponibles.exists(),
         },
     )
@@ -86,5 +87,5 @@ def confirmacion_solicitud(request, pk):
     return render(
         request,
         "asignaciones/confirmacion.html",
-        {"solicitud": solicitud, "usuario": usuario},
+        {"solicitud": solicitud, "usuario": usuario, **identidad_portal(usuario)},
     )

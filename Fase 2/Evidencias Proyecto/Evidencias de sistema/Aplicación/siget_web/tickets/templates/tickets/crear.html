@@ -1,37 +1,8 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGET - Levantar ticket</title>
-    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
-</head>
-<body class="page-dashboard">
-    <aside class="sidebar">
-        <div class="sidebar-top">
-            <div class="sidebar-brand">
-                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
-                <div class="brand-info"><h2>SIGET</h2><p>Portal de autoservicio</p></div>
-            </div>
-            <div class="user-card">
-                <div class="user-meta">
-                    <div class="user-name">{{ usuario.nombres }} {{ usuario.apellidos }}</div>
-                    <div class="user-role">Usuario solicitante</div>
-                </div>
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item"><a href="{% url 'inicio' %}">Inicio</a></li>
-                <li class="nav-item active"><a href="{% url 'tickets_web:crear' %}" aria-current="page">Soporte / Tickets</a></li>
-            </ul>
-        </div>
-        <div class="sidebar-bottom"><a href="{% url 'usuarios:auth_logout' %}" class="btn-logout">Cerrar sesión</a></div>
-    </aside>
-    <div class="main-wrapper">
-        <header class="top-navbar">
-            <div class="page-heading"><h1>Levantar ticket</h1><p>Describe el problema para solicitar soporte.</p></div>
-        </header>
-        <main class="content-area">
+{% extends 'usuarios/base_portal.html' %}
+{% block titulo %}Levantar ticket{% endblock %}
+{% block encabezado %}Levantar ticket{% endblock %}
+{% block subtitulo %}Describe el problema para solicitar soporte.{% endblock %}
+{% block contenido %}
             <section class="session-card" aria-labelledby="titulo-ticket">
                 <div class="session-header"><h2 id="titulo-ticket">Nuevo ticket Service Desk</h2></div>
                 {% for error in form.non_field_errors %}
@@ -59,7 +30,4 @@
                 </form>
                 <a href="{% url 'inicio' %}" class="btn-back-link">Volver al inicio</a>
             </section>
-        </main>
-    </div>
-</body>
-</html>
+        {% endblock %}

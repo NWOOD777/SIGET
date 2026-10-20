@@ -11,3 +11,5 @@ Una cuenta autenticada sin rol de Usuario solicitante recibe `403` al intentar a
 Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](../README.md) · [Índice general](../../README.md)
+
+El resumen utiliza las asignaciones vigentes, solicitudes pendientes o aprobadas y tickets activos del usuario conectado. Muestra sus registros recientes y estados vacíos cuando corresponde. Notificaciones permanece pendiente.

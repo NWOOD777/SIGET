@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from usuarios.forms import RecuperarAccesoForm
+from usuarios.portal import resumen_usuario
 from usuarios.services import (
     ROL_USUARIO_SOLICITANTE,
     AuthRecoverApiError,
@@ -221,6 +222,7 @@ def inicio(request: HttpRequest) -> HttpResponse:
         "nombre": nombre,
         "iniciales": iniciales,
     }
+    context.update(resumen_usuario(usuario))
     return render(request, "usuarios/inicio.html", context)
 
 

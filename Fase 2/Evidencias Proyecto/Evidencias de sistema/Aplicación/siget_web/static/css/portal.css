@@ -1,0 +1,12 @@
+/* Consultas personales del portal de autoservicio. */
+.portal-personal .session-card p { color: #64748b; line-height: 1.6; margin: 0 0 16px; }
+.portal-personal .session-card a:not(.btn-action) { color: #1d4ed8; text-decoration: none; font-weight: 600; }
+.portal-personal .session-card a:hover { text-decoration: underline; }
+.portal-toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.portal-datos { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(160px, 2fr); gap: 16px 24px; margin: 0 0 28px; }
+.portal-datos dt { color: #64748b; font-size: 13px; font-weight: 600; }
+.portal-datos dd { color: #1e293b; margin: 0; overflow-wrap: anywhere; }
+.portal-perfil-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; gap: 24px; }
+.nav-pendiente { display: block; padding: 10px 14px; color: #64748b; font-size: 13px; }
+@media (max-width: 1000px) { .portal-perfil-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .portal-datos { grid-template-columns: 1fr; gap: 8px; } .portal-datos dd { margin-bottom: 12px; } }

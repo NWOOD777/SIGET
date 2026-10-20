@@ -473,7 +473,8 @@ class Auth0VistasTests(SimpleTestCase):
         asignar_mock_session(request)
 
         with patch("usuarios.views.obtener_usuario_actual", return_value=None):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
@@ -521,7 +522,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=True,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
@@ -569,15 +571,8 @@ class Auth0VistasTests(SimpleTestCase):
             "/auth/logout/",
             content,
         )
-        # Indicadores neutrales sin datos ficticios
-        self.assertIn(
-            "—",
-            content,
-        )
-        self.assertIn(
-            "Sin información disponible por ahora.",
-            content,
-        )
+        self.assertIn("No tienes equipos asignados.", content)
+        self.assertNotIn("Sin información disponible por ahora.", content)
 
     def test_vista_inicio_tecnico_sin_rol_solicitante_recibe_403(self):
         """
@@ -611,7 +606,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=False,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 403)
         content = response.content.decode("utf-8")
@@ -660,7 +656,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=False,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 403)
         content = response.content.decode("utf-8")
@@ -709,7 +706,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=False,
             ) as mock_tiene_rol,
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
             mock_tiene_rol.assert_called_once_with(
                 mock_user,
                 ROL_USUARIO_SOLICITANTE,
@@ -753,7 +751,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=True,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         content = response.content.decode("utf-8")
         self.assertNotIn("Administrador del sistema", content)
@@ -796,7 +795,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=True,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
@@ -838,7 +838,8 @@ class Auth0VistasTests(SimpleTestCase):
                 return_value=True,
             ),
         ):
-            response = inicio(request)
+            with patch("usuarios.views.resumen_usuario", return_value={}):
+                response = inicio(request)
 
         self.assertEqual(response.status_code, 200)
 

@@ -14,6 +14,7 @@ from tickets.forms import TicketCreateForm
 from tickets.models import Ticket
 from tickets.selectors import activos_reportables_por_usuario
 from tickets.services import crear_ticket
+from usuarios.portal import identidad_portal
 from usuarios.services import (
     ROL_USUARIO_SOLICITANTE,
     obtener_usuario_actual,
@@ -73,7 +74,7 @@ def crear_ticket_web(request):
         else:
             return redirect("tickets_web:confirmacion", pk=ticket.pk)
 
-    return render(request, "tickets/crear.html", {"form": form, "usuario": usuario})
+    return render(request, "tickets/crear.html", {"form": form, "usuario": usuario, **identidad_portal(usuario)})
 
 
 @require_GET
@@ -90,5 +91,5 @@ def confirmacion_ticket(request, pk):
     return render(
         request,
         "tickets/confirmacion.html",
-        {"ticket": ticket, "usuario": usuario},
+        {"ticket": ticket, "usuario": usuario, **identidad_portal(usuario)},
     )

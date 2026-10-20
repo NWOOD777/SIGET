@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGET - {% block titulo %}Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+    <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+</head>
+<body class="page-dashboard portal-personal">
+    <!-- Barra Lateral Izquierda (Usuario Solicitante) -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-brand">
+                <div class="logo-badge"><img src="{% static 'img/logo_SIGET.png' %}" alt="" width="30" height="30"></div>
+                <div class="brand-info">
+                    <h2>SIGET</h2>
+                    <p>Portal de autoservicio</p>
+                </div>
+            </div>
+
+            <!-- Identidad de usuario en sidebar -->
+            <div class="user-card">
+                <div class="avatar-circle">{{ iniciales }}</div>
+                <div class="user-meta">
+                    <div class="user-name">{{ nombre }}</div>
+                    <div class="user-role">Usuario solicitante</div>
+                </div>
+            </div>
+
+            <!-- Navegación principal del Usuario solicitante -->
+            <ul class="nav-menu">
+                <li class="nav-item{% if request.path == '/' %} active{% endif %}">
+                    <a href="{% url 'inicio' %}"><span>Inicio</span></a>
+                </li>
+                <li class="nav-item{% if request.resolver_match.url_name == 'mis_equipos' or request.resolver_match.url_name == 'detalle_equipo' %} active{% endif %}">
+                    <a href="{% url 'usuarios:mis_equipos' %}"><span>Mis equipos</span></a>
+                </li>
+                <li class="nav-item{% if request.resolver_match.namespace == 'asignaciones_web' %} active{% endif %}">
+                    <a href="{% url 'asignaciones_web:solicitar' %}"><span>Solicitudes</span></a>
+                </li>
+                <li class="nav-item{% if request.resolver_match.namespace == 'tickets_web' %} active{% endif %}">
+                    <a href="{% url 'tickets_web:nuevo' %}"><span>Soporte / Tickets</span></a>
+                </li>
+                <li class="nav-item">
+                    <span class="nav-pendiente" aria-disabled="true" title="Disponible en un próximo incremento">Notificaciones (próximamente)</span>
+                </li>
+                <li class="nav-item{% if request.resolver_match.url_name == 'perfil' %} active{% endif %}">
+                    <a href="{% url 'usuarios:perfil' %}"><span>Mi perfil</span></a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <a href="{% url 'usuarios:auth_logout' %}" class="btn-logout" id="btn-cerrar-sesion">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <div class="main-wrapper">
+        <header class="top-navbar">
+            <div class="page-heading">
+                <h1>{% block encabezado %}Inicio{% endblock %}</h1>
+                <p>{% block subtitulo %}Portal de autoservicio{% endblock %}</p>
+            </div>
+
+            <div class="top-user-pill">
+                <div class="top-avatar">{{ iniciales }}</div>
+                <span class="top-user-meta">{{ nombre }}</span>
+            </div>
+        </header>
+
+        <main class="content-area">{% block contenido %}{% endblock %}</main>
+    </div>
+</body>
+</html>

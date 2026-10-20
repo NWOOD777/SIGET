@@ -16,6 +16,8 @@ Las rutas de acceso Web devuelven páginas o redirecciones. `/admin/` es el pane
 | POST | `/api/usuarios/roles/{id_rol}/permisos/` | [Asociar un permiso a un rol](asignar_permiso.md) |
 | DELETE | `/api/usuarios/roles/{id_rol}/permisos/{id_permiso}/` | [Retirar un permiso de un rol](retirar_permiso.md) |
 | GET | `/` | [Acceder al portal](web/inicio.md) |
+| GET | `/mis-equipos/` y `/mis-equipos/{id_asignacion}/` | [Mis equipos y su detalle](web/mis_equipos.md) |
+| GET | `/perfil/` | [Mi perfil](web/perfil.md) |
 | GET | `/auth/login/` | [Iniciar sesión Web](web/login.md) |
 | GET | `/auth/callback/` | [Completar el acceso Web](web/callback.md) |
 | GET | `/auth/logout/` | [Cerrar sesión Web](web/logout.md) |
