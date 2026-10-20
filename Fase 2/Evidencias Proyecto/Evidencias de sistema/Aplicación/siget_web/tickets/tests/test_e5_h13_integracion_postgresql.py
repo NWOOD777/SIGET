@@ -201,21 +201,20 @@ class TicketActivoPortalPostgreSQLTests(PostgreSQLTestBase):
         self.assertFalse(Ticket.objects.exists())
         self.assertFalse(BitacoraAuditoria.objects.filter(accion="TICKET_CREADO").exists())
 
-    def test_api_admin_y_tecnico_reportan_activos_sin_asignacion_y_finalizados(self):
+    def test_api_admin_y_tecnico_no_registran_tickets_manuales(self):
         for usuario in (self.admin, self.tecnico):
             for activo in (self.sin_asignacion, self.finalizada.id_activo, self.ajena.id_activo):
                 with self.subTest(usuario=usuario.pk, activo=activo.pk):
                     response = self.cliente(usuario).post("/api/tickets/", {**self.datos, "id_activo": activo.pk}, format="json")
-                    self.assertEqual(response.status_code, 201, response.data)
-                    self.assertEqual(Ticket.objects.get(pk=response.data["id_ticket"]).id_usuario_solicitante, usuario)
-        self.assertEqual(Ticket.objects.count(), 6)
+                    self.assertEqual(response.status_code, 403, response.data)
+        self.assertFalse(Ticket.objects.exists())
 
-    def test_api_roles_multiples_conservan_privilegios_internos(self):
+    def test_api_roles_multiples_no_amplian_activos_del_solicitante(self):
         UsuarioRol.objects.create(usuario=self.solicitante, rol=Rol.objects.get(nombre="Técnico de soporte"))
         response = self.cliente(self.solicitante).post(
             "/api/tickets/", {**self.datos, "id_activo": self.ajena.id_activo_id}, format="json",
         )
-        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.status_code, 403, response.data)
 
     def test_api_ticket_crear_sin_rol_interno_no_concede_activos_globales(self):
         rol = Rol.objects.create(nombre="Reportador de prueba")
@@ -227,9 +226,9 @@ class TicketActivoPortalPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Ticket.objects.exists())
         response = cliente.post("/api/tickets/", {**self.datos, "id_activo": self.propia.id_activo_id}, format="json")
-        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.status_code, 403, response.data)
         response = cliente.post("/api/tickets/", {**self.datos, "asunto": "Incidente general"}, format="json")
-        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.status_code, 403, response.data)
 
     def test_api_duplicados_siguen_bloqueados_con_activo_y_null(self):
         cliente = self.cliente(self.solicitante)

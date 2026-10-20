@@ -12,7 +12,6 @@ from usuarios.services import (
     ROL_USUARIO_SOLICITANTE,
     es_administrador,
     obtener_usuario_actual,
-    usuario_tiene_permiso,
     usuario_tiene_rol,
 )
 
@@ -39,7 +38,7 @@ def _obtener_usuario_siget(request: Request) -> Usuario | None:
 class PuedeCrearTicket(permissions.BasePermission):
     """
     Permite crear tickets de soporte (E5-H13) a usuarios autenticados con rol
-    'Usuario solicitante', 'Técnico de soporte', o 'Administrador del sistema' (o permiso TICKET_CREAR).
+    'Usuario solicitante' mediante una sesión del portal Web.
     """
 
     def has_permission(self, request: Request, view) -> bool:
@@ -49,12 +48,8 @@ class PuedeCrearTicket(permissions.BasePermission):
                 "No autenticado. Inicie sesión para registrar un ticket de soporte."
             )
 
-        if (
-            usuario_tiene_rol(usuario, ROL_USUARIO_SOLICITANTE)
-            or usuario_tiene_rol(usuario, ROL_TECNICO)
-            or es_administrador(usuario)
-            or usuario_tiene_permiso(usuario, "TICKET_CREAR")
-        ):
+        if (usuario_tiene_rol(usuario, ROL_USUARIO_SOLICITANTE)
+                and not request.headers.get("Authorization")):
             return True
 
         raise exceptions.PermissionDenied(
@@ -75,4 +70,6 @@ class PuedeConsultarTickets(permissions.BasePermission):
             raise exceptions.NotAuthenticated(
                 "No autenticado. Inicie sesión para consultar tickets de soporte."
             )
-        return True
+        if es_administrador(usuario) or usuario_tiene_rol(usuario, ROL_TECNICO) or usuario_tiene_rol(usuario, ROL_USUARIO_SOLICITANTE):
+            return True
+        raise exceptions.PermissionDenied("Su rol no tiene acceso a los tickets de soporte.")

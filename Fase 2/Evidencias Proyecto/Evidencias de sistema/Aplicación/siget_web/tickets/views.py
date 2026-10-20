@@ -33,7 +33,7 @@ from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 class TicketListCreateView(APIView):
     """
     Lista tickets (GET) y registra un nuevo ticket (POST - E5-H13).
-    - POST: Disponible para Usuario solicitante (y demás roles autorizados).
+    - POST: Disponible para Usuario solicitante con sesión Web.
     - GET: Solicitante consulta únicamente sus propios tickets;
            Técnico y Administrador pueden consultar todo el inventario de tickets con filtros.
     """
@@ -132,8 +132,7 @@ class TicketListCreateView(APIView):
             if id_activo is not None:
                 # Mismo orden que entrega/devolución: activo -> tickets.
                 bloquear_operacion(70403, id_activo)
-                es_interno = es_administrador(usuario) or usuario_tiene_rol(usuario, ROL_TECNICO)
-                if not es_interno and not activos_reportables_por_usuario(usuario).filter(pk=id_activo).exists():
+                if not activos_reportables_por_usuario(usuario).filter(pk=id_activo).exists():
                     raise exceptions.PermissionDenied("No tiene autorización para reportar ese activo.")
             ticket = crear_ticket(
                 solicitante=usuario,

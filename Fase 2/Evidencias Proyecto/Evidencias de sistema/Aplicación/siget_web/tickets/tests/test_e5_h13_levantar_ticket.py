@@ -318,7 +318,7 @@ class LevantarTicketE5H13Tests(SimpleTestCase):
 
         with (
             patch("tickets.permissions.obtener_usuario_actual", return_value=self.solicitante_user),
-            patch("tickets.permissions.usuario_tiene_rol", return_value=False),
+            patch("tickets.permissions.usuario_tiene_rol", side_effect=lambda usuario, rol: rol == ROL_USUARIO_SOLICITANTE),
             patch("tickets.permissions.es_administrador", return_value=False),
             patch.object(Ticket.objects, "select_related") as mock_sr,
         ):

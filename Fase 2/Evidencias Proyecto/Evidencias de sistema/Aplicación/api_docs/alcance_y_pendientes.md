@@ -23,6 +23,6 @@ El flujo que conecta ambas APIs se explica en [devolución y evaluación inicial
 
 El correo de contraseña enviado por Auth0 pertenece a la integración de identidad y no corresponde al correo transaccional de notificaciones de negocio. La lectura de códigos con dispositivos USB HID es una integración local del escritorio y no se contabiliza como API externa.
 
-El registro inicial de tickets admite también a Técnico y Administrador, además del Solicitante previsto en el contrato preliminar, según los permisos implementados. Los servicios de usuarios y catálogos amplían el detalle de las operaciones del Anexo B.
+El registro manual de tickets corresponde al Solicitante mediante la sesión Web. Administrador y Técnico consultan los tickets desde el escritorio para su gestión. La devolución con fallas puede generar un ticket automáticamente. Los servicios de usuarios y catálogos amplían el detalle de las operaciones del Anexo B.
 
 [Índice general](README.md)

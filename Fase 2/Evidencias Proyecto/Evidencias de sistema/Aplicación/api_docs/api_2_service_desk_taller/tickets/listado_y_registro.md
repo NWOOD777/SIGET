@@ -5,7 +5,7 @@ Ruta: `/api/tickets/`
 | Método | Acceso | Respuesta correcta |
 |---|---|---|
 | `GET` | Cuenta activa: registros propios; Administrador y Técnico: listado general. | `200`, lista de tickets. |
-| `POST` | Los tres roles oficiales o cuenta con permiso `TICKET_CREAR`. | `201`, ticket creado. |
+| `POST` | Usuario solicitante con sesión Web y protección CSRF; Bearer no habilita esta operación. | `201`, ticket creado. |
 
 ## Consultar
 
@@ -26,9 +26,9 @@ Ruta: `/api/tickets/`
 
 `asunto` es obligatorio y admite hasta 200 caracteres. `descripcion` es obligatoria. `id_activo` e `id_prioridad` son opcionales y admiten `null`; si se informan, deben corresponder a registros existentes. La prioridad predeterminada es `Medio` en el catálogo inicial.
 
-Si se informa `id_activo`, el Usuario solicitante solo puede asociar un activo que tenga mediante una asignación en estado `Activa` y con `fecha_finalizacion` en `null`. El permiso `TICKET_CREAR` permite crear tickets, pero no concede acceso global a los activos: sin rol interno se aplica la misma restricción. El Administrador del sistema y el Técnico de soporte mantienen su alcance por rol y pueden asociar cualquier activo existente, sin exigir una asignación propia activa.
+Si se informa `id_activo`, el Usuario solicitante solo puede asociar un activo que tenga mediante una asignación en estado `Activa` y con `fecha_finalizacion` en `null`. Los roles adicionales no amplían los activos reportables al actuar como Solicitante.
 
-Para un usuario sin rol interno, un activo no autorizado devuelve HTTP `403` con el mensaje genérico `No tiene autorización para reportar ese activo.`, sin crear el ticket ni registrar auditoría de creación. Omitir `id_activo` o enviarlo como `null` permite registrar un ticket sin equipo específico.
+Un activo no autorizado devuelve HTTP `403` con el mensaje genérico `No tiene autorización para reportar ese activo.`, sin crear el ticket ni registrar auditoría de creación. Omitir `id_activo` o enviarlo como `null` permite registrar un ticket sin equipo específico.
 
 La autorización sobre el activo se verifica al registrar el ticket para mantenerla consistente con las devoluciones concurrentes.
 
