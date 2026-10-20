@@ -35,3 +35,17 @@ class PuedeAdministrarUsuarios(BasePermission):
                 "Acceso no autorizado: Se requieren privilegios de Administrador del sistema."
             )
         return True
+
+
+class EsUsuarioSigetAutenticado(BasePermission):
+    """
+    Exige un Usuario SIGET activo, autenticado por sesión Web o por access token.
+    No exige rol: cada usuario solo consulta su propia información.
+    """
+
+    def has_permission(self, request: Request, view):
+        from rest_framework.exceptions import NotAuthenticated
+
+        if not obtener_usuario_actual(request._request):
+            raise NotAuthenticated("Debe iniciar sesión para realizar esta operación.")
+        return True

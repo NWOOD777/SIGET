@@ -173,12 +173,32 @@ AUTH0_METADATA_URL = (
     f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration" if AUTH0_DOMAIN else ""
 )
 
+# Access tokens de la API de SIGET (aplicación de Escritorio, Authorization Code + PKCE).
+# AUTH0_API_AUDIENCE es el "Identifier" de la API registrada en Auth0. Si está vacío,
+# la autenticación Bearer queda deshabilitada y el portal Web funciona igual.
+AUTH0_API_AUDIENCE = env.str("AUTH0_API_AUDIENCE", default="")
+# client_id de las aplicaciones autorizadas a llamar la API (claim azp). Vacío = sin restricción.
+AUTH0_API_ALLOWED_CLIENT_IDS = [
+    client_id.strip()
+    for client_id in env.str("AUTH0_API_ALLOWED_CLIENT_IDS", default="").split(",")
+    if client_id.strip()
+]
+AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json" if AUTH0_DOMAIN else ""
+AUTH0_JWKS_CACHE_SEGUNDOS = env.int("AUTH0_JWKS_CACHE_SEGUNDOS", default=600)
+AUTH0_TOKEN_LEEWAY = env.int("AUTH0_TOKEN_LEEWAY", default=10)
+AUTH0_HTTP_TIMEOUT = env.int("AUTH0_HTTP_TIMEOUT", default=5)
+
 LOGIN_URL = "/auth/login/"
 LOGOUT_REDIRECT_URL = "/"
 
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["usuarios.authentication.SigetSessionAuthentication"],
+    # El Bearer se evalúa primero solo si la petición lo incluye; sin ese encabezado
+    # se mantiene la sesión Web con CSRF obligatorio.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "usuarios.authentication.SigetAccessTokenAuthentication",
+        "usuarios.authentication.SigetSessionAuthentication",
+    ],
     "EXCEPTION_HANDLER": "siget.exceptions.api_exception_handler",
 }
 

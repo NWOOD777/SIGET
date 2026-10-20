@@ -9,6 +9,9 @@ from usuarios import api_views
 app_name = "usuarios_api"
 
 urlpatterns = [
+    # Identidad y acceso del usuario autenticado (Web y Escritorio)
+    path("me/", api_views.UsuarioActualAPIView.as_view(), name="usuario_actual"),
+
     # Gestión de usuarios
     path("", api_views.UsuarioListAPIView.as_view(), name="usuario_list"),
     path("aprovisionar/", api_views.UsuarioAprovisionarAPIView.as_view(), name="usuario_aprovisionar"),

@@ -4,7 +4,6 @@ Diseñadas para consumo por clientes administrativos autorizados (PySide6).
 """
 
 import logging
-from siget.http import direccion_ip_cliente
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -12,8 +11,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from siget.http import direccion_ip_cliente
 from usuarios.models import Rol, Usuario
-from usuarios.permissions import PuedeAdministrarUsuarios
+from usuarios.permissions import EsUsuarioSigetAutenticado, PuedeAdministrarUsuarios
 from usuarios.serializers import (
     AsignarPermisoSerializer,
     AsignarRolesSerializer,
@@ -30,6 +30,7 @@ from usuarios.services import (
     aprovisionar_usuario,
     asignar_permiso_a_rol,
     asignar_roles_usuario,
+    consultar_acceso_usuario_actual,
     consultar_usuario_detalle_rbac,
     listar_roles_con_permisos,
     listar_usuarios_sistema,
@@ -44,6 +45,26 @@ logger = logging.getLogger(__name__)
 def _obtener_ip(request: Request) -> str | None:
     """Extrae la dirección IP del cliente desde la petición."""
     return direccion_ip_cliente(request)
+
+
+class UsuarioActualAPIView(APIView):
+    """
+    GET /api/usuarios/me/
+    Identidad, roles y permisos efectivos del usuario autenticado (sesión Web o
+    access token de la aplicación de Escritorio). Disponible para cualquier
+    cuenta SIGET activa; no permite consultar a otros usuarios.
+    """
+
+    permission_classes = [EsUsuarioSigetAutenticado]
+
+    def get(self, request: Request) -> Response:
+        usuario = obtener_usuario_actual(request._request)
+        assert usuario is not None
+        datos = consultar_acceso_usuario_actual(usuario)
+        datos["metodo_autenticacion"] = getattr(
+            request, "_siget_metodo_autenticacion", "sesion"
+        )
+        return Response(datos, status=status.HTTP_200_OK)
 
 
 class UsuarioListAPIView(APIView):

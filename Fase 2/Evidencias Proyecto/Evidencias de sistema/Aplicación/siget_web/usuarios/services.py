@@ -223,6 +223,46 @@ def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
     )
 
 
+def resolver_usuario_access_token(claims: dict[str, Any], access_token: str) -> Usuario:
+    """
+    Obtiene el Usuario SIGET correspondiente a un access token ya validado.
+
+    1. Busca por identificador_externo == sub (claim firmado por Auth0).
+    2. Si no existe vínculo, obtiene correo y verificación desde /userinfo de
+       Auth0 (nunca desde el cliente) y aplica las mismas reglas de
+       vincular_o_obtener_usuario que el portal Web: sin alta automática,
+       correo verificado obligatorio para vincular y cuenta activa.
+    """
+    from usuarios.tokens import obtener_perfil_userinfo
+
+    sub = str((claims or {}).get("sub") or "").strip()
+    if not sub:
+        raise ClaimInvalidoError(
+            "Identificador de usuario (sub) ausente en el token de acceso."
+        )
+
+    usuario = Usuario.objects.filter(identificador_externo=sub).first()
+    if usuario:
+        if not usuario.activo:
+            raise UsuarioInactivoError(
+                "Su cuenta de usuario se encuentra inactiva. Contacte al administrador."
+            )
+        return usuario
+
+    perfil = obtener_perfil_userinfo(access_token)
+    if str(perfil.get("sub") or "").strip() != sub:
+        raise ClaimInvalidoError(
+            "No fue posible confirmar la identidad del usuario con el proveedor."
+        )
+    return vincular_o_obtener_usuario(
+        {
+            "sub": sub,
+            "email": perfil.get("email"),
+            "email_verified": perfil.get("email_verified"),
+        }
+    )
+
+
 def iniciar_sesion_siget(request, usuario: Usuario, sub: str) -> None:
     """
     Establece la sesión del usuario en SIGET mediante request.session.
@@ -342,12 +382,25 @@ ROLES_OFICIALES = (
 )
 
 
+ATRIBUTO_USUARIO_BEARER = "_siget_usuario_bearer"
+
+
 def obtener_usuario_actual(request: HttpRequest) -> Usuario | None:
     """
     Obtiene la instancia de Usuario SIGET para la sesión actual consultando PostgreSQL.
     Garantiza que el usuario exista y se encuentre activo.
     No asume ni confía en datos mutables de la sesión para autorización.
+
+    Si la petición fue autenticada con un access token validado
+    (SigetAccessTokenAuthentication), se utiliza el usuario resuelto desde ese
+    token; en caso contrario se utiliza la sesión Web.
     """
+    usuario_bearer = getattr(request, ATRIBUTO_USUARIO_BEARER, None)
+    if isinstance(usuario_bearer, Usuario):
+        return Usuario.objects.filter(
+            id_usuario=usuario_bearer.id_usuario, activo=True
+        ).first()
+
     usuario_id = request.session.get("siget_usuario_id")
     if not usuario_id:
         return None
@@ -439,6 +492,30 @@ def es_administrador(usuario: Usuario | None) -> bool:
     Determina si el usuario tiene asignado el rol canónico 'Administrador del sistema'.
     """
     return usuario_tiene_rol(usuario, ROL_ADMINISTRADOR)
+
+
+ROLES_APLICACION_ESCRITORIO = (ROL_TECNICO, ROL_ADMINISTRADOR)
+
+
+def consultar_acceso_usuario_actual(usuario: Usuario) -> dict[str, Any]:
+    """
+    Identidad, roles y permisos efectivos del propio usuario autenticado.
+
+    Expone solo lo necesario para que un cliente adapte su interfaz; no incluye
+    RUT ni identificadores externos. La autorización de cada operación sigue
+    validándose en el endpoint correspondiente.
+    """
+    roles = sorted(obtener_nombres_roles_usuario(usuario))
+    return {
+        "id_usuario": usuario.id_usuario,
+        "nombres": usuario.nombres,
+        "apellidos": usuario.apellidos,
+        "nombre_completo": f"{usuario.nombres} {usuario.apellidos}".strip(),
+        "correo": usuario.correo,
+        "roles": roles,
+        "permisos": sorted(obtener_codigos_permisos_usuario(usuario)),
+        "acceso_escritorio": any(r in ROLES_APLICACION_ESCRITORIO for r in roles),
+    }
 
 
 # ============================================================================
