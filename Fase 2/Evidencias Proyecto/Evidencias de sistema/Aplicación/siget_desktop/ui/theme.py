@@ -91,6 +91,11 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
 QToolTip { background: #172b4d; color: white; border: none; padding: 6px; }
 QMenu { background: white; color: #172b4d; border: 1px solid #dce5f0; }
 QMenu::item:selected { background: #dbeafe; color: #1e3a8a; }
+QTabWidget::pane { border: none; background: transparent; }
+QTabBar::tab { background: #e2e8f0; color: #475569; padding: 8px 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 4px; font-weight: 600; min-height: 20px; }
+QTabBar::tab:selected { background: white; color: #1d4ed8; border: 1px solid #dce5f0; border-bottom: 2px solid #1d4ed8; }
+QTabBar::tab:hover:!selected { background: #cbd5e1; color: #1e293b; }
+
 """.replace("__FLECHA_ABAJO__", (Path(__file__).parent / "assets" / "chevron-down.svg").as_posix())
 
 

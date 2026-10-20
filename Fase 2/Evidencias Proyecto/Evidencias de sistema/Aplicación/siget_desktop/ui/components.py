@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 
 def mostrar_mensaje(label: QLabel, texto: str, tono: str = "info") -> None:
+    label.setTextFormat(Qt.TextFormat.PlainText)
     label.setText(texto)
     label.setWordWrap(True)
     label.setProperty("messageTone", tono)
@@ -93,3 +94,10 @@ def texto_relacion(value: Any, default: str = "—") -> str:
         name = " ".join(str(value.get(key) or "").strip() for key in ("nombres", "apellidos")).strip()
         return str(value.get("nombre") or name or value.get("codigo_inventario") or default)
     return str(value) if value is not None and value != "" else default
+
+
+def notificar_cambio(view: QWidget) -> None:
+    """Invalida los listados relacionados después de confirmar una operación."""
+    callback = getattr(view.window(), "invalidar_consultas", None)
+    if callable(callback):
+        callback(view)

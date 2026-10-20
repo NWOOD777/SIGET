@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from siget_desktop.auth.session import current_session
+from siget_desktop.tests.qt_helpers import limpiar_widgets
 from siget_desktop.ui.main_window import MainWindow
 from siget_desktop.ui.views.activos_view import ActivosView
 from siget_desktop.ui.views.dashboard_view import DashboardView
@@ -30,6 +31,7 @@ class UiRbacTests(unittest.TestCase):
 
     def tearDown(self):
         current_session.clear()
+        limpiar_widgets()
 
     def test_dashboard_muestra_roles_y_permisos(self):
         current_session.update_user_info({
@@ -66,7 +68,7 @@ class UiRbacTests(unittest.TestCase):
             "acceso_escritorio": True,
         })
         view.actualizar_permisos_ui()
-        self.assertFalse(view.btn_nuevo_activo.isEnabled())
+        self.assertTrue(view.btn_nuevo_activo.isEnabled())
 
     def test_solicitudes_view_rbac_botones_accion(self):
         # Técnico

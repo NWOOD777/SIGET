@@ -18,6 +18,7 @@ from siget_desktop.auth.pkce import PkceContext
 from siget_desktop.auth.server import CallbackResult, esperar_retorno_oauth
 from siget_desktop.auth.session import current_session
 from siget_desktop.config import config
+from siget_desktop.tests.qt_helpers import limpiar_widgets
 from siget_desktop.ui.main_window import MainWindow
 from siget_desktop.ui.workers import ApiWorker
 
@@ -32,6 +33,7 @@ class SessionLifecycleTests(unittest.TestCase):
 
     def tearDown(self):
         current_session.clear()
+        limpiar_widgets()
 
     def test_rechazo_backend_no_conserva_credenciales(self):
         context=PkceContext.create()

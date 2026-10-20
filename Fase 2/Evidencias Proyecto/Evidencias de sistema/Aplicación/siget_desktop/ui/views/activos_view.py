@@ -1,7 +1,8 @@
 """
 Vista de Gestión y Consulta de Activos TI en PySide6.
 Demuestra la comunicación real con el endpoint protegido GET /api/activos/ de Django,
-gestionando estados de carga, listas vacías, errores de red y filtros de búsqueda.
+gestiona el alta de nuevos equipos (POST) y la consulta/modificación de detalle (GET/PATCH)
+respetando los controles RBAC para Administrador y Técnico.
 """
 
 from __future__ import annotations
@@ -25,7 +26,11 @@ from PySide6.QtWidgets import (
 
 from siget_desktop.api.services import listar_activos
 from siget_desktop.auth.session import current_session
-from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje
+from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, notificar_cambio
+from siget_desktop.ui.dialogs.activos_dialogs import (
+    DetalleModificarActivoDialog,
+    RegistrarActivoDialog,
+)
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -66,10 +71,18 @@ class ActivosView(QWidget):
         layout_encabezado.addLayout(vbox_titulo)
         layout_encabezado.addStretch()
 
+        self.btn_ver_detalle = QPushButton("Ver detalle")
+        self.btn_ver_detalle.setObjectName("btnSecundario")
+        self.btn_ver_detalle.setEnabled(False)
+        self.btn_ver_detalle.setToolTip("Seleccione un activo para consultar o modificar su información")
+        self.btn_ver_detalle.clicked.connect(self._abrir_detalle_seleccionado)
+        layout_encabezado.addWidget(self.btn_ver_detalle)
+
         # Botón administrativo (control RBAC en UI)
         self.btn_nuevo_activo = QPushButton("+ Registrar activo")
         self.btn_nuevo_activo.setEnabled(False)
-        self.btn_nuevo_activo.setToolTip("Funcionalidad pendiente de una próxima entrega")
+        self.btn_nuevo_activo.setToolTip("Dar de alta un nuevo equipo (exclusivo Administrador)")
+        self.btn_nuevo_activo.clicked.connect(self._abrir_registro_activo)
         layout_encabezado.addWidget(self.btn_nuevo_activo)
 
         layout.addLayout(layout_encabezado)
@@ -129,12 +142,46 @@ class ActivosView(QWidget):
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
         configurar_tabla(self.tabla, (6,))
+        self.tabla.itemSelectionChanged.connect(self._on_seleccion_cambiada)
+        self.tabla.cellDoubleClicked.connect(lambda _r, _c: self._abrir_detalle_seleccionado())
         layout.addWidget(self.tabla, 1)
 
     def actualizar_permisos_ui(self):
         """Ajusta las acciones según los permisos efectivos del usuario."""
-        self.btn_nuevo_activo.setEnabled(False)
-        self.btn_nuevo_activo.setToolTip("Funcionalidad pendiente de una próxima entrega")
+        es_admin = current_session.is_admin()
+        self.btn_nuevo_activo.setEnabled(es_admin)
+        if es_admin:
+            self.btn_nuevo_activo.setToolTip("Dar de alta un nuevo equipo tecnológico en inventario")
+        else:
+            self.btn_nuevo_activo.setToolTip("El alta de activos está restringida a Administradores del sistema")
+
+    def _on_seleccion_cambiada(self):
+        hay_seleccion = self.tabla.currentRow() >= 0
+        self.btn_ver_detalle.setEnabled(hay_seleccion)
+
+    def _obtener_id_activo_seleccionado(self) -> int | None:
+        fila = self.tabla.currentRow()
+        if fila < 0:
+            return None
+        item_id = self.tabla.item(fila, 0)
+        if item_id and item_id.text().isdigit():
+            return int(item_id.text())
+        return None
+
+    def _abrir_registro_activo(self):
+        dialogo = RegistrarActivoDialog(self)
+        if dialogo.exec() == RegistrarActivoDialog.DialogCode.Accepted:
+            notificar_cambio(self)
+            self.cargar_activos()
+
+    def _abrir_detalle_seleccionado(self):
+        id_activo = self._obtener_id_activo_seleccionado()
+        if not id_activo:
+            return
+        dialogo = DetalleModificarActivoDialog(id_activo, self)
+        if dialogo.exec() == DetalleModificarActivoDialog.DialogCode.Accepted:
+            notificar_cambio(self)
+            self.cargar_activos()
 
     def cargar_activos(self):
         """Inicia la consulta al backend de forma asíncrona para no congelar la UI."""
@@ -143,13 +190,14 @@ class ActivosView(QWidget):
         self.lbl_mensaje.hide()
         self.btn_reintentar.hide()
         self.btn_buscar.setEnabled(False)
+        self.btn_ver_detalle.setEnabled(False)
 
         search_text = self.input_search.text().strip() or None
         estado_sel = self.combo_estado.currentData() or None
 
         self._worker = ApiWorker(listar_activos, search=search_text, estado=estado_sel)
-        self._worker.signals.finished.connect(lambda value, generation=current_session.generation: self._on_datos_cargados(value, generation))
-        self._worker.signals.error.connect(lambda value, generation=current_session.generation: self._on_error_carga(value, generation))
+        self._worker.signals.finished.connect(lambda value, generation=current_session.generation, worker=self._worker: self._on_datos_cargados(value, generation) if worker is self._worker else None)
+        self._worker.signals.error.connect(lambda value, generation=current_session.generation, worker=self._worker: self._on_error_carga(value, generation) if worker is self._worker else None)
         self._worker.start()
 
     def _on_datos_cargados(self, activos: list[dict[str, Any]], request_generation: int | None = None):
@@ -184,7 +232,6 @@ class ActivosView(QWidget):
             table_item = QTableWidgetItem(val)
             table_item.setToolTip(val)
             table_item.setFlags(table_item.flags() ^ Qt.ItemFlag.ItemIsEditable)
-
             self.tabla.setItem(row, col, table_item)
 
     def _on_error_carga(self, exc: Exception, request_generation: int | None = None):

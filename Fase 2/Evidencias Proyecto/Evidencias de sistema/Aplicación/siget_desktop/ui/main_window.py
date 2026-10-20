@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from siget_desktop.api.services import obtener_perfil_actual
 from siget_desktop.auth.manager import auth_manager
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.views.activos_view import ActivosView
@@ -28,6 +29,7 @@ from siget_desktop.ui.views.dashboard_view import DashboardView
 from siget_desktop.ui.views.solicitudes_view import SolicitudesView
 from siget_desktop.ui.views.tickets_view import TicketsView
 from siget_desktop.ui.views.usuarios_view import UsuariosView
+from siget_desktop.ui.workers import ApiWorker
 
 
 class MainWindow(QMainWindow):
@@ -42,6 +44,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1000, 650)
         self._init_ui()
         self._sesion_activa = False
+        self._worker_perfil: ApiWorker | None = None
         self._reloj_sesion = QTimer(self)
         self._reloj_sesion.timeout.connect(self._verificar_sesion)
         self._reloj_sesion.start(500)
@@ -217,14 +220,52 @@ class MainWindow(QMainWindow):
         elif index == 4 and current_session.is_admin() and self.view_usuarios.tabla.rowCount() == 0:
             self.view_usuarios.cargar_usuarios()
 
+    def invalidar_consultas(self, origen: QWidget):
+        for view in (self.view_activos, self.view_tickets, self.view_usuarios):
+            if view is not origen:
+                view._worker = None
+                view.tabla.setRowCount(0)
+                if view is self.view_tickets:
+                    self.view_tickets._tickets_cargados = []
+                elif view is self.view_usuarios:
+                    self.view_usuarios._usuarios_cargados = []
+        if self.view_solicitudes is not origen:
+            self.view_solicitudes.limpiar_sesion()
+        generation = current_session.generation
+        worker = ApiWorker(obtener_perfil_actual)
+        self._worker_perfil = worker
+        worker.signals.finished.connect(lambda profile: self._refrescar_perfil(profile, generation) if worker is self._worker_perfil else None)
+        worker.signals.error.connect(lambda _error: None)
+        worker.start()
+
+    def _refrescar_perfil(self, profile: dict, generation: int):
+        if generation != current_session.generation or not current_session.is_authenticated():
+            return
+        current_session.update_user_info(profile)
+        if not current_session.acceso_escritorio:
+            self._cerrar_sesion()
+            return
+        if not current_session.is_admin():
+            self.view_usuarios.tabla.setRowCount(0)
+            self.view_usuarios._usuarios_cargados = []
+            if self.sidebar.currentRow() == 4:
+                self.sidebar.setCurrentRow(0)
+        self.actualizar_sesion()
+
     def _cerrar_sesion(self):
         """Cierra la sesión, limpia las credenciales en memoria y notifica."""
         self._sesion_activa = False
         auth_manager.cerrar_sesion(abrir_logout_auth0=False)
+        self.view_activos._worker = None
+        self.view_tickets._worker = None
+        self.view_usuarios._worker = None
+        self._worker_perfil = None
         self.view_activos.tabla.setRowCount(0)
-        self.view_solicitudes.tabla.setRowCount(0)
+        self.view_solicitudes.limpiar_sesion()
         self.view_tickets.tabla.setRowCount(0)
         self.view_usuarios.tabla.setRowCount(0)
+        self.view_usuarios._usuarios_cargados = []
+        self.view_tickets._tickets_cargados = []
         self.actualizar_sesion()
         self.sidebar.blockSignals(True)
         self.sidebar.setCurrentRow(0)
