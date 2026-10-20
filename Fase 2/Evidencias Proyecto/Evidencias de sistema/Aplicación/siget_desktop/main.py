@@ -18,7 +18,7 @@ from PySide6.QtWidgets import QApplication
 from siget_desktop.config import config
 from siget_desktop.ui.login_window import LoginWindow
 from siget_desktop.ui.main_window import MainWindow
-from siget_desktop.ui.theme import ESTILO_GLOBAL
+from siget_desktop.ui.theme import aplicar_tema
 
 
 class SigetDesktopApp:
@@ -31,7 +31,7 @@ class SigetDesktopApp:
         self.app = app
         self.app.setApplicationName(config.app_name)
         self.app.setApplicationVersion(config.app_version)
-        self.app.setStyleSheet(ESTILO_GLOBAL)
+        aplicar_tema(self.app)
 
         self.login_window = LoginWindow()
         self.main_window = MainWindow()
@@ -49,7 +49,7 @@ class SigetDesktopApp:
         self.main_window.hide()
         self.login_window._restablecer_estado(
             "Sesión cerrada exitosamente.",
-            color="#38bdf8",
+            color="#1d4ed8",
         )
         self.login_window.show()
 

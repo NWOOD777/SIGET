@@ -12,15 +12,16 @@ from typing import Any
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
+    QHBoxLayout,
     QLabel,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from siget_desktop.auth.manager import auth_manager
-from siget_desktop.config import config
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -32,71 +33,78 @@ class LoginWindow(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("loginWindow")
-        self.setStyleSheet("QWidget#loginWindow { background-color: #0f172a; }")
         self.setWindowTitle("SIGET - Acceso de Escritorio")
-        self.setFixedSize(520, 560)
+        self.resize(960, 600)
+        self.setMinimumSize(860, 580)
         self._worker: ApiWorker | None = None
         self._cancel_event = Event()
         self._init_ui()
 
     def _init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(20)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        # Tarjeta principal de login
+        brand = QFrame()
+        brand.setObjectName("loginBrand")
+        brand.setMinimumWidth(300)
+        brand_layout = QVBoxLayout(brand)
+        brand_layout.setContentsMargins(36, 36, 36, 28)
+        logo = QLabel("SIGET")
+        logo.setObjectName("brandName")
+        brand_layout.addWidget(logo)
+        caption = QLabel("Sistema Integral de Gestión de Equipos\ny Soporte Tecnológico")
+        caption.setObjectName("brandCaption")
+        brand_layout.addWidget(caption)
+        brand_layout.addStretch()
+        headline = QLabel("Gestión de equipos\ny soporte tecnológico")
+        headline.setObjectName("loginHeadline")
+        headline.setWordWrap(True)
+        brand_layout.addWidget(headline)
+        description = QLabel("Consulta el inventario, revisa solicitudes y accede a la mesa de ayuda desde un solo lugar.")
+        description.setObjectName("loginDescription")
+        description.setWordWrap(True)
+        brand_layout.addWidget(description)
+        brand_layout.addSpacing(24)
+        for text in ("Inventario de activos TI", "Solicitudes y entregas", "Soporte técnico y usuarios"):
+            feature = QLabel("•  " + text)
+            feature.setObjectName("loginDescription")
+            brand_layout.addWidget(feature)
+        brand_layout.addStretch()
+        footer = QLabel("SIGET · Proyecto Capstone · Duoc UC")
+        footer.setObjectName("brandCaption")
+        brand_layout.addWidget(footer)
+        layout.addWidget(brand, 2)
+
+        access = QWidget()
+        access_layout = QVBoxLayout(access)
+        access_layout.setContentsMargins(40, 32, 40, 32)
+        access_layout.addStretch()
         card = QFrame()
         card.setObjectName("loginCard")
-        card.setStyleSheet("""
-            QFrame#loginCard {
-                background-color: #1e293b;
-                border: 1px solid #334155;
-                border-radius: 12px;
-                padding: 30px;
-            }
-        """)
+        card.setMinimumWidth(340)
+        card.setMaximumWidth(420)
+        card.setMinimumHeight(360)
         layout_card = QVBoxLayout(card)
-        layout_card.setSpacing(16)
-        layout_card.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Insignia institucional
-        lbl_badge = QLabel("SIGET")
-        lbl_badge.setStyleSheet("""
-            background-color: #0369a1;
-            color: #ffffff;
-            font-size: 24px;
-            font-weight: 900;
-            padding: 8px 16px;
-            border-radius: 8px;
-            letter-spacing: 2px;
-        """)
-        lbl_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_card.addWidget(lbl_badge)
-
-        # Títulos
-        lbl_titulo = QLabel("Aplicación de Escritorio")
+        layout_card.setContentsMargins(28, 30, 28, 30)
+        layout_card.setSpacing(18)
+        lbl_titulo = QLabel("Iniciar sesión")
         lbl_titulo.setObjectName("tituloPrincipal")
-        lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_card.addWidget(lbl_titulo)
-
-        lbl_sub = QLabel("Módulo de Técnicos de Soporte y Administradores")
+        lbl_sub = QLabel("Accede al espacio de trabajo de Técnicos de soporte y Administradores.")
         lbl_sub.setObjectName("subtitulo")
         lbl_sub.setWordWrap(True)
-        lbl_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_sub.setMinimumHeight(40)
+        lbl_sub.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         layout_card.addWidget(lbl_sub)
-
-        # Separador decorativo
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: #334155;")
-        layout_card.addWidget(sep)
 
         # Mensaje de estado / errores
         self.lbl_estado = QLabel("Haga clic para iniciar sesión mediante Auth0.")
-        self.lbl_estado.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_estado.setStyleSheet("color: #94a3b8; font-size: 12px;")
+        self.lbl_estado.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.lbl_estado.setObjectName("subtitulo")
         self.lbl_estado.setWordWrap(True)
+        self.lbl_estado.setMinimumHeight(42)
+        self.lbl_estado.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         layout_card.addWidget(self.lbl_estado)
 
         self.progreso = QProgressBar()
@@ -107,26 +115,9 @@ class LoginWindow(QWidget):
         layout_card.addWidget(self.progreso)
 
         # Botón de Login
-        self.btn_login = QPushButton("Iniciar Sesión con Auth0")
+        self.btn_login = QPushButton("Iniciar sesión institucional")
         self.btn_login.setFixedHeight(42)
         self.btn_login.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_login.setStyleSheet("""
-            QPushButton {
-                background-color: #0284c7;
-                color: #ffffff;
-                font-size: 14px;
-                font-weight: bold;
-                border-radius: 8px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #0369a1;
-            }
-            QPushButton:disabled {
-                background-color: #334155;
-                color: #64748b;
-            }
-        """)
         self.btn_login.clicked.connect(self._iniciar_login)
         layout_card.addWidget(self.btn_login)
 
@@ -137,13 +128,15 @@ class LoginWindow(QWidget):
         self.btn_cancelar.clicked.connect(self._cancelar_login)
         layout_card.addWidget(self.btn_cancelar)
 
-        # Información del backend conectado
-        lbl_info_backend = QLabel(f"Backend: {config.api_base_url}\nTenant: {config.auth0_domain}")
-        lbl_info_backend.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_info_backend.setStyleSheet("color: #64748b; font-size: 10px; font-family: monospace;")
-        layout_card.addWidget(lbl_info_backend)
-
-        layout.addWidget(card)
+        note = QLabel("La autenticación se realiza en el navegador institucional.")
+        note.setObjectName("subtitulo")
+        note.setWordWrap(True)
+        note.setMinimumHeight(38)
+        note.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        layout_card.addWidget(note)
+        access_layout.addWidget(card, 0, Qt.AlignmentFlag.AlignHCenter)
+        access_layout.addStretch()
+        layout.addWidget(access, 3)
 
     def _iniciar_login(self):
         self.btn_login.setEnabled(False)
@@ -153,7 +146,7 @@ class LoginWindow(QWidget):
             "Abriendo el navegador del sistema para autenticarse con Auth0...\n"
             "Complete el inicio de sesión en su navegador."
         )
-        self.lbl_estado.setStyleSheet("color: #38bdf8; font-size: 12px;")
+        self.lbl_estado.setStyleSheet("color: #1d4ed8; font-size: 12px;")
 
         self._cancel_event = Event()
         self._worker = ApiWorker(auth_manager.iniciar_flujo_login,
@@ -170,20 +163,20 @@ class LoginWindow(QWidget):
             return
         self._restablecer_estado(
             "Inicio de sesión cancelado por el usuario.",
-            color="#94a3b8",
+            color="#64748b",
         )
 
     def _on_login_exitoso(self, user_info: dict[str, Any]):
         self.progreso.hide()
         self.lbl_estado.setText(f"¡Bienvenido, {user_info.get('nombre_completo', '')}!")
-        self.lbl_estado.setStyleSheet("color: #10b981; font-weight: bold;")
+        self.lbl_estado.setStyleSheet("color: #047857; font-weight: bold;")
         self.login_exitoso.emit(user_info)
 
     def _on_login_error(self, exc: Exception):
         self.progreso.hide()
-        self._restablecer_estado(str(exc), color="#f87171")
+        self._restablecer_estado(str(exc), color="#be123c")
 
-    def _restablecer_estado(self, mensaje: str, color: str = "#94a3b8"):
+    def _restablecer_estado(self, mensaje: str, color: str = "#64748b"):
         self.btn_login.setEnabled(True)
         self.btn_cancelar.setEnabled(True)
         self.btn_cancelar.hide()

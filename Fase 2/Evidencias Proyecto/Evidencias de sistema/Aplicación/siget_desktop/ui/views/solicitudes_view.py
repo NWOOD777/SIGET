@@ -25,19 +25,20 @@ from PySide6.QtWidgets import (
 
 from siget_desktop.api.services import listar_solicitudes
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, texto_relacion
 from siget_desktop.ui.workers import ApiWorker
 
 
 class SolicitudesView(QWidget):
-    """Módulo de Solicitudes de Asignación y Operaciones de Entrega."""
+    """Módulo de Solicitudes de asignación y Operaciones de Entrega."""
 
     COLUMNAS = [
         "ID",
         "Solicitante",
-        "Categoría Solicitada",
+        "Categoría",
         "Estado",
         "Resolutor",
-        "Fecha Solicitud",
+        "Fecha",
         "Motivo",
     ]
 
@@ -54,11 +55,12 @@ class SolicitudesView(QWidget):
         # Encabezado
         layout_encabezado = QHBoxLayout()
         vbox_titulo = QVBoxLayout()
-        lbl_titulo = QLabel("Solicitudes de Asignación")
+        lbl_titulo = QLabel("Solicitudes de asignación")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
         lbl_desc = QLabel("Aprobación administrativa y formalización de entregas de equipamiento")
         lbl_desc.setObjectName("subtitulo")
+        lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
         layout_encabezado.addLayout(vbox_titulo)
         layout_encabezado.addStretch()
@@ -87,7 +89,7 @@ class SolicitudesView(QWidget):
         layout.addLayout(layout_encabezado)
 
         # Filtros
-        layout_filtros = QHBoxLayout()
+        barra_filtros, layout_filtros = crear_filtros(self)
         self.input_search = QLineEdit()
         self.input_search.setPlaceholderText("Buscar por solicitante, motivo o identificador...")
         self.input_search.returnPressed.connect(self.cargar_solicitudes)
@@ -107,7 +109,7 @@ class SolicitudesView(QWidget):
         self.btn_actualizar.clicked.connect(self.cargar_solicitudes)
         layout_filtros.addWidget(self.btn_actualizar)
 
-        layout.addLayout(layout_filtros)
+        layout.addWidget(barra_filtros)
 
         # Progreso y mensajes
         self.progreso = QProgressBar()
@@ -118,7 +120,6 @@ class SolicitudesView(QWidget):
         layout.addWidget(self.progreso)
 
         self.lbl_mensaje = QLabel("")
-        self.lbl_mensaje.setStyleSheet("padding: 8px 12px; border-radius: 6px; font-weight: 500;")
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
 
@@ -136,7 +137,7 @@ class SolicitudesView(QWidget):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
-        self.tabla.setStyleSheet("QTableWidget { alternate-background-color: #162032; }")
+        configurar_tabla(self.tabla, (3,))
         layout.addWidget(self.tabla, 1)
 
     def actualizar_permisos_ui(self):
@@ -170,42 +171,26 @@ class SolicitudesView(QWidget):
         self.tabla.setRowCount(0)
 
         if not solicitudes:
-            self.lbl_mensaje.setText("No hay solicitudes de asignación registradas con los filtros seleccionados.")
-            self.lbl_mensaje.setStyleSheet("""
-                background-color: #1e293b; color: #94a3b8;
-                border: 1px dashed #334155; padding: 12px; border-radius: 6px;
-            """)
-            self.lbl_mensaje.show()
+            mostrar_mensaje(self.lbl_mensaje, "No hay solicitudes de asignación registradas con los filtros seleccionados.", "empty")
             return
 
-        self.lbl_mensaje.setText(f"Mostrando {len(solicitudes)} solicitudes.")
-        self.lbl_mensaje.setStyleSheet("color: #38bdf8; font-size: 11px;")
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Mostrando {len(solicitudes)} solicitudes.", "info")
 
         self.tabla.setRowCount(len(solicitudes))
         for row_idx, item in enumerate(solicitudes):
             valores = [
                 str(item.get("id_solicitud", "")),
-                str(item.get("solicitante", "—")),
-                str(item.get("categoria", "—")),
-                str(item.get("estado", "—")),
-                str(item.get("resolutor") or "—"),
+                texto_relacion(item.get("solicitante")),
+                texto_relacion(item.get("categoria")),
+                texto_relacion(item.get("estado")),
+                texto_relacion(item.get("resolutor")),
                 str(item.get("fecha_solicitud", "")[:10] if item.get("fecha_solicitud") else "—"),
                 str(item.get("motivo", "")),
             ]
             for col_idx, val in enumerate(valores):
                 cell = QTableWidgetItem(val)
+                cell.setToolTip(val)
                 cell.setFlags(cell.flags() ^ Qt.ItemFlag.ItemIsEditable)
-                if col_idx == 3:  # Estado
-                    est = val.lower()
-                    if "pendiente" in est:
-                        cell.setForeground(Qt.GlobalColor.yellow)
-                    elif "aprobada" in est:
-                        cell.setForeground(Qt.GlobalColor.cyan)
-                    elif "atendida" in est:
-                        cell.setForeground(Qt.GlobalColor.green)
-                    elif "rechazada" in est:
-                        cell.setForeground(Qt.GlobalColor.red)
                 self.tabla.setItem(row_idx, col_idx, cell)
 
     def _on_error(self, exc: Exception, request_generation: int | None = None):
@@ -214,10 +199,5 @@ class SolicitudesView(QWidget):
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
         self.tabla.setRowCount(0)
-        self.lbl_mensaje.setText(f"Error al obtener solicitudes del backend: {exc}")
-        self.lbl_mensaje.setStyleSheet("""
-            background-color: #450a0a; color: #fca5a5;
-            border: 1px solid #7f1d1d; padding: 12px; border-radius: 6px;
-        """)
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Error al obtener solicitudes del backend: {exc}", "error")
         self.btn_reintentar.show()

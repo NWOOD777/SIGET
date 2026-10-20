@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from siget_desktop.api.services import listar_usuarios_rbac
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -44,11 +45,12 @@ class UsuariosView(QWidget):
         # Encabezado
         layout_encabezado = QHBoxLayout()
         vbox_titulo = QVBoxLayout()
-        lbl_titulo = QLabel("Administración de Usuarios y RBAC")
+        lbl_titulo = QLabel("Usuarios, roles y permisos")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
         lbl_desc = QLabel("Gestión de cuentas institucionales, asignación de roles y control de acceso")
         lbl_desc.setObjectName("subtitulo")
+        lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
         layout_encabezado.addLayout(vbox_titulo)
         layout_encabezado.addStretch()
@@ -63,23 +65,16 @@ class UsuariosView(QWidget):
         # Panel para usuarios sin rol Administrador
         self.panel_bloqueo = QFrame()
         self.panel_bloqueo.setObjectName("blockedRolePanel")
-        self.panel_bloqueo.setStyleSheet("""
-            QFrame#blockedRolePanel {
-                background-color: #450a0a;
-                border: 1px solid #7f1d1d;
-                border-radius: 8px;
-                padding: 24px;
-            }
-        """)
         layout_bloqueo = QVBoxLayout(self.panel_bloqueo)
-        lbl_bloq_titulo = QLabel("Acceso Restringido por RBAC")
-        lbl_bloq_titulo.setStyleSheet("font-size: 16px; font-weight: bold; color: #f87171;")
+        lbl_bloq_titulo = QLabel("Acceso restringido")
+        lbl_bloq_titulo.setObjectName("sectionTitle")
         layout_bloqueo.addWidget(lbl_bloq_titulo)
         lbl_bloq_desc = QLabel(
             "Este módulo está restringido exclusivamente a usuarios con rol 'Administrador del sistema'.\n"
             "Las políticas de seguridad del backend rechazarán cualquier consulta o modificación no autorizada."
         )
-        lbl_bloq_desc.setStyleSheet("color: #fecaca; line-height: 1.5;")
+        lbl_bloq_desc.setObjectName("subtitulo")
+        lbl_bloq_desc.setWordWrap(True)
         layout_bloqueo.addWidget(lbl_bloq_desc)
         layout.addWidget(self.panel_bloqueo)
 
@@ -97,7 +92,6 @@ class UsuariosView(QWidget):
         layout_admin.addWidget(self.progreso)
 
         self.lbl_mensaje = QLabel("")
-        self.lbl_mensaje.setStyleSheet("padding: 8px 12px; border-radius: 6px; font-weight: 500;")
         self.lbl_mensaje.hide()
         layout_admin.addWidget(self.lbl_mensaje)
 
@@ -108,7 +102,7 @@ class UsuariosView(QWidget):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
-        self.tabla.setStyleSheet("QTableWidget { alternate-background-color: #162032; }")
+        configurar_tabla(self.tabla, (5,))
         layout_admin.addWidget(self.tabla, 1)
 
         layout.addWidget(self.contenedor_admin, 1)
@@ -144,13 +138,10 @@ class UsuariosView(QWidget):
         self.tabla.setRowCount(0)
 
         if not usuarios:
-            self.lbl_mensaje.setText("No se encontraron usuarios registrados.")
-            self.lbl_mensaje.show()
+            mostrar_mensaje(self.lbl_mensaje, "No se encontraron usuarios registrados.", "empty")
             return
 
-        self.lbl_mensaje.setText(f"Total de usuarios registrados en SIGET: {len(usuarios)}")
-        self.lbl_mensaje.setStyleSheet("color: #38bdf8; font-size: 11px;")
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Total de usuarios registrados en SIGET: {len(usuarios)}", "info")
 
         self.tabla.setRowCount(len(usuarios))
         for row_idx, user in enumerate(usuarios):
@@ -166,9 +157,8 @@ class UsuariosView(QWidget):
             ]
             for col_idx, val in enumerate(valores):
                 cell = QTableWidgetItem(val)
+                cell.setToolTip(val)
                 cell.setFlags(cell.flags() ^ Qt.ItemFlag.ItemIsEditable)
-                if col_idx == 5:
-                    cell.setForeground(Qt.GlobalColor.green if user.get("activo") else Qt.GlobalColor.red)
                 self.tabla.setItem(row_idx, col_idx, cell)
 
     def _on_error(self, exc: Exception, request_generation: int | None = None):
@@ -177,9 +167,4 @@ class UsuariosView(QWidget):
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
         self.tabla.setRowCount(0)
-        self.lbl_mensaje.setText(f"Error al obtener usuarios: {exc}")
-        self.lbl_mensaje.setStyleSheet("""
-            background-color: #450a0a; color: #fca5a5;
-            border: 1px solid #7f1d1d; padding: 12px; border-radius: 6px;
-        """)
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Error al obtener usuarios: {exc}", "error")

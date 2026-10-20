@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from siget_desktop.api.services import listar_activos
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -33,8 +34,8 @@ class ActivosView(QWidget):
 
     COLUMNAS = [
         "ID",
-        "Código Inventario",
-        "N° de Serie",
+        "Código",
+        "N.º de serie",
         "Modelo",
         "Categoría",
         "Ubicación",
@@ -55,30 +56,26 @@ class ActivosView(QWidget):
         # Encabezado con título y acciones
         layout_encabezado = QHBoxLayout()
         vbox_titulo = QVBoxLayout()
-        lbl_titulo = QLabel("Gestión de Activos TI")
+        lbl_titulo = QLabel("Gestión de activos")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
         lbl_desc = QLabel("Consulta y administración del parque tecnológico de SIGET")
         lbl_desc.setObjectName("subtitulo")
+        lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
         layout_encabezado.addLayout(vbox_titulo)
         layout_encabezado.addStretch()
 
         # Botón administrativo (control RBAC en UI)
-        self.btn_nuevo_activo = QPushButton("+ Nuevo Activo")
+        self.btn_nuevo_activo = QPushButton("+ Registrar activo")
         self.btn_nuevo_activo.setEnabled(False)
         self.btn_nuevo_activo.setToolTip("Funcionalidad pendiente de una próxima entrega")
-        self.btn_nuevo_activo.setToolTip(
-            "Registrar un nuevo activo (exclusivo para Administrador del sistema)"
-            if not current_session.is_admin()
-            else "Crear un nuevo activo en el inventario"
-        )
         layout_encabezado.addWidget(self.btn_nuevo_activo)
 
         layout.addLayout(layout_encabezado)
 
         # Barra de filtros
-        layout_filtros = QHBoxLayout()
+        barra_filtros, layout_filtros = crear_filtros(self)
         layout_filtros.setSpacing(10)
 
         self.input_search = QLineEdit()
@@ -101,7 +98,7 @@ class ActivosView(QWidget):
         self.btn_buscar.clicked.connect(self.cargar_activos)
         layout_filtros.addWidget(self.btn_buscar)
 
-        layout.addLayout(layout_filtros)
+        layout.addWidget(barra_filtros)
 
         # Barra de estado y progreso
         self.progreso = QProgressBar()
@@ -113,7 +110,6 @@ class ActivosView(QWidget):
 
         # Mensaje informativo / error / lista vacía
         self.lbl_mensaje = QLabel("")
-        self.lbl_mensaje.setStyleSheet("padding: 8px 12px; border-radius: 6px; font-weight: 500;")
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
 
@@ -132,11 +128,7 @@ class ActivosView(QWidget):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
-        self.tabla.setStyleSheet("""
-            QTableWidget {
-                alternate-background-color: #162032;
-            }
-        """)
+        configurar_tabla(self.tabla, (6,))
         layout.addWidget(self.tabla, 1)
 
     def actualizar_permisos_ui(self):
@@ -168,17 +160,10 @@ class ActivosView(QWidget):
         self.tabla.setRowCount(0)
 
         if not activos:
-            self.lbl_mensaje.setText("No se encontraron activos registrados con los filtros aplicados.")
-            self.lbl_mensaje.setStyleSheet("""
-                background-color: #1e293b; color: #94a3b8;
-                border: 1px dashed #334155; padding: 12px; border-radius: 6px;
-            """)
-            self.lbl_mensaje.show()
+            mostrar_mensaje(self.lbl_mensaje, "No se encontraron activos registrados con los filtros aplicados.", "empty")
             return
 
-        self.lbl_mensaje.setText(f"Mostrando {len(activos)} activos obtenidos del servidor.")
-        self.lbl_mensaje.setStyleSheet("color: #38bdf8; font-size: 11px;")
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Mostrando {len(activos)} activos obtenidos del servidor.", "info")
 
         self.tabla.setRowCount(len(activos))
         for row_idx, activo in enumerate(activos):
@@ -197,17 +182,8 @@ class ActivosView(QWidget):
         ]
         for col, val in enumerate(valores):
             table_item = QTableWidgetItem(val)
+            table_item.setToolTip(val)
             table_item.setFlags(table_item.flags() ^ Qt.ItemFlag.ItemIsEditable)
-
-            # Estilo para el estado
-            if col == 6:  # Columna de estado
-                estado = val.lower()
-                if "disponible" in estado:
-                    table_item.setForeground(Qt.GlobalColor.green)
-                elif "reparación" in estado or "revisión" in estado:
-                    table_item.setForeground(Qt.GlobalColor.yellow)
-                elif "baja" in estado:
-                    table_item.setForeground(Qt.GlobalColor.red)
 
             self.tabla.setItem(row, col, table_item)
 
@@ -218,10 +194,5 @@ class ActivosView(QWidget):
         self.btn_buscar.setEnabled(True)
         self.tabla.setRowCount(0)
 
-        self.lbl_mensaje.setText(f"Error al comunicar con el backend: {exc}")
-        self.lbl_mensaje.setStyleSheet("""
-            background-color: #450a0a; color: #fca5a5;
-            border: 1px solid #7f1d1d; padding: 12px; border-radius: 6px;
-        """)
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Error al comunicar con el backend: {exc}", "error")
         self.btn_reintentar.show()

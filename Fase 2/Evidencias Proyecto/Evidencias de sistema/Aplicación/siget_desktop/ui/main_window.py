@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -37,8 +38,8 @@ class MainWindow(QMainWindow):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("SIGET - Sistema Integral de Gestión de Equipos y Soporte")
-        self.resize(1100, 720)
-        self.setMinimumSize(900, 600)
+        self.resize(1280, 800)
+        self.setMinimumSize(1000, 650)
         self._init_ui()
         self._sesion_activa = False
         self._reloj_sesion = QTimer(self)
@@ -48,108 +49,104 @@ class MainWindow(QMainWindow):
     def _init_ui(self):
         widget_central = QWidget()
         self.setCentralWidget(widget_central)
-        layout_principal = QVBoxLayout(widget_central)
+        layout_principal = QHBoxLayout(widget_central)
         layout_principal.setContentsMargins(0, 0, 0, 0)
         layout_principal.setSpacing(0)
+        layout_principal.addWidget(self._crear_navegacion())
 
-        # 1. Barra superior (Header)
-        header = self._crear_header()
-        layout_principal.addWidget(header)
+        area_trabajo = QVBoxLayout()
+        area_trabajo.setContentsMargins(0, 0, 0, 0)
+        area_trabajo.setSpacing(0)
+        area_trabajo.addWidget(self._crear_header())
 
-        # 2. Contenedor dividido: Sidebar + Contenido
-        layout_cuerpo = QHBoxLayout()
-        layout_cuerpo.setContentsMargins(0, 0, 0, 0)
-        layout_cuerpo.setSpacing(0)
-
-        self.sidebar = self._crear_sidebar()
-        layout_cuerpo.addWidget(self.sidebar)
-
-        # Vistas apiladas en el área de trabajo
         self.stacked_views = QStackedWidget()
         self.view_dashboard = DashboardView()
         self.view_activos = ActivosView()
         self.view_solicitudes = SolicitudesView()
         self.view_tickets = TicketsView()
         self.view_usuarios = UsuariosView()
-
-        self.stacked_views.addWidget(self.view_dashboard)    # índice 0
-        self.stacked_views.addWidget(self.view_activos)      # índice 1
-        self.stacked_views.addWidget(self.view_solicitudes)  # índice 2
-        self.stacked_views.addWidget(self.view_tickets)      # índice 3
-        self.stacked_views.addWidget(self.view_usuarios)     # índice 4
-
-        layout_cuerpo.addWidget(self.stacked_views, 1)
-        layout_principal.addLayout(layout_cuerpo, 1)
+        for view in (self.view_dashboard, self.view_activos, self.view_solicitudes,
+                     self.view_tickets, self.view_usuarios):
+            self.stacked_views.addWidget(view)
+        self.view_dashboard.modulo_seleccionado.connect(self.sidebar.setCurrentRow)
+        area_trabajo.addWidget(self.stacked_views, 1)
+        layout_principal.addLayout(area_trabajo, 1)
 
         self.sidebar.currentRowChanged.connect(self._cambiar_vista)
 
+    def _crear_navegacion(self) -> QWidget:
+        frame = QFrame()
+        frame.setObjectName("desktopSidebar")
+        frame.setFixedWidth(218)
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        brand = QHBoxLayout()
+        brand.setSpacing(10)
+        brand.setContentsMargins(18, 20, 18, 22)
+        mark = QLabel("S")
+        mark.setObjectName("brandMark")
+        mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        mark.setFixedSize(36, 36)
+        brand.addWidget(mark)
+        titles = QVBoxLayout()
+        name = QLabel("SIGET")
+        name.setObjectName("brandName")
+        caption = QLabel("Gestión tecnológica")
+        caption.setObjectName("brandCaption")
+        titles.addWidget(name)
+        titles.addWidget(caption)
+        brand.addLayout(titles, 1)
+        layout.addLayout(brand)
+
+        section = QLabel("ESPACIO DE TRABAJO")
+        section.setObjectName("navigationCaption")
+        layout.addWidget(section)
+        self.sidebar = self._crear_sidebar()
+        layout.addWidget(self.sidebar, 1)
+        footer = QLabel("Aplicación de escritorio")
+        footer.setObjectName("sidebarFooter")
+        layout.addWidget(footer)
+        return frame
+
     def _crear_header(self) -> QWidget:
         header = QFrame()
-        header.setFixedHeight(64)
+        header.setFixedHeight(72)
         header.setObjectName("desktopHeader")
-        header.setStyleSheet("""
-            QFrame#desktopHeader {
-                background-color: #0b1329;
-                border-bottom: 1px solid #1e293b;
-            }
-        """)
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(20, 10, 20, 10)
-        layout.setSpacing(16)
-
-        # Logo / Título
-        lbl_logo = QLabel("SIGET")
-        lbl_logo.setStyleSheet("""
-            background-color: #0284c7; color: #ffffff;
-            font-weight: 900; font-size: 16px; padding: 4px 10px;
-            border-radius: 6px; letter-spacing: 1px;
-        """)
-        layout.addWidget(lbl_logo)
-
-        lbl_app = QLabel("Escritorio")
-        lbl_app.setStyleSheet("color: #94a3b8; font-weight: 600; font-size: 14px;")
-        layout.addWidget(lbl_app)
-
+        layout.setContentsMargins(24, 12, 24, 12)
+        layout.setSpacing(12)
+        caption = QLabel("Gestión de equipos y soporte")
+        caption.setObjectName("headerCaption")
+        layout.addWidget(caption)
         layout.addStretch()
 
-        # Ficha del usuario conectado
         self.lbl_usuario_nombre = QLabel(current_session.nombre_completo or "Usuario")
-        self.lbl_usuario_nombre.setStyleSheet("font-weight: 600; color: #f8fafc;")
+        self.lbl_usuario_nombre.setObjectName("userName")
         layout.addWidget(self.lbl_usuario_nombre)
-
         self.widget_header_roles = QWidget()
         self.layout_header_roles = QHBoxLayout(self.widget_header_roles)
         self.layout_header_roles.setContentsMargins(0, 0, 0, 0)
         self.layout_header_roles.setSpacing(6)
         layout.addWidget(self.widget_header_roles)
-
-        # Botón cerrar sesión
-        btn_logout = QPushButton("Cerrar Sesión")
+        btn_logout = QPushButton("Cerrar sesión")
         btn_logout.setObjectName("btnSecundario")
-        btn_logout.setFixedHeight(32)
         btn_logout.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_logout.clicked.connect(self._cerrar_sesion)
         layout.addWidget(btn_logout)
-
         return header
 
     def _crear_sidebar(self) -> QListWidget:
         sidebar = QListWidget()
-        sidebar.setFixedWidth(220)
-        sidebar.setStyleSheet("""
-            QListWidget {
-                background-color: #0b1329;
-                border-right: 1px solid #1e293b;
-                padding-top: 12px;
-            }
-        """)
+        sidebar.setObjectName("desktopNavigation")
 
         items = [
-            ("Inicio / Panel", True),
+            ("Panel de control", True),
             ("Activos TI", True),
-            ("Solicitudes y Entregas", True),
-            ("Mesa de Ayuda (Tickets)", True),
-            ("Usuarios y RBAC", current_session.is_admin()),
+            ("Solicitudes y entregas", True),
+            ("Mesa de ayuda", True),
+            ("Usuarios y roles", current_session.is_admin()),
         ]
 
         for texto, habilitado in items:
@@ -173,16 +170,19 @@ class MainWindow(QMainWindow):
             if item is not None:
                 widget = item.widget()
                 if widget is not None:
+                    widget.hide()
                     widget.deleteLater()
 
         for rol in current_session.roles:
             badge = QLabel(rol)
+            badge.setFixedHeight(28)
+            badge.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
             if "Administrador" in rol:
                 badge.setObjectName("badgeRolAdmin")
             elif "Técnico" in rol:
                 badge.setObjectName("badgeRolTecnico")
             else:
-                badge.setStyleSheet("background-color: #334155; color: #cbd5e1; border-radius: 4px; padding: 2px 6px; font-size: 11px;")
+                badge.setObjectName("badgeRol")
             self.layout_header_roles.addWidget(badge)
 
         # Habilitar/deshabilitar ítem de Usuarios según rol Administrador

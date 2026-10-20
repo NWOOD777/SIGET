@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from siget_desktop.api.services import listar_tickets
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, texto_relacion
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -36,8 +37,8 @@ class TicketsView(QWidget):
         "Solicitante",
         "Estado",
         "Prioridad",
-        "Técnico Asignado",
-        "Fecha Creación",
+        "Técnico",
+        "Fecha",
     ]
 
     def __init__(self, parent: QWidget | None = None):
@@ -53,11 +54,12 @@ class TicketsView(QWidget):
         # Encabezado
         layout_encabezado = QHBoxLayout()
         vbox_titulo = QVBoxLayout()
-        lbl_titulo = QLabel("Mesa de Ayuda - Tickets")
+        lbl_titulo = QLabel("Service Desk — Tickets")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
         lbl_desc = QLabel("Gestión de incidentes, solicitudes de soporte y atención técnica")
         lbl_desc.setObjectName("subtitulo")
+        lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
         layout_encabezado.addLayout(vbox_titulo)
         layout_encabezado.addStretch()
@@ -65,13 +67,12 @@ class TicketsView(QWidget):
         self.btn_atender = QPushButton("Atender Ticket")
         self.btn_atender.setEnabled(False)
         self.btn_atender.setToolTip("Funcionalidad pendiente de una próxima entrega")
-        self.btn_atender.setToolTip("Iniciar atención u orden de trabajo técnica (solo Técnico de soporte)")
         layout_encabezado.addWidget(self.btn_atender)
 
         layout.addLayout(layout_encabezado)
 
         # Filtros
-        layout_filtros = QHBoxLayout()
+        barra_filtros, layout_filtros = crear_filtros(self)
         self.input_search = QLineEdit()
         self.input_search.setPlaceholderText("Buscar por código, asunto o descripción...")
         self.input_search.returnPressed.connect(self.cargar_tickets)
@@ -88,10 +89,10 @@ class TicketsView(QWidget):
 
         self.combo_prioridad = QComboBox()
         self.combo_prioridad.addItem("Todas las prioridades", "")
-        self.combo_prioridad.addItem("Baja", "Baja")
-        self.combo_prioridad.addItem("Media", "Media")
-        self.combo_prioridad.addItem("Alta", "Alta")
-        self.combo_prioridad.addItem("Crítica", "Crítica")
+        self.combo_prioridad.addItem("Bajo", "Bajo")
+        self.combo_prioridad.addItem("Medio", "Medio")
+        self.combo_prioridad.addItem("Alto", "Alto")
+        self.combo_prioridad.addItem("Crítico", "Crítico")
         self.combo_prioridad.currentIndexChanged.connect(self.cargar_tickets)
         layout_filtros.addWidget(self.combo_prioridad, 1)
 
@@ -100,7 +101,7 @@ class TicketsView(QWidget):
         self.btn_actualizar.clicked.connect(self.cargar_tickets)
         layout_filtros.addWidget(self.btn_actualizar)
 
-        layout.addLayout(layout_filtros)
+        layout.addWidget(barra_filtros)
 
         # Progreso y mensajes
         self.progreso = QProgressBar()
@@ -111,7 +112,6 @@ class TicketsView(QWidget):
         layout.addWidget(self.progreso)
 
         self.lbl_mensaje = QLabel("")
-        self.lbl_mensaje.setStyleSheet("padding: 8px 12px; border-radius: 6px; font-weight: 500;")
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
 
@@ -129,7 +129,7 @@ class TicketsView(QWidget):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
-        self.tabla.setStyleSheet("QTableWidget { alternate-background-color: #162032; }")
+        configurar_tabla(self.tabla, (3, 4))
         layout.addWidget(self.tabla, 1)
 
     def actualizar_permisos_ui(self):
@@ -160,40 +160,26 @@ class TicketsView(QWidget):
         self.tabla.setRowCount(0)
 
         if not tickets:
-            self.lbl_mensaje.setText("No hay tickets de soporte registrados con los filtros seleccionados.")
-            self.lbl_mensaje.setStyleSheet("""
-                background-color: #1e293b; color: #94a3b8;
-                border: 1px dashed #334155; padding: 12px; border-radius: 6px;
-            """)
-            self.lbl_mensaje.show()
+            mostrar_mensaje(self.lbl_mensaje, "No hay tickets de soporte registrados con los filtros seleccionados.", "empty")
             return
 
-        self.lbl_mensaje.setText(f"Mostrando {len(tickets)} tickets.")
-        self.lbl_mensaje.setStyleSheet("color: #38bdf8; font-size: 11px;")
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Mostrando {len(tickets)} tickets.", "info")
 
         self.tabla.setRowCount(len(tickets))
         for row_idx, item in enumerate(tickets):
             valores = [
                 str(item.get("codigo_ticket", "")),
                 str(item.get("asunto", "—")),
-                str(item.get("solicitante", "—")),
-                str(item.get("estado", "—")),
-                str(item.get("prioridad", "—")),
-                str(item.get("tecnico_asignado") or "Sin asignar"),
+                texto_relacion(item.get("solicitante")),
+                texto_relacion(item.get("estado")),
+                texto_relacion(item.get("prioridad")),
+                texto_relacion(item.get("tecnico_asignado"), "Sin asignar"),
                 str(item.get("fecha_creacion", "")[:10] if item.get("fecha_creacion") else "—"),
             ]
             for col_idx, val in enumerate(valores):
                 cell = QTableWidgetItem(val)
+                cell.setToolTip(val)
                 cell.setFlags(cell.flags() ^ Qt.ItemFlag.ItemIsEditable)
-                if col_idx == 3:  # Estado
-                    est = val.lower()
-                    if "abierto" in est:
-                        cell.setForeground(Qt.GlobalColor.cyan)
-                    elif "atención" in est:
-                        cell.setForeground(Qt.GlobalColor.yellow)
-                    elif "resuelto" in est or "cerrado" in est:
-                        cell.setForeground(Qt.GlobalColor.green)
                 self.tabla.setItem(row_idx, col_idx, cell)
 
     def _on_error(self, exc: Exception, request_generation: int | None = None):
@@ -202,10 +188,5 @@ class TicketsView(QWidget):
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
         self.tabla.setRowCount(0)
-        self.lbl_mensaje.setText(f"Error al obtener tickets: {exc}")
-        self.lbl_mensaje.setStyleSheet("""
-            background-color: #450a0a; color: #fca5a5;
-            border: 1px solid #7f1d1d; padding: 12px; border-radius: 6px;
-        """)
-        self.lbl_mensaje.show()
+        mostrar_mensaje(self.lbl_mensaje, f"Error al obtener tickets: {exc}", "error")
         self.btn_reintentar.show()
