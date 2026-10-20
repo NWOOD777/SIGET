@@ -7,13 +7,106 @@ from __future__ import annotations
 
 from typing import Any
 
-from siget_desktop.api.client import api_client
+from siget_desktop.api.client import ServerApiError, api_client
 
+
+def _objeto(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or not value:
+        raise ServerApiError("El servidor devolvió una respuesta incompleta o con un formato inesperado.")
+    return value
+
+
+def _lista(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or any(not isinstance(row, dict) for row in value):
+        raise ServerApiError("El servidor devolvió un listado con un formato inesperado.")
+    return value
+
+
+# ============================================================================
+# USUARIOS, IDENTIDAD Y RBAC
+# ============================================================================
 
 def obtener_perfil_actual() -> dict[str, Any]:
     """Consulta la identidad, roles y permisos efectivos del usuario actual."""
-    return api_client.get("/api/usuarios/me/")
+    resultado = api_client.get("/api/usuarios/me/")
+    return _objeto(resultado)
 
+
+def listar_usuarios_rbac() -> list[dict[str, Any]]:
+    """Consulta administrativa de usuarios y roles RBAC (exclusivo Administrador)."""
+    resultado = api_client.get("/api/usuarios/")
+    return _lista(resultado)
+
+
+def aprovisionar_usuario(
+    nombres: str,
+    apellidos: str,
+    correo: str,
+    rut: str,
+    rol: str,
+) -> dict[str, Any]:
+    """
+    Aprovisiona un nuevo usuario mediante Auth0 y lo vincula en PostgreSQL (exclusivo Administrador).
+    """
+    payload = {
+        "nombres": nombres,
+        "apellidos": apellidos,
+        "correo": correo,
+        "rut": rut,
+        "rol": rol,
+    }
+    resultado = api_client.post("/api/usuarios/aprovisionar/", json=payload)
+    return _objeto(resultado)
+
+
+def obtener_acceso_usuario(id_usuario: int) -> dict[str, Any]:
+    """Consulta los roles y permisos efectivos consolidados de un usuario (exclusivo Administrador)."""
+    resultado = api_client.get(f"/api/usuarios/{id_usuario}/acceso/")
+    return _objeto(resultado)
+
+
+def listar_roles_rbac() -> list[dict[str, Any]]:
+    """Consulta el catálogo de roles oficiales y sus permisos asociados (exclusivo Administrador)."""
+    resultado = api_client.get("/api/usuarios/roles/")
+    return _lista(resultado)
+
+
+def actualizar_roles_usuario(id_usuario: int, roles: list[str | int]) -> dict[str, Any]:
+    """
+    Actualiza la colección completa de roles que conserva el usuario (exclusivo Administrador).
+    No permite dejar a una cuenta sin roles.
+    """
+    payload = {"roles": roles}
+    resultado = api_client.post(f"/api/usuarios/{id_usuario}/roles/", json=payload)
+    return _objeto(resultado)
+
+
+def retirar_rol_usuario(id_usuario: int, id_rol: int) -> dict[str, Any]:
+    """Retira un rol específico asignado a un usuario (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/usuarios/{id_usuario}/roles/{id_rol}/")
+    return _objeto(resultado)
+
+
+def asignar_permiso_rol(id_rol: int, id_permiso: int | None = None, codigo: str | None = None) -> dict[str, Any]:
+    """Asocia un permiso existente a un rol (exclusivo Administrador)."""
+    payload: dict[str, Any] = {}
+    if id_permiso is not None:
+        payload["id_permiso"] = id_permiso
+    if codigo:
+        payload["codigo"] = codigo
+    resultado = api_client.post(f"/api/usuarios/roles/{id_rol}/permisos/", json=payload)
+    return _objeto(resultado)
+
+
+def retirar_permiso_rol(id_rol: int, id_permiso: int) -> dict[str, Any]:
+    """Retira un permiso de un rol oficial (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/usuarios/roles/{id_rol}/permisos/{id_permiso}/")
+    return _objeto(resultado)
+
+
+# ============================================================================
+# ACTIVOS TI
+# ============================================================================
 
 def listar_activos(
     search: str | None = None,
@@ -32,14 +125,61 @@ def listar_activos(
     if estado:
         params["estado"] = estado
     resultado = api_client.get("/api/activos/", params=params)
-    return resultado if isinstance(resultado, list) else []
+    return _lista(resultado)
+
+
+def obtener_activo(id_activo: int) -> dict[str, Any]:
+    """Consulta el detalle de un activo tecnológico."""
+    resultado = api_client.get(f"/api/activos/{id_activo}/")
+    return _objeto(resultado)
+
+
+def crear_activo(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra un nuevo activo tecnológico (exclusivo Administrador)."""
+    resultado = api_client.post("/api/activos/", json=datos)
+    return _objeto(resultado)
+
+
+def actualizar_activo(id_activo: int, datos: dict[str, Any], parcial: bool = True) -> dict[str, Any]:
+    """Modifica la información de un activo tecnológico (exclusivo Administrador)."""
+    metodo = api_client.patch if parcial else api_client.put
+    resultado = metodo(f"/api/activos/{id_activo}/", json=datos)
+    return _objeto(resultado)
 
 
 def listar_categorias_activos() -> list[dict[str, Any]]:
     """Consulta el catálogo de categorías de activos TI."""
     resultado = api_client.get("/api/activos/categorias/")
-    return resultado if isinstance(resultado, list) else []
+    return _lista(resultado)
 
+
+def listar_marcas_activos() -> list[dict[str, Any]]:
+    """Consulta el catálogo de marcas de activos TI."""
+    resultado = api_client.get("/api/activos/marcas/")
+    return _lista(resultado)
+
+
+def listar_modelos_activos() -> list[dict[str, Any]]:
+    """Consulta el catálogo de modelos de activos TI."""
+    resultado = api_client.get("/api/activos/modelos/")
+    return _lista(resultado)
+
+
+def listar_ubicaciones_activos() -> list[dict[str, Any]]:
+    """Consulta el catálogo de ubicaciones físicas de activos TI."""
+    resultado = api_client.get("/api/activos/ubicaciones/")
+    return _lista(resultado)
+
+
+def listar_estados_activos() -> list[dict[str, Any]]:
+    """Consulta el catálogo de estados de activos TI."""
+    resultado = api_client.get("/api/activos/estados/")
+    return _lista(resultado)
+
+
+# ============================================================================
+# SOLICITUDES DE ASIGNACIÓN
+# ============================================================================
 
 def listar_solicitudes(
     estado: str | None = None,
@@ -55,27 +195,117 @@ def listar_solicitudes(
     if search:
         params["search"] = search
     resultado = api_client.get("/api/solicitudes-asignacion/", params=params)
-    return resultado if isinstance(resultado, list) else []
+    return _lista(resultado)
 
+
+def obtener_solicitud(id_solicitud: int) -> dict[str, Any]:
+    """Consulta el detalle de una solicitud de asignación específica."""
+    resultado = api_client.get(f"/api/solicitudes-asignacion/{id_solicitud}/")
+    return _objeto(resultado)
+
+
+def aprobar_solicitud(id_solicitud: int) -> dict[str, Any]:
+    """Aprueba una solicitud de asignación pendiente (exclusivo Administrador)."""
+    resultado = api_client.post(f"/api/solicitudes-asignacion/{id_solicitud}/aprobar/")
+    return _objeto(resultado)
+
+
+def rechazar_solicitud(id_solicitud: int, motivo_rechazo: str) -> dict[str, Any]:
+    """Rechaza una solicitud de asignación con su motivo (exclusivo Administrador)."""
+    payload = {"motivo_rechazo": motivo_rechazo}
+    resultado = api_client.post(f"/api/solicitudes-asignacion/{id_solicitud}/rechazar/", json=payload)
+    return _objeto(resultado)
+
+
+def listar_estados_solicitudes() -> list[dict[str, Any]]:
+    """Consulta el catálogo de estados de solicitudes de asignación."""
+    resultado = api_client.get("/api/solicitudes-asignacion/estados/")
+    return _lista(resultado)
+
+
+# ============================================================================
+# ASIGNACIONES, ENTREGAS Y DEVOLUCIONES
+# ============================================================================
 
 def listar_asignaciones(
     estado: str | None = None,
+    equipo: str | None = None,
+    usuario: str | None = None,
     search: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Consulta asignaciones de equipos."""
+    """Consulta asignaciones de equipos aplicando filtros."""
     params: dict[str, Any] = {}
     if estado:
         params["estado"] = estado
+    if equipo:
+        params["equipo"] = equipo
+    if usuario:
+        params["usuario"] = usuario
     if search:
         params["search"] = search
     resultado = api_client.get("/api/asignaciones/", params=params)
-    return resultado if isinstance(resultado, list) else []
+    return _lista(resultado)
 
+
+def obtener_asignacion(id_asignacion: int) -> dict[str, Any]:
+    """Consulta el detalle de una asignación específica."""
+    resultado = api_client.get(f"/api/asignaciones/{id_asignacion}/")
+    return _objeto(resultado)
+
+
+def registrar_entrega_solicitud(
+    id_solicitud: int,
+    id_activo: int,
+    fecha_devolucion_prevista: str | None = None,
+) -> dict[str, Any]:
+    """
+    Registra la entrega física de un activo para una solicitud aprobada (exclusivo Técnico).
+    El equipo debe ser compatible y estar disponible.
+    """
+    payload: dict[str, Any] = {"id_activo": id_activo}
+    if fecha_devolucion_prevista:
+        payload["fecha_devolucion_prevista"] = fecha_devolucion_prevista
+    resultado = api_client.post(f"/api/solicitudes-asignacion/{id_solicitud}/entregar/", json=payload)
+    return _objeto(resultado)
+
+
+def registrar_devolucion_asignacion(
+    id_asignacion: int,
+    condicion_fisica: str,
+    motivo_devolucion: str | None = None,
+    observaciones: str | None = None,
+    id_ticket_asociado: int | None = None,
+) -> dict[str, Any]:
+    """
+    Registra la devolución y evaluación física integrada de una asignación activa (exclusivo Técnico).
+    Condiciones físicas válidas: 'Buen estado', 'Con falla técnica', 'Con daño físico'.
+    """
+    payload: dict[str, Any] = {"condicion_fisica": condicion_fisica}
+    if motivo_devolucion:
+        payload["motivo_devolucion"] = motivo_devolucion
+    if observaciones:
+        payload["observaciones"] = observaciones
+    if id_ticket_asociado is not None:
+        payload["id_ticket_asociado"] = id_ticket_asociado
+    resultado = api_client.post(f"/api/asignaciones/{id_asignacion}/devolucion/", json=payload)
+    return _objeto(resultado)
+
+
+def listar_estados_asignaciones() -> list[dict[str, Any]]:
+    """Consulta el catálogo de estados de asignación."""
+    resultado = api_client.get("/api/asignaciones/estados/")
+    return _lista(resultado)
+
+
+# ============================================================================
+# TICKETS Y SERVICE DESK
+# ============================================================================
 
 def listar_tickets(
     estado: str | None = None,
     prioridad: str | None = None,
     search: str | None = None,
+    activo: str | None = None,
 ) -> list[dict[str, Any]]:
     """Consulta tickets de soporte dentro del alcance del usuario."""
     params: dict[str, Any] = {}
@@ -85,11 +315,31 @@ def listar_tickets(
         params["prioridad"] = prioridad
     if search:
         params["search"] = search
+    if activo:
+        params["activo"] = activo
     resultado = api_client.get("/api/tickets/", params=params)
-    return resultado if isinstance(resultado, list) else []
+    return _lista(resultado)
 
 
-def listar_usuarios_rbac() -> list[dict[str, Any]]:
-    """Consulta administrativa de usuarios y roles RBAC (exclusivo Administrador)."""
-    resultado = api_client.get("/api/usuarios/")
-    return resultado if isinstance(resultado, list) else []
+def obtener_ticket(id_ticket: int) -> dict[str, Any]:
+    """Consulta el detalle de un ticket de soporte."""
+    resultado = api_client.get(f"/api/tickets/{id_ticket}/")
+    return _objeto(resultado)
+
+
+def listar_prioridades_tickets() -> list[dict[str, Any]]:
+    """Consulta el catálogo de prioridades de tickets."""
+    resultado = api_client.get("/api/tickets/prioridades/")
+    return _lista(resultado)
+
+
+def listar_estados_tickets() -> list[dict[str, Any]]:
+    """Consulta el catálogo de estados de tickets."""
+    resultado = api_client.get("/api/tickets/estados/")
+    return _lista(resultado)
+
+
+def listar_sla_tickets() -> list[dict[str, Any]]:
+    """Consulta las políticas de tiempos de respuesta y resolución (SLA)."""
+    resultado = api_client.get("/api/tickets/sla/")
+    return _lista(resultado)

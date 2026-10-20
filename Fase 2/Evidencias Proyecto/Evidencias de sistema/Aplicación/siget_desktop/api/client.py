@@ -93,6 +93,15 @@ class ApiClient:
         elif isinstance(datos, str) and datos:
             mensaje_error = datos
 
+        if not mensaje_error and isinstance(datos, dict):
+            def collect(value: Any, prefix: str = "") -> list[str]:
+                if isinstance(value, dict):
+                    return [message for key, nested in value.items() for message in collect(nested, f"{prefix}.{key}".strip("."))]
+                if isinstance(value, list):
+                    return [message for nested in value for message in collect(nested, prefix)]
+                return [f"{prefix}: {value}" if prefix else str(value)]
+            mensaje_error = "\n".join(collect(datos))
+
         if 200 <= resp.status_code < 300:
             return datos
 
