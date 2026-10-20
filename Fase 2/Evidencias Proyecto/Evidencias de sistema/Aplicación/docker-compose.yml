@@ -22,7 +22,8 @@ services:
 
   web:
     build:
-      context: ./siget_web
+      context: .
+      dockerfile: siget_web/Dockerfile
 
     restart: unless-stopped
 

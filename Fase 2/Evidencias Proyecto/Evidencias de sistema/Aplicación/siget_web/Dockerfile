@@ -9,7 +9,7 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY siget_web/ .
 
 EXPOSE 8000
 
