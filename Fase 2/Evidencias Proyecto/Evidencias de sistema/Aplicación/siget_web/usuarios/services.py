@@ -1107,7 +1107,7 @@ def crear_usuario_auth0(
 ) -> dict[str, Any]:
     """
     Crea una identidad de usuario en Auth0 mediante la Management API (POST /api/v2/users).
-    Marca la cuenta con app_metadata={"invitacion_pendiente": True} para el flujo de invitación.
+    El acceso inicial utiliza el correo estándar de restablecimiento del proveedor.
     No almacena contraseñas en PostgreSQL.
     """
     domain = getattr(settings, "AUTH0_DOMAIN", "")
@@ -1123,9 +1123,6 @@ def crear_usuario_auth0(
         "connection": db_connection,
         "email_verified": True,
         "name": f"{nombres} {apellidos}".strip() or email,
-        "app_metadata": {
-            "invitacion_pendiente": True,
-        },
         "user_metadata": {
             "nombres": nombres,
             "apellidos": apellidos,

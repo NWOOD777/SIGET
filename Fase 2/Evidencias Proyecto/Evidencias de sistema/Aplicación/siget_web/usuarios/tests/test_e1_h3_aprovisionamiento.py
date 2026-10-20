@@ -371,12 +371,12 @@ class AprovisionamientoE1H3Tests(RbacTestBase):
 
     @patch("usuarios.services.requests.post")
     @patch("usuarios.services.obtener_token_management_api", return_value="mock_mgmt_token")
-    def test_14_creacion_auth0_asigna_app_metadata_invitacion_pendiente(
+    def test_14_creacion_auth0_no_depende_de_plantillas_personalizadas(
         self, mock_token, mock_post
     ):
         """
         14. Al invocar crear_usuario_auth0, el payload enviado a POST /api/v2/users:
-        - Incluye app_metadata: {'invitacion_pendiente': True}.
+        - No incluye marcas que dependan de personalizar correos.
         - Incluye una contraseña técnica transitoria.
         - Incluye email_verified=True y user_metadata con nombres/apellidos.
         """
@@ -400,10 +400,7 @@ class AprovisionamientoE1H3Tests(RbacTestBase):
 
         self.assertEqual(payload["email"], "test.meta@duocuc.cl")
         self.assertTrue(payload["email_verified"])
-        self.assertEqual(
-            payload["app_metadata"],
-            {"invitacion_pendiente": True},
-        )
+        self.assertNotIn("app_metadata", payload)
         self.assertEqual(
             payload["user_metadata"],
             {"nombres": "Meta", "apellidos": "Test"},
@@ -501,7 +498,7 @@ class AprovisionamientoE1H3Tests(RbacTestBase):
         17. El flujo de recuperación posterior de contraseña (E1-H2) reutiliza
         solicitar_recuperacion_acceso sin alterar app_metadata.
         La diferenciación de contenido ('Configure su contraseña' vs 'Restablezca su contraseña')
-        recae en el template de correo condicionado por app_metadata.invitacion_pendiente,
+        utiliza el correo estándar de restablecimiento del proveedor,
         el cual es desactivado por la Action Post-Login tras el primer acceso.
         """
         mock_resp = MagicMock(ok=True, status_code=200)
