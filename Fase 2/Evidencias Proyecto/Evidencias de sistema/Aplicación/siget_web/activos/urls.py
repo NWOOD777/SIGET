@@ -41,4 +41,12 @@ urlpatterns = [
         views.EstadoActivoListView.as_view(),
         name="estados",
     ),
+    path(
+    "historial/",
+    views.ActivoHistorialView.as_view(),
+    name="activo_historial",
+    ),
+
+
+
 ]
