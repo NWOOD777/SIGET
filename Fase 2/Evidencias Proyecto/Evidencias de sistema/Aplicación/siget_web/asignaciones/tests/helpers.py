@@ -74,6 +74,9 @@ class AsignacionesTestBase(SimpleTestCase):
         historial_patch = patch("asignaciones.services.HistorialEstadoActivo.objects.create")
         historial_patch.start()
         self.addCleanup(historial_patch.stop)
+        correo_patch = patch("asignaciones.services.notificar_resolucion_solicitud")
+        correo_patch.start()
+        self.addCleanup(correo_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios

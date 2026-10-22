@@ -15,6 +15,7 @@ from asignaciones.models import (
     HistorialEstadoActivo,
     SolicitudAsignacion,
 )
+from notificaciones.services import notificar_resolucion_solicitud
 from siget.db import bloquear_operacion, transaccion_operacion
 from tickets.models import Ticket
 from tickets.services import crear_ticket
@@ -184,6 +185,7 @@ def aprobar_solicitud_asignacion(
             direccion_ip=ip_origen,
         )
 
+    notificar_resolucion_solicitud(solicitud)
     return solicitud
 
 
@@ -243,6 +245,7 @@ def rechazar_solicitud_asignacion(
             direccion_ip=ip_origen,
         )
 
+    notificar_resolucion_solicitud(solicitud)
     return solicitud
 
 

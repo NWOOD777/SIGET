@@ -1,7 +1,7 @@
-"""Escenarios de d94bc0e (Diego) adaptados al contrato REST integrado.
+"""Pruebas de integración del registro de devoluciones mediante la API REST.
 
-Sustituye tests.py y integration_test_transaccion.py. Usa fixtures propias y la
-base test_ protegida por PostgreSQLTestRunner, sin IDs de usuarios preexistentes.
+Usa fixtures propias y una base test_ protegida por PostgreSQLTestRunner,
+sin IDs de usuarios preexistentes.
 """
 from unittest.mock import patch
 

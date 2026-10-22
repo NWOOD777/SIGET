@@ -1,4 +1,4 @@
-"""Regresión real de las tarjetas Sprint 4/5. Solo Auth0 se simula en su frontera."""
+"""Pruebas de integración con PostgreSQL y simulación de la API de Auth0."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from typing import Any, cast
