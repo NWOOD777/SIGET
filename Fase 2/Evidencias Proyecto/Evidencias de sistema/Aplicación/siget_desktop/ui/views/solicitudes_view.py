@@ -11,6 +11,10 @@ from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
+    QDialog,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -18,6 +22,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
@@ -29,6 +34,7 @@ from siget_desktop.api.services import (
     aprobar_solicitud,
     listar_asignaciones,
     listar_solicitudes,
+    obtener_historial_activo,
 )
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import (
@@ -74,10 +80,14 @@ class SolicitudesView(QWidget):
         "Estado",
     ]
 
+    COLUMNAS_HISTORIAL = ["Fecha", "Movimiento", "Usuario asociado", "Detalles"]
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._worker_sol: ApiWorker | None = None
         self._worker_asig: ApiWorker | None = None
+        self._worker_historial: ApiWorker | None = None
+        self._movimientos_historial: list[dict[str, Any]] = []
         self._solicitudes_cargadas: list[dict[str, Any]] = []
         self._asignaciones_cargadas: list[dict[str, Any]] = []
         self._decision_en_curso = False
@@ -91,12 +101,15 @@ class SolicitudesView(QWidget):
         self.tabs = QTabWidget()
         self.tab_solicitudes = QWidget()
         self.tab_asignaciones = QWidget()
+        self.tab_historial = QWidget()
 
         self._init_tab_solicitudes()
         self._init_tab_asignaciones()
+        self._init_tab_historial()
 
         self.tabs.addTab(self.tab_solicitudes, "Solicitudes de asignación")
         self.tabs.addTab(self.tab_asignaciones, "Asignaciones y devoluciones")
+        self.tabs.addTab(self.tab_historial, "Historial y Trazabilidad")
         self.tabs.currentChanged.connect(self._on_tab_cambiada)
 
         layout_principal.addWidget(self.tabs, 1)
@@ -285,14 +298,75 @@ class SolicitudesView(QWidget):
         self.tabla_asignaciones.cellDoubleClicked.connect(lambda _r, _c: self._abrir_detalle_asignacion())
         layout.addWidget(self.tabla_asignaciones, 1)
 
+    def _init_tab_historial(self):
+        """Construye la pestaña de consulta cronológica de movimientos de un activo."""
+        layout = QVBoxLayout(self.tab_historial)
+        layout.setContentsMargins(12, 14, 12, 14)
+        layout.setSpacing(14)
+
+        lbl_titulo = QLabel("Historial y Trazabilidad")
+        lbl_titulo.setObjectName("tituloPrincipal")
+        layout.addWidget(lbl_titulo)
+
+        lbl_desc = QLabel(
+            "Consulta los movimientos de un equipo: asignaciones, devoluciones y cambios de estado."
+        )
+        lbl_desc.setObjectName("subtitulo")
+        lbl_desc.setWordWrap(True)
+        layout.addWidget(lbl_desc)
+
+        barra_busqueda, layout_busqueda = crear_filtros(self)
+        self.input_search_historial = QLineEdit()
+        self.input_search_historial.setPlaceholderText(
+            "Código de inventario, número de serie o ID del equipo..."
+        )
+        self.input_search_historial.returnPressed.connect(self.buscar_historial)
+        layout_busqueda.addWidget(self.input_search_historial, 2)
+
+        self.btn_buscar_historial = QPushButton("Buscar")
+        self.btn_buscar_historial.setObjectName("btnSecundario")
+        self.btn_buscar_historial.clicked.connect(self.buscar_historial)
+        layout_busqueda.addWidget(self.btn_buscar_historial)
+        layout.addWidget(barra_busqueda)
+
+        self.progreso_historial = QProgressBar()
+        self.progreso_historial.setRange(0, 0)
+        self.progreso_historial.setFixedHeight(4)
+        self.progreso_historial.setTextVisible(False)
+        self.progreso_historial.hide()
+        layout.addWidget(self.progreso_historial)
+
+        self.lbl_mensaje_historial = QLabel("")
+        self.lbl_mensaje_historial.setWordWrap(True)
+        self.lbl_mensaje_historial.hide()
+        layout.addWidget(self.lbl_mensaje_historial)
+
+        self.tabla_historial = QTableWidget()
+        self.tabla_historial.setColumnCount(len(self.COLUMNAS_HISTORIAL))
+        self.tabla_historial.setHorizontalHeaderLabels(self.COLUMNAS_HISTORIAL)
+        self.tabla_historial.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.tabla_historial.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.tabla_historial.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.tabla_historial.setAlternatingRowColors(True)
+        configurar_tabla(self.tabla_historial)
+        self.tabla_historial.cellDoubleClicked.connect(self._abrir_detalle_historial)
+        layout.addWidget(self.tabla_historial, 1)
+
     def limpiar_sesion(self):
         self._decision_en_curso = False
         self._worker_sol = None
         self._worker_asig = None
+        self._worker_historial = None
         self._solicitudes_cargadas = []
         self._asignaciones_cargadas = []
         self.tabla.setRowCount(0)
         self.tabla_asignaciones.setRowCount(0)
+        self.tabla_historial.setRowCount(0)
+        self._movimientos_historial = []
+        self.progreso_historial.hide()
+        self.lbl_mensaje_historial.hide()
         self.progreso.hide()
         self.progreso_asig.hide()
         self.lbl_mensaje.hide()
@@ -584,3 +658,342 @@ class SolicitudesView(QWidget):
         self._asignaciones_cargadas = []
         mostrar_mensaje(self.lbl_mensaje_asig, f"Error al consultar asignaciones: {exc}", "error")
         self._on_seleccion_asignacion_cambiada()
+
+
+    def buscar_historial(self):
+        """Consulta el historial del activo indicado en el campo de búsqueda."""
+        search_text = self.input_search_historial.text().strip()
+        if not search_text:
+            mostrar_mensaje(
+                self.lbl_mensaje_historial,
+                "Ingresa un código de inventario, número de serie o ID para buscar.",
+                "empty",
+            )
+            return
+
+        self.progreso_historial.show()
+        self.lbl_mensaje_historial.hide()
+        self.btn_buscar_historial.setEnabled(False)
+        self.tabla_historial.setRowCount(0)
+
+        self._worker_historial = ApiWorker(obtener_historial_activo, search=search_text)
+        self._worker_historial.signals.finished.connect(
+            lambda value, generation=current_session.generation, worker=self._worker_historial:
+            self._on_historial_cargado(value, generation)
+            if worker is self._worker_historial else None
+        )
+        self._worker_historial.signals.error.connect(
+            lambda exc, generation=current_session.generation, worker=self._worker_historial:
+            self._on_error_historial(exc, generation)
+            if worker is self._worker_historial else None
+        )
+        self._worker_historial.start()
+
+    def _on_historial_cargado(
+        self, resultado: dict[str, Any], request_generation: int | None = None
+    ):
+        if not current_session.is_authenticated() or (
+            request_generation is not None
+            and request_generation != current_session.generation
+        ):
+            return
+
+        self.progreso_historial.hide()
+        self.btn_buscar_historial.setEnabled(True)
+        self.tabla_historial.setRowCount(0)
+
+        movimientos = resultado.get("movimientos") or []
+        self._movimientos_historial = movimientos
+        activo = resultado.get("activo") or {}
+        self._activo_historial = activo
+
+        identificador = (
+            activo.get("codigo_inventario")
+            or activo.get("numero_serie")
+            or activo.get("id_activo")
+            or self.input_search_historial.text().strip()
+        )
+
+        if not movimientos:
+            mensaje = resultado.get("mensaje") or (
+                f"El equipo {identificador} existe, pero no tiene movimientos registrados."
+            )
+            mostrar_mensaje(
+                self.lbl_mensaje_historial,
+                str(mensaje),
+                "empty",
+            )
+            return
+
+        # Crear las filas necesarias antes de insertar los movimientos.
+        self.tabla_historial.setRowCount(len(movimientos))
+
+        nombres_tipos = {
+            "asignacion": "Asignación",
+            "devolucion": "Devolución",
+            "cambio_estado": "Cambio de estado",
+        }
+
+        for row, movimiento in enumerate(movimientos):
+            usuario = (
+                movimiento.get("usuario_asignado")
+                or movimiento.get("usuario")
+                or movimiento.get("usuario_asociado")
+                or "No hay usuario asociado"
+            )
+
+            detalles = (
+                movimiento.get("detalle")
+                or movimiento.get("observacion")
+                or movimiento.get("observaciones")
+                or movimiento.get("motivo")
+                or movimiento.get("estado_resultante")
+                or movimiento.get("estado")
+                or "Sin detalles adicionales"
+            )
+
+            tipo_movimiento = str(
+                movimiento.get("tipo")
+                or movimiento.get("tipo_movimiento")
+                or "Movimiento"
+            )
+
+            movimiento_visible = nombres_tipos.get(
+                tipo_movimiento.casefold(),
+                tipo_movimiento.replace("_", " ").capitalize(),
+            )
+
+            usuario_visible = (
+                texto_relacion(usuario)
+                if isinstance(usuario, dict)
+                else str(usuario)
+            )
+            detalles_visible = str(detalles)
+
+            # Capitalizar la primera letra de usuario y detalles.
+            if usuario_visible:
+                usuario_visible = (
+                    usuario_visible[0].upper() + usuario_visible[1:]
+                )
+
+            if detalles_visible:
+                detalles_visible = (
+                    detalles_visible[0].upper() + detalles_visible[1:]
+                )
+
+            valores = [
+                str(
+                    movimiento.get("fecha")
+                    or movimiento.get("fecha_movimiento")
+                    or "Sin fecha"
+                ),
+                movimiento_visible,
+                usuario_visible,
+                detalles_visible,
+            ]
+
+            for col, valor in enumerate(valores):
+                item = QTableWidgetItem(valor)
+                item.setToolTip(valor)
+                item.setFlags(
+                    item.flags() & ~Qt.ItemFlag.ItemIsEditable
+                )
+                self.tabla_historial.setItem(row, col, item)
+
+        mostrar_mensaje(
+            self.lbl_mensaje_historial,
+            f"Equipo {identificador}: {len(movimientos)} movimiento(s) encontrado(s).",
+            "info",
+        )
+
+    def _abrir_detalle_historial(self, row: int, _column: int = 0):
+        """Muestra en un modal organizado los datos del movimiento seleccionado."""
+        if row < 0 or row >= len(self._movimientos_historial):
+            return
+
+        movimiento = self._movimientos_historial[row]
+        tipo = str(movimiento.get("tipo") or movimiento.get("tipo_movimiento") or "Movimiento")
+        titulos = {
+            "asignacion": ("Asignación", "Entrega del equipo a un usuario"),
+            "devolucion": ("Devolución", "Recepción del equipo por parte de soporte"),
+            "cambio_estado": ("Cambio de estado", "Actualización del estado del equipo"),
+        }
+        titulo, descripcion = titulos.get(tipo, ("Movimiento", "Información del movimiento registrado"))
+
+        dialogo = QDialog(self)
+        dialogo.setWindowTitle(f"Detalle del movimiento · {titulo}")
+        dialogo.setMinimumSize(600, 440)
+        dialogo.resize(760, 600)
+        dialogo.setStyleSheet("""
+            QDialog { background: palette(window); }
+            QLabel#modalTitulo { font-size: 20px; font-weight: 700; }
+            QLabel#modalSubtitulo { color: palette(mid); font-size: 12px; }
+            QFrame#tarjeta { border: 1px solid palette(midlight); border-radius: 10px; background: palette(base); }
+            QLabel#seccionTitulo { font-size: 13px; font-weight: 700; }
+            QLabel#campoEtiqueta { color: palette(mid); font-size: 11px; font-weight: 700; }
+            QLabel#campoValor { font-size: 12px; }
+            QPushButton#cerrarModal { padding: 8px 22px; border-radius: 6px; font-weight: 600; }
+        """)
+
+        layout_dialogo = QVBoxLayout(dialogo)
+        layout_dialogo.setContentsMargins(22, 20, 22, 18)
+        layout_dialogo.setSpacing(14)
+
+        encabezado = QVBoxLayout()
+        encabezado.setSpacing(5)
+        lbl_titulo = QLabel(f"Detalle del movimiento: {titulo}")
+        lbl_titulo.setObjectName("modalTitulo")
+        encabezado.addWidget(lbl_titulo)
+        lbl_subtitulo = QLabel(descripcion)
+        lbl_subtitulo.setObjectName("modalSubtitulo")
+        lbl_subtitulo.setWordWrap(True)
+        encabezado.addWidget(lbl_subtitulo)
+        layout_dialogo.addLayout(encabezado)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        contenido = QWidget()
+        layout_contenido = QVBoxLayout(contenido)
+        layout_contenido.setContentsMargins(2, 2, 8, 2)
+        layout_contenido.setSpacing(12)
+
+        etiquetas = {
+            "tipo": "Movimiento",
+            "tipo_movimiento": "Movimiento",
+            "fecha": "Fecha y hora",
+            "fecha_movimiento": "Fecha y hora",
+            "id_asignacion": "ID de asignación",
+            "id_devolucion": "ID de devolución",
+            "id_historial_estado": "ID del cambio de estado",
+            "usuario_asignado": "Usuario involucrado",
+            "usuario_asociado": "Usuario involucrado",
+            "usuario": "Usuario involucrado",
+            "registrado_por": "Responsable de la acción",
+            "estado_asignacion": "Estado de asignación",
+            "fecha_devolucion_prevista": "Devolución prevista",
+            "fecha_finalizacion": "Fecha de finalización",
+            "condicion_fisica": "Condición física del equipo",
+            "motivo": "Motivo",
+            "motivo_devolucion": "Motivo de devolución",
+            "observaciones": "Observaciones",
+            "observacion": "Observación",
+            "estado_resultante": "Estado resultante",
+            "estado": "Estado",
+        }
+
+        # Datos breves de identificación al inicio del modal.
+        resumen = QFrame()
+        resumen.setObjectName("tarjeta")
+        resumen_layout = QGridLayout(resumen)
+        resumen_layout.setContentsMargins(14, 12, 14, 12)
+        resumen_layout.setHorizontalSpacing(24)
+        resumen_layout.setVerticalSpacing(10)
+
+        codigo_equipo = (
+            (resultado_activo := getattr(self, "_activo_historial", {})).get("codigo_inventario")
+            or resultado_activo.get("numero_serie")
+            or "Equipo consultado"
+        )
+        resumen_datos = [("Equipo", codigo_equipo), ("Tipo de movimiento", titulo)]
+        if movimiento.get("fecha") or movimiento.get("fecha_movimiento"):
+            resumen_datos.append(("Fecha", movimiento.get("fecha") or movimiento.get("fecha_movimiento")))
+        for indice, (etiqueta, valor) in enumerate(resumen_datos):
+            columna = indice % 2
+            fila = indice // 2
+            etiqueta_lbl = QLabel(etiqueta.upper())
+            etiqueta_lbl.setObjectName("campoEtiqueta")
+            valor_lbl = QLabel(str(valor))
+            valor_lbl.setObjectName("campoValor")
+            valor_lbl.setWordWrap(True)
+            valor_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            celda = QVBoxLayout()
+            celda.setSpacing(3)
+            celda.addWidget(etiqueta_lbl)
+            celda.addWidget(valor_lbl)
+            resumen_layout.addLayout(celda, fila, columna)
+        layout_contenido.addWidget(resumen)
+
+        # Secciones semánticas: personas, información operativa y observaciones.
+        claves_personas = {"usuario_asignado", "usuario_asociado", "usuario", "registrado_por"}
+        claves_basicas = {"tipo", "tipo_movimiento", "fecha", "fecha_movimiento", "id_asignacion", "id_devolucion", "id_historial_estado"}
+        campos = []
+        for clave, valor in movimiento.items():
+            if clave in claves_basicas:
+                continue
+            if valor is None or valor == "":
+                texto = "No disponible"
+            elif isinstance(valor, dict):
+                nombres = " ".join(
+                    str(valor.get(campo, ""))
+                    for campo in ("nombres", "apellidos")
+                    if valor.get(campo)
+                ).strip()
+                texto = nombres or texto_relacion(valor) or str(valor.get("id_usuario") or "No disponible")
+            elif isinstance(valor, (list, tuple)):
+                texto = ", ".join(str(elemento) for elemento in valor) or "No disponible"
+            else:
+                texto = str(valor)
+            campos.append((clave, etiquetas.get(clave, clave.replace("_", " ").capitalize()), texto))
+
+        secciones = [
+            ("Personas involucradas", [c for c in campos if c[0] in claves_personas]),
+            ("Información del movimiento", [c for c in campos if c[0] not in claves_personas and c[0] not in {"observacion", "observaciones", "motivo", "motivo_devolucion"}]),
+            ("Motivo y observaciones", [c for c in campos if c[0] in {"motivo", "motivo_devolucion", "observacion", "observaciones"}]),
+        ]
+        for titulo_seccion, elementos in secciones:
+            if not elementos:
+                continue
+            tarjeta = QFrame()
+            tarjeta.setObjectName("tarjeta")
+            tarjeta_layout = QVBoxLayout(tarjeta)
+            tarjeta_layout.setContentsMargins(14, 12, 14, 14)
+            tarjeta_layout.setSpacing(10)
+            lbl_seccion = QLabel(titulo_seccion)
+            lbl_seccion.setObjectName("seccionTitulo")
+            tarjeta_layout.addWidget(lbl_seccion)
+            for _, etiqueta, texto in elementos:
+                campo_layout = QVBoxLayout()
+                campo_layout.setSpacing(3)
+                lbl_etiqueta = QLabel(etiqueta)
+                lbl_etiqueta.setObjectName("campoEtiqueta")
+                lbl_valor = QLabel(texto)
+                lbl_valor.setObjectName("campoValor")
+                lbl_valor.setWordWrap(True)
+                lbl_valor.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+                campo_layout.addWidget(lbl_etiqueta)
+                campo_layout.addWidget(lbl_valor)
+                tarjeta_layout.addLayout(campo_layout)
+            layout_contenido.addWidget(tarjeta)
+
+        layout_contenido.addStretch(1)
+        scroll.setWidget(contenido)
+        layout_dialogo.addWidget(scroll, 1)
+
+        botones = QHBoxLayout()
+        botones.addStretch()
+        btn_cerrar = QPushButton("Cerrar")
+        btn_cerrar.setObjectName("cerrarModal")
+        btn_cerrar.clicked.connect(dialogo.accept)
+        botones.addWidget(btn_cerrar)
+        layout_dialogo.addLayout(botones)
+        dialogo.exec()
+
+    def _on_error_historial(
+        self, exc: Exception, request_generation: int | None = None
+    ):
+        if not current_session.is_authenticated() or (
+            request_generation is not None
+            and request_generation != current_session.generation
+        ):
+            return
+        self.progreso_historial.hide()
+        self.btn_buscar_historial.setEnabled(True)
+        self.tabla_historial.setRowCount(0)
+        # El endpoint responde 404 cuando el equipo no existe; mostramos el error
+        # devuelto por el cliente API para que el usuario distinga ese caso.
+        mostrar_mensaje(
+            self.lbl_mensaje_historial,
+            f"No se pudo consultar el historial. Verifica el identificador del equipo. Detalle: {exc}",
+            "error",
+        )

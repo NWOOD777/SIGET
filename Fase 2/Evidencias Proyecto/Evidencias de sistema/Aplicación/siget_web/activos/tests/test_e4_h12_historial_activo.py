@@ -121,6 +121,9 @@ class HistorialActivoE4H12Tests(ActivosTestBase):
                 return_value=self.tecnico_user,
             ),
             patch("activos.permissions.es_administrador", return_value=False),
+            patch("activos.permissions.usuario_tiene_rol", return_value=False),
+            patch("activos.permissions.usuario_tiene_permiso", return_value=False),
+
         ):
             response = ActivoHistorialView.as_view()(request)
 
@@ -152,6 +155,7 @@ class HistorialActivoE4H12Tests(ActivosTestBase):
         devolucion = SimpleNamespace(
             id_devolucion=300,
             id_asignacion_id=200,
+            id_asignacion=asignacion,
             id_tecnico_receptor=tecnico,
             fecha_devolucion="2026-10-15T15:00:00Z",
             condicion_fisica="Buen estado",

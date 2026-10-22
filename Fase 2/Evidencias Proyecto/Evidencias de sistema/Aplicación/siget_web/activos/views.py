@@ -322,7 +322,7 @@ class ActivoHistorialView(APIView):
                 id_asignacion__id_activo_id=activo.id_activo
             )
             .select_related(
-                "id_asignacion",
+                "id_asignacion__id_solicitud__id_usuario",
                 "id_tecnico_receptor",
                 "id_estado_activo_resultante",
             )
@@ -330,17 +330,26 @@ class ActivoHistorialView(APIView):
 
         for devolucion in devoluciones:
             tecnico = devolucion.id_tecnico_receptor
+            solicitante = devolucion.id_asignacion.id_solicitud.id_usuario
 
             movimientos.append({
                 "tipo": "devolucion",
                 "fecha": devolucion.fecha_devolucion,
                 "id_devolucion": devolucion.id_devolucion,
                 "id_asignacion": devolucion.id_asignacion_id,
-                "registrado_por": {
-                    "id_usuario": tecnico.id_usuario,
-                    "nombres": tecnico.nombres,
-                    "apellidos": tecnico.apellidos,
+                "usuario_asignado": {
+                    "id_usuario": solicitante.id_usuario,
+                    "nombres": solicitante.nombres,
+                    "apellidos": solicitante.apellidos,
                 },
+                "registrado_por": (
+                    {
+                        "id_usuario": tecnico.id_usuario,
+                        "nombres": tecnico.nombres,
+                        "apellidos": tecnico.apellidos,
+                    }
+                    if tecnico else None
+                ),
                 "condicion_fisica": devolucion.condicion_fisica,
                 "motivo": devolucion.motivo_devolucion,
                 "observaciones": devolucion.observaciones,
