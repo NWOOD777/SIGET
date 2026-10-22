@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "activos",
     "asignaciones",
     "tickets",
+    "ordenes_trabajo"
 ]
 
 MIDDLEWARE = [

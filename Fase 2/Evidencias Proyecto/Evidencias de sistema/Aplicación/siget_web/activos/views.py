@@ -246,7 +246,7 @@ class ActivoHistorialView(APIView):
     Exclusivo para Administrador del sistema (E4-H12).
     """
 
-    permission_classes = [PuedeAdministrarActivos]
+    permission_classes = [PuedeConsultarActivos]
 
     def get(self, request):
         search = request.GET.get("search", "").strip()

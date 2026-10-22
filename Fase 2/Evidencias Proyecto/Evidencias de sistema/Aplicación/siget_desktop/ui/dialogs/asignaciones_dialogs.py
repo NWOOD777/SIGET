@@ -107,99 +107,198 @@ class DetalleAsignacionDialog(SessionDialog):
 
     def _cargar_datos(self):
         self.progreso.show()
-        self._worker = ApiWorker(obtener_asignacion, id_asignacion=self.id_asignacion)
-        self.conectar_worker(self._worker, self._on_datos, self._on_error)
+        self._worker = ApiWorker(
+            obtener_asignacion,
+            id_asignacion=self.id_asignacion,
+        )
+        self.conectar_worker(
+            self._worker,
+            self._on_datos,
+            self._on_error,
+        )
         self._worker.start()
 
     def _on_datos(self, asig: dict[str, Any]):
         self.progreso.hide()
+
         activo = asig.get("activo") or {}
         solicitud = asig.get("solicitud") or {}
         solicitante = solicitud.get("solicitante") or {}
         tecnico = asig.get("tecnico_entrega") or {}
 
         cod_activo = activo.get("codigo_inventario", "")
-        modelo_nombre = texto_relacion(activo.get("id_modelo") or activo.get("modelo"))
-        self.lbl_titulo.setText(f"Asignación #{self.id_asignacion} — {cod_activo}")
+        modelo_nombre = texto_relacion(
+            activo.get("id_modelo") or activo.get("modelo")
+        )
 
-        self.lbl_activo.setText(f"{cod_activo} ({modelo_nombre})".strip())
+        self.lbl_titulo.setText(
+            f"Asignación #{self.id_asignacion} — {cod_activo}"
+        )
+        self.lbl_activo.setText(
+            f"{cod_activo} ({modelo_nombre})".strip()
+        )
         self.lbl_serie.setText(str(activo.get("numero_serie", "—")))
         self.lbl_solicitante.setText(texto_relacion(solicitante))
 
-        correo = solicitante.get("correo", "") if isinstance(solicitante, dict) else ""
-        rut = solicitante.get("rut", "") if isinstance(solicitante, dict) else ""
+        correo = solicitante.get("correo", "")
+        rut = solicitante.get("rut", "")
         self.lbl_correo.setText(f"{correo}  |  {rut}".strip(" |"))
 
         self.lbl_tecnico.setText(texto_relacion(tecnico))
         self.lbl_estado.setText(texto_relacion(asig.get("estado")))
-        self.lbl_fecha_entrega.setText(str(asig.get("fecha_entrega", "—"))[:19])
-        self.lbl_fecha_prevista.setText(str(asig.get("fecha_devolucion_prevista") or "Sin fecha prevista"))
-        self.lbl_fecha_fin.setText(str(asig.get("fecha_finalizacion") or "Asignación activa")[:19])
+        self.lbl_fecha_entrega.setText(
+            str(asig.get("fecha_entrega", "—"))[:19]
+        )
+        self.lbl_fecha_prevista.setText(
+            str(asig.get("fecha_devolucion_prevista") or "Sin fecha prevista")
+        )
+        self.lbl_fecha_fin.setText(
+            str(asig.get("fecha_finalizacion") or "Asignación activa")[:19]
+        )
 
     def _on_error(self, exc: Exception):
         self.progreso.hide()
-        mostrar_mensaje(self.lbl_mensaje, f"Error al cargar asignación: {exc}", "error")
+        mostrar_mensaje(
+            self.lbl_mensaje,
+            f"Error al cargar asignación: {exc}",
+            "error",
+        )
 
 
 class RegistrarDevolucionDialog(SessionDialog):
-    """Formulario de devolución física y evaluación inicial integrada (Técnico de soporte)."""
+    """Registro de devolución física y evaluación inicial del equipo."""
 
-    def __init__(self, asignacion: dict[str, Any], parent: QWidget | None = None):
+    CONDICIONES = [
+        ("Bueno — Sin daños visibles", "Buen estado"),
+        ("Regular — Daños menores", "Con daño físico"),
+        ("Malo — Daños graves", "Con daño físico"),
+        ("No funcional", "Con falla técnica"),
+    ]
+
+    MOTIVOS = [
+        "Término de función / cargo",
+        "Cambio de equipo",
+        "Envío a reparación",
+        "Baja del equipo",
+        "Otro",
+    ]
+
+    def __init__(
+        self,
+        asignacion: dict[str, Any],
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self.asignacion = asignacion
         self.id_asignacion = int(asignacion.get("id_asignacion") or 0)
-        self.setWindowTitle(f"Registrar devolución — Asignación #{self.id_asignacion}")
-        self.resize(520, 480)
         self._worker: ApiWorker | None = None
+
+        self.setWindowTitle("Registrar devolución")
+        self.resize(560, 610)
         self._init_ui()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(14)
+        layout.setSpacing(12)
 
-        lbl_titulo = QLabel("Devolución y evaluación inicial de equipo")
-        lbl_titulo.setObjectName("sectionTitle")
-        layout.addWidget(lbl_titulo)
+        titulo = QLabel("Registrar devolución")
+        titulo.setObjectName("sectionTitle")
+        layout.addWidget(titulo)
 
-        activo_info = texto_relacion(self.asignacion.get("activo"))
+        activo = self.asignacion.get("activo") or {}
         solicitud = self.asignacion.get("solicitud") or {}
-        solicitante_info = texto_relacion(solicitud.get("solicitante"))
+        usuario = solicitud.get("solicitante") or {}
 
-        lbl_desc = QLabel(
-            f"Equipo: {activo_info}\nCustodio: {solicitante_info}\n\n"
-            "La devolución finaliza la asignación y registra la condición recibida. "
-            "Si existe falla o daño, se genera o vincula un ticket de soporte."
+        codigo = activo.get("codigo_inventario", "Sin código")
+        modelo = activo.get("modelo", "")
+        marca = activo.get("marca", "")
+
+        nombre_activo = " ".join(
+            str(v).strip() for v in (marca, modelo) if v
+        ) or texto_relacion(activo)
+
+        nombre_usuario = " ".join(
+            str(v).strip()
+            for v in (
+                usuario.get("nombres", ""),
+                usuario.get("apellidos", ""),
+            )
+            if v
+        ) or texto_relacion(usuario)
+
+        card = QFrame()
+        card.setObjectName("filterBar")
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(5)
+
+        lbl_codigo = QLabel(f"Código de activo: {codigo}")
+        lbl_codigo.setStyleSheet("font-weight: bold;")
+        card_layout.addWidget(lbl_codigo)
+        card_layout.addWidget(QLabel(nombre_activo))
+        card_layout.addWidget(QLabel(f"Asignado a: {nombre_usuario}"))
+
+        departamento = (
+            usuario.get("departamento")
+            or usuario.get("nombre_departamento")
+            or ""
         )
-        lbl_desc.setWordWrap(True)
-        lbl_desc.setObjectName("subtitulo")
-        layout.addWidget(lbl_desc)
+        if departamento:
+            card_layout.addWidget(QLabel(f"Departamento: {departamento}"))
+
+        estado = activo.get("estado", "Sin información")
+        card_layout.addWidget(QLabel(f"Estado actual: {estado}"))
+        layout.addWidget(card)
 
         form = QFormLayout()
         form.setSpacing(10)
 
         self.combo_condicion = QComboBox()
-        self.combo_condicion.addItem("Buen estado", "Buen estado")
-        self.combo_condicion.addItem("Con falla técnica", "Con falla técnica")
-        self.combo_condicion.addItem("Con daño físico", "Con daño físico")
-        self.combo_condicion.currentIndexChanged.connect(self._actualizar_ticket)
-        form.addRow("Condición física *:", self.combo_condicion)
+        for etiqueta, valor_api in self.CONDICIONES:
+            self.combo_condicion.addItem(etiqueta, valor_api)
+        form.addRow("Estado físico recibido *:", self.combo_condicion)
 
-        self.input_motivo = QLineEdit()
-        self.input_motivo.setPlaceholderText("Ej. Término de proyecto, recambio de equipo o renovación...")
-        form.addRow("Motivo devolución:", self.input_motivo)
+        self.combo_motivo = QComboBox()
+        self.combo_motivo.addItems(self.MOTIVOS)
+        form.addRow("Motivo de devolución *:", self.combo_motivo)
+
+        self.input_otro = QLineEdit()
+        self.input_otro.setPlaceholderText("Especifica el motivo")
+        self.input_otro.setMaxLength(100)
+        self.input_otro.hide()
+        form.addRow("Otro motivo:", self.input_otro)
+
+        self.combo_motivo.currentTextChanged.connect(
+            self._actualizar_otro_motivo
+        )
 
         self.input_observaciones = QTextEdit()
-        self.input_observaciones.setPlaceholderText("Detalle el estado del equipo, accesorios entregados o síntomas observados...")
+        self.input_observaciones.setPlaceholderText(
+            "Daños, accesorios faltantes u otras observaciones (opcional)"
+        )
+        self.input_observaciones.setMaximumHeight(100)
         form.addRow("Observaciones:", self.input_observaciones)
 
         self.input_ticket = QLineEdit()
-        self.input_ticket.setPlaceholderText("Opcional: ID de ticket de soporte existente a asociar")
+        self.input_ticket.setPlaceholderText(
+            "ID de ticket existente (opcional)"
+        )
         form.addRow("Ticket asociado:", self.input_ticket)
-        self.input_motivo.setMaxLength(100)
+
+        self.combo_condicion.currentIndexChanged.connect(
+            self._actualizar_ticket
+        )
         self._actualizar_ticket()
 
         layout.addLayout(form)
+
+        aviso = QLabel(
+            "Si el equipo presenta fallas o daños, quedará En revisión "
+            "y se gestionará un ticket de soporte."
+        )
+        aviso.setWordWrap(True)
+        aviso.setObjectName("subtitulo")
+        layout.addWidget(aviso)
 
         self.progreso = QProgressBar()
         self.progreso.setRange(0, 0)
@@ -209,40 +308,111 @@ class RegistrarDevolucionDialog(SessionDialog):
         layout.addWidget(self.progreso)
 
         self.lbl_mensaje = QLabel("")
+        self.lbl_mensaje.setWordWrap(True)
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
 
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
+        botones = QHBoxLayout()
+        botones.addStretch()
 
         self.btn_cancelar = QPushButton("Cancelar")
         self.btn_cancelar.setObjectName("btnSecundario")
         self.btn_cancelar.clicked.connect(self.reject)
-        btn_layout.addWidget(self.btn_cancelar)
+        botones.addWidget(self.btn_cancelar)
 
-        self.btn_confirmar = QPushButton("Registrar devolución")
+        self.btn_confirmar = QPushButton("Confirmar devolución")
         self.btn_confirmar.clicked.connect(self._registrar)
-        btn_layout.addWidget(self.btn_confirmar)
+        botones.addWidget(self.btn_confirmar)
 
-        layout.addLayout(btn_layout)
+        layout.addLayout(botones)
 
-    def _actualizar_ticket(self):
-        con_falla = self.combo_condicion.currentData() != "Buen estado"
-        self.input_ticket.setEnabled(con_falla)
-        if not con_falla:
+        self._actualizar_otro_motivo(self.combo_motivo.currentText())
+
+    def _actualizar_otro_motivo(self, motivo: str):
+        es_otro = motivo == "Otro"
+        self.input_otro.setVisible(es_otro)
+        self.input_otro.setEnabled(es_otro)
+
+        if not es_otro:
+            self.input_otro.clear()
+
+    def _actualizar_ticket(self, *_):
+        requiere_ticket = (
+            self.combo_condicion.currentData() != "Buen estado"
+        )
+        self.input_ticket.setEnabled(requiere_ticket)
+
+        if not requiere_ticket:
             self.input_ticket.clear()
 
     def _registrar(self):
         condicion = self.combo_condicion.currentData()
-        motivo = self.input_motivo.text().strip() or None
-        obs = self.input_observaciones.toPlainText().strip() or None
-        ticket_str = self.input_ticket.text().strip()
-        if ticket_str and (not ticket_str.isascii() or not ticket_str.isdigit() or not 1 <= int(ticket_str) <= 2147483647):
-            mostrar_mensaje(self.lbl_mensaje, "El ticket debe ser un identificador numérico positivo válido.", "error")
+        motivo_seleccionado = self.combo_motivo.currentText()
+
+        if motivo_seleccionado == "Otro":
+            motivo = self.input_otro.text().strip()
+            if not motivo:
+                mostrar_mensaje(
+                    self.lbl_mensaje,
+                    "Especifica el motivo de devolución.",
+                    "error",
+                )
+                self.input_otro.setFocus()
+                return
+        else:
+            motivo = motivo_seleccionado
+
+        if not motivo or len(motivo) > 100:
+            mostrar_mensaje(
+                self.lbl_mensaje,
+                "El motivo debe contener entre 1 y 100 caracteres.",
+                "error",
+            )
             return
+
+        observaciones = (
+            self.input_observaciones.toPlainText().strip() or None
+        )
+        ticket_str = self.input_ticket.text().strip()
+
+        if ticket_str and (
+            not ticket_str.isascii()
+            or not ticket_str.isdigit()
+            or not 1 <= int(ticket_str) <= 2147483647
+        ):
+            mostrar_mensaje(
+                self.lbl_mensaje,
+                "El ticket debe ser un identificador numérico positivo válido.",
+                "error",
+            )
+            return
+
         id_ticket = int(ticket_str) if ticket_str else None
+
         if condicion == "Buen estado" and id_ticket is not None:
-            mostrar_mensaje(self.lbl_mensaje, "Una devolución en buen estado no requiere ticket asociado.", "error")
+            mostrar_mensaje(
+                self.lbl_mensaje,
+                "Una devolución en buen estado no requiere ticket asociado.",
+                "error",
+            )
+            return
+
+        respuesta = QMessageBox.question(
+            self,
+            "Confirmar devolución",
+            (
+                f"¿Confirmas la devolución del activo "
+                f"{(self.asignacion.get('activo') or {}).get('codigo_inventario', '')}?\n\n"
+                f"Condición: {self.combo_condicion.currentText()}\n"
+                f"Motivo: {motivo}\n\n"
+                "Esta acción finalizará la asignación y actualizará "
+                "el estado del activo."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if respuesta != QMessageBox.StandardButton.Yes:
             return
 
         self.btn_confirmar.setEnabled(False)
@@ -255,23 +425,49 @@ class RegistrarDevolucionDialog(SessionDialog):
             id_asignacion=self.id_asignacion,
             condicion_fisica=condicion,
             motivo_devolucion=motivo,
-            observaciones=obs,
+            observaciones=observaciones,
             id_ticket_asociado=id_ticket,
         )
-        self.conectar_worker(self._worker, self._on_exito, self._on_error)
+        self.conectar_worker(
+            self._worker,
+            self._on_exito,
+            self._on_error,
+        )
         self._worker.start()
 
     def _on_exito(self, res: dict[str, Any]):
         self.progreso.hide()
+
+        estado = res.get("estado_activo_resultante")
+        if isinstance(estado, dict):
+            estado = estado.get("nombre")
+
+        mensaje = (
+            f"La devolución de la asignación #{self.id_asignacion} "
+            "se registró correctamente."
+        )
+
+        if estado:
+            mensaje += f"\nEstado resultante del activo: {estado}."
+
         ticket_asoc = res.get("id_ticket_asociado")
-        msg = f"La devolución de la asignación #{self.id_asignacion} ha sido registrada exitosamente."
         if ticket_asoc:
-            msg += f"\nSe vinculó con el ticket de soporte #{ticket_asoc}."
-        QMessageBox.information(self, "Devolución registrada", msg)
+            mensaje += f"\nTicket de soporte asociado: #{ticket_asoc}."
+
+        QMessageBox.information(
+            self,
+            "Devolución registrada",
+            mensaje,
+        )
         self.accept()
 
     def _on_error(self, exc: Exception):
         self.progreso.hide()
         self.btn_confirmar.setEnabled(True)
         self.btn_cancelar.setEnabled(True)
-        mostrar_mensaje(self.lbl_mensaje, f"No se pudo registrar la devolución: {exc}", "error")
+
+        mostrar_mensaje(
+            self.lbl_mensaje,
+            f"No se pudo registrar la devolución: {exc}",
+            "error",
+        )

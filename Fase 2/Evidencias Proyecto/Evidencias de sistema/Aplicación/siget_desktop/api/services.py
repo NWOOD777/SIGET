@@ -343,3 +343,47 @@ def listar_sla_tickets() -> list[dict[str, Any]]:
     """Consulta las políticas de tiempos de respuesta y resolución (SLA)."""
     resultado = api_client.get("/api/tickets/sla/")
     return _lista(resultado)
+
+
+
+
+# ORDENES DE TRABAJO Y DIAGNOSTICOS
+
+
+def listar_ordenes_trabajo() -> list[dict[str, Any]]:
+    """Consulta las órdenes de trabajo mediante la API REST."""
+    resultado = api_client.get("/api/ordenes-trabajo/")
+    return _lista(resultado)
+
+
+def crear_orden_trabajo(
+    id_ticket: int,
+    descripcion_falla: str,
+    procedimiento_inicial: str,
+    es_reparable: bool = True,
+) -> dict[str, Any]:
+    """Registra un diagnóstico y crea una orden de trabajo."""
+    payload = {
+        "id_ticket": id_ticket,
+        "descripcion_falla": descripcion_falla,
+        "procedimiento_inicial": procedimiento_inicial,
+        "es_reparable": es_reparable,
+    }
+    resultado = api_client.post("/api/ordenes-trabajo/", json=payload)
+    return _objeto(resultado)
+
+
+def iniciar_reparacion(id_orden: int) -> dict[str, Any]:
+    """Solicita al backend el inicio de la reparación de una OT."""
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/iniciar-reparacion/"
+    )
+    return _objeto(resultado)
+
+def obtener_historial_activo(search: str) -> dict[str, Any]:
+    """Consulta la trazabilidad de un activo mediante la API REST."""
+    resultado = api_client.get(
+        "/api/activos/historial/",
+        params={"search": search},
+    )
+    return _objeto(resultado)

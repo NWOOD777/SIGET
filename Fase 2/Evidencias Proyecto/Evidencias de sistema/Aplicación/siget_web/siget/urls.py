@@ -16,5 +16,6 @@ urlpatterns = [
     path("api/solicitudes-asignacion/", include("asignaciones.urls_solicitudes")),
     path("api/asignaciones/", include("asignaciones.urls")),
     path("api/tickets/", include("tickets.urls")),
+    path("api/ordenes-trabajo/", include("ordenes_trabajo.urls")),
     path("", inicio, name="inicio"),
 ]
