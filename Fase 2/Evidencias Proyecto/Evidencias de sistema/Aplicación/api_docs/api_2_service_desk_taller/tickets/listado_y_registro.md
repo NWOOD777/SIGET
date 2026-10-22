@@ -11,6 +11,22 @@ Ruta: `/api/tickets/`
 
 `GET /api/tickets/` admite `search` para código, asunto o descripción; `estado` y `prioridad` por identificador o nombre; y `activo` por identificador, código o serie. Para Administrador y Técnico, `usuario` permite filtrar por identificador, correo, RUT, nombres o apellidos del solicitante.
 
+### Bandeja de tickets disponibles
+
+`GET /api/tickets/?estado=Abierto&sin_asignar=true` devuelve únicamente tickets **Abiertos y sin técnico asignado**, dentro del alcance visible para el usuario autenticado. `sin_asignar=true` aplica ambas condiciones incluso si no se indica `estado`.
+
+El parámetro opcional admite exclusivamente `true` o `false` en minúsculas. Omitirlo o utilizar `sin_asignar=false` conserva el comportamiento anterior, sin añadir restricciones. Un valor vacío u otro valor devuelve **400**:
+
+```json
+{
+  "sin_asignar": ["Utilice true o false."]
+}
+```
+
+Se combina por intersección con los filtros existentes (`estado`, `search`, `prioridad`, `usuario` y `activo`), conservando sus reglas de acceso. Por ejemplo, `estado=Resuelto&sin_asignar=true` devuelve una lista vacía. No amplía la visibilidad: el solicitante sigue viendo solo sus tickets y Administrador/Técnico mantienen el alcance existente.
+
+La respuesta conserva la lista sin paginación existente y el orden descendente por `fecha_creacion`. Consultar no reserva tickets; después de un `/tomar/` exitoso, ese ticket deja de aparecer con `sin_asignar=true`. La autoasignación siempre valida la disponibilidad bajo bloqueo.
+
 ## Registrar
 
 `POST /api/tickets/`

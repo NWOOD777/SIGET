@@ -59,7 +59,7 @@ def crear_orden_trabajo(
     bloquear_operacion(70616, 0)
 
     ticket = (
-        Ticket.objects.select_related("id_activo", "id_estado_ticket")
+        Ticket.objects.select_for_update(of=("self",))
         .filter(pk=id_ticket)
         .first()
     )
@@ -67,6 +67,11 @@ def crear_orden_trabajo(
     if ticket is None:
         raise exceptions.ValidationError(
             {"id_ticket": ["El ticket indicado no existe."]}
+        )
+
+    if ticket.id_estado_ticket.nombre in ("Resuelto", "Cerrado"):
+        raise exceptions.ValidationError(
+            {"id_ticket": ["No se pueden crear órdenes de trabajo sobre tickets Resueltos o Cerrados."]}
         )
 
     if ticket.id_activo_id is None:

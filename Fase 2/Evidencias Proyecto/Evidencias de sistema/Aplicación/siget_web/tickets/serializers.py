@@ -3,7 +3,7 @@ Serializadores DRF para Service Desk y Tickets de Soporte (E5-H13).
 """
 from rest_framework import serializers
 
-from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
+from tickets.models import SLA, ComentarioTicket, EstadoTicket, PrioridadTicket, Ticket
 
 
 class PrioridadTicketSerializer(serializers.ModelSerializer):
@@ -103,3 +103,24 @@ class TicketCreateSerializer(serializers.Serializer):
     id_activo = serializers.IntegerField(
         required=False, allow_null=True, min_value=1, max_value=2147483647,
     )
+
+
+class TicketAsignacionSerializer(serializers.Serializer):
+    id_tecnico_asignado = serializers.IntegerField(min_value=1, max_value=2147483647)
+    motivo = serializers.CharField(allow_blank=False, trim_whitespace=True)
+
+
+class TicketAtencionCreateSerializer(serializers.Serializer):
+    mensaje = serializers.CharField(allow_blank=False, trim_whitespace=True)
+
+
+class TicketEstadoSerializer(serializers.Serializer):
+    id_estado_ticket = serializers.IntegerField(min_value=1, max_value=2147483647)
+    mensaje = serializers.CharField(allow_blank=False, trim_whitespace=True)
+
+
+class TicketAtencionReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComentarioTicket
+        fields = ["id_comentario", "id_ticket", "id_usuario", "mensaje", "fecha_registro"]
+        read_only_fields = fields

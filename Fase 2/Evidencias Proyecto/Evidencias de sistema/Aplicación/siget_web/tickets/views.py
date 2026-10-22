@@ -14,19 +14,26 @@ from siget.db import bloquear_operacion
 from siget.http import direccion_ip_cliente
 from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
 from tickets.permissions import (
+    PuedeAsignarTickets,
+    PuedeAtenderTickets,
     PuedeConsultarTickets,
     PuedeCrearTicket,
     _obtener_usuario_siget,
 )
 from tickets.selectors import activos_reportables_por_usuario
 from tickets.serializers import (
+    TicketAsignacionSerializer,
+    TicketAtencionCreateSerializer,
+    TicketAtencionReadSerializer,
+    TicketEstadoSerializer,
     EstadoTicketSerializer,
     PrioridadTicketSerializer,
     SLASerializer,
     TicketCreateSerializer,
     TicketReadSerializer,
 )
-from tickets.services import crear_ticket
+from tickets.services import asignar_ticket, cambiar_estado_ticket, crear_ticket, registrar_atencion_ticket, tomar_ticket
+from tickets.services import ESTADO_TICKET_ABIERTO
 from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
@@ -70,6 +77,16 @@ class TicketListCreateView(APIView):
         prioridad = request.GET.get("prioridad", "").strip()
         usuario_param = request.GET.get("usuario", "").strip()
         activo_param = request.GET.get("activo", "").strip()
+        sin_asignar = request.GET.get("sin_asignar")
+
+        if sin_asignar is not None:
+            if sin_asignar not in ("true", "false"):
+                raise exceptions.ValidationError({"sin_asignar": ["Utilice true o false."]})
+            if sin_asignar == "true":
+                tickets = tickets.filter(
+                    id_tecnico_asignado__isnull=True,
+                    id_estado_ticket__nombre=ESTADO_TICKET_ABIERTO,
+                )
 
         if search:
             criterios = (
@@ -200,3 +217,60 @@ class SLAListView(APIView):
     def get(self, request):
         politicas = SLA.objects.select_related("id_prioridad").order_by("id_prioridad__nivel_urgencia")
         return Response(SLASerializer(politicas, many=True).data)
+
+
+class TicketAsignarView(APIView):
+    permission_classes = [PuedeAsignarTickets]
+
+    def post(self, request, pk):
+        serializer = TicketAsignacionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ticket = asignar_ticket(
+            id_ticket=pk,
+            administrador=_obtener_usuario_siget(request),
+            id_tecnico_asignado=serializer.validated_data["id_tecnico_asignado"],
+            motivo=serializer.validated_data["motivo"],
+            ip_origen=direccion_ip_cliente(request),
+        )
+        return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
+
+
+class TicketAtencionCreateView(APIView):
+    permission_classes = [PuedeAtenderTickets]
+
+    def post(self, request, pk):
+        serializer = TicketAtencionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        atencion = registrar_atencion_ticket(
+            id_ticket=pk,
+            tecnico=_obtener_usuario_siget(request),
+            mensaje=serializer.validated_data["mensaje"],
+            ip_origen=direccion_ip_cliente(request),
+        )
+        return Response(TicketAtencionReadSerializer(atencion).data, status=status.HTTP_201_CREATED)
+
+
+class TicketEstadoView(APIView):
+    permission_classes = [PuedeAtenderTickets]
+
+    def patch(self, request, pk):
+        serializer = TicketEstadoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ticket = cambiar_estado_ticket(
+            id_ticket=pk, tecnico=_obtener_usuario_siget(request),
+            id_estado_ticket=serializer.validated_data["id_estado_ticket"],
+            mensaje=serializer.validated_data["mensaje"], ip_origen=direccion_ip_cliente(request),
+        )
+        return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
+
+
+class TicketTomarView(APIView):
+    permission_classes = [PuedeAtenderTickets]
+
+    def post(self, request, pk):
+        if request.data:
+            raise exceptions.ValidationError({"detail": "Esta operación no admite campos en el cuerpo de la solicitud."})
+        ticket = tomar_ticket(
+            id_ticket=pk, tecnico=_obtener_usuario_siget(request), ip_origen=direccion_ip_cliente(request),
+        )
+        return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
