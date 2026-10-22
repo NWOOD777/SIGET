@@ -4,6 +4,7 @@ from contextlib import nullcontext
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_http_methods
 from rest_framework.exceptions import ValidationError
@@ -72,22 +73,46 @@ def crear_ticket_web(request):
                 for error in errores if isinstance(errores, (list, tuple)) else [errores]:
                     form.add_error(destino, str(error))
         else:
+            request.session["ticket_recien_registrado"] = ticket.pk
             return redirect("tickets_web:confirmacion", pk=ticket.pk)
 
     return render(request, "tickets/crear.html", {"form": form, "usuario": usuario, **identidad_portal(usuario)})
 
 
+def _ticket_propio(usuario, pk):
+    return get_object_or_404(
+        Ticket.objects.select_related("id_estado_ticket", "id_prioridad", "id_activo", "id_tecnico_asignado"),
+        pk=pk,
+        id_usuario_solicitante=usuario,
+    )
+
+
 @require_GET
+@never_cache
+def detalle_ticket(request, pk):
+    usuario = _solicitante_actual(request)
+    if usuario is None:
+        return _acceso_denegado(request)
+
+    ticket = _ticket_propio(usuario, pk)
+    return render(
+        request,
+        "tickets/detalle.html",
+        {"ticket": ticket, "usuario": usuario, **identidad_portal(usuario)},
+    )
+
+
+@require_GET
+@never_cache
 def confirmacion_ticket(request, pk):
     usuario = _solicitante_actual(request)
     if usuario is None:
         return _acceso_denegado(request)
 
-    ticket = get_object_or_404(
-        Ticket.objects.select_related("id_estado_ticket", "id_prioridad"),
-        pk=pk,
-        id_usuario_solicitante=usuario,
-    )
+    ticket = _ticket_propio(usuario, pk)
+    if request.session.get("ticket_recien_registrado") != ticket.pk:
+        return redirect("tickets_web:detalle", pk=ticket.pk)
+    del request.session["ticket_recien_registrado"]
     return render(
         request,
         "tickets/confirmacion.html",

@@ -6,12 +6,15 @@
             <section class="session-card" aria-labelledby="titulo-confirmacion">
                 <div class="session-header"><h2 id="titulo-confirmacion">Ticket registrado</h2></div>
                 <div class="alert-box alert-success" role="status">Tu ticket fue registrado correctamente.</div>
-                <dl>
+                <dl class="portal-datos">
                     <dt>Código del ticket</dt><dd>{{ ticket.codigo_ticket }}</dd>
                     <dt>Asunto</dt><dd>{{ ticket.asunto }}</dd>
                     <dt>Estado</dt><dd>{{ ticket.id_estado_ticket.nombre }}</dd>
                     <dt>Prioridad</dt><dd>{{ ticket.id_prioridad.nombre }}</dd>
                 </dl>
-                <a href="{% url 'inicio' %}" class="btn-back-link">Volver al inicio</a>
+                <div class="portal-toolbar">
+                    <a href="{% url 'tickets_web:detalle' ticket.pk %}" class="btn-action btn-primary">Ver detalle de tu ticket</a>
+                    <a href="{% url 'inicio' %}" class="btn-action btn-outline">Volver al inicio</a>
+                </div>
             </section>
         {% endblock %}

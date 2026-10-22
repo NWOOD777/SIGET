@@ -6,12 +6,15 @@
             <section class="session-card" aria-labelledby="titulo-confirmacion">
                 <div class="session-header"><h2 id="titulo-confirmacion">Solicitud registrada</h2></div>
                 <div class="alert-box alert-success" role="status">Tu solicitud fue registrada correctamente.</div>
-                <dl>
+                <dl class="portal-datos">
                     <dt>Número de solicitud</dt><dd>{{ solicitud.id_solicitud }}</dd>
                     <dt>Categoría</dt><dd>{{ solicitud.id_categoria.nombre }}</dd>
                     <dt>Estado</dt><dd>{{ solicitud.id_estado_solicitud.nombre }}</dd>
                 </dl>
                 <p>El equipo específico se seleccionará en la entrega. Registrar la solicitud no reserva un equipo.</p>
-                <a href="{% url 'inicio' %}" class="btn-back-link">Volver al inicio</a>
+                <div class="portal-toolbar">
+                    <a href="{% url 'asignaciones_web:detalle' solicitud.pk %}" class="btn-action btn-primary">Ver detalle de la solicitud</a>
+                    <a href="{% url 'inicio' %}" class="btn-action btn-outline">Volver al inicio</a>
+                </div>
             </section>
         {% endblock %}

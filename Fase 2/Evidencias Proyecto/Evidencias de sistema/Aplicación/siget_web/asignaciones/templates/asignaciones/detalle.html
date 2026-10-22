@@ -1,0 +1,34 @@
+{% extends 'usuarios/base_portal.html' %}
+{% block titulo %}Detalle de solicitud{% endblock %}
+{% block encabezado %}Detalle de solicitud{% endblock %}
+{% block subtitulo %}Consulta el estado actual y la resolución de tu solicitud.{% endblock %}
+{% block contenido %}
+<section class="session-card" aria-labelledby="titulo-solicitud">
+    <div class="session-header"><h2 id="titulo-solicitud">Solicitud #{{ solicitud.id_solicitud }}</h2></div>
+    <dl class="portal-datos">
+        <dt>Categoría</dt><dd>{{ solicitud.id_categoria.nombre }}</dd>
+        <dt>Estado actual</dt><dd>{{ solicitud.id_estado_solicitud.nombre }}</dd>
+        <dt>Fecha de solicitud</dt><dd>{{ solicitud.fecha_solicitud|date:'d/m/Y H:i' }}</dd>
+        <dt>Motivo de la solicitud</dt><dd>{{ solicitud.motivo|linebreaksbr }}</dd>
+        {% if solicitud.fecha_resolucion %}
+        <dt>Fecha de resolución</dt><dd>{{ solicitud.fecha_resolucion|date:'d/m/Y H:i' }}</dd>
+        {% endif %}
+        {% if solicitud.id_estado_solicitud.nombre == 'Rechazada' %}
+        <dt>Motivo del rechazo</dt><dd>{{ solicitud.motivo_rechazo|linebreaksbr }}</dd>
+        {% endif %}
+    </dl>
+    {% if solicitud.id_estado_solicitud.nombre == 'Pendiente' %}
+    <p>Tu solicitud está pendiente de evaluación.</p>
+    {% elif solicitud.id_estado_solicitud.nombre == 'Aprobada' %}
+    <p>Tu solicitud fue aprobada. Coordina con el área de soporte la entrega del equipo. La aprobación no asigna un equipo físico.</p>
+    {% elif solicitud.id_estado_solicitud.nombre == 'Atendida' %}
+    <p>La entrega del equipo ya fue registrada. Puedes consultar la asignación en Mis equipos.</p>
+    {% endif %}
+    <div class="portal-toolbar">
+        <a class="btn-action btn-outline" href="{% url 'inicio' %}">Volver al inicio</a>
+        {% if solicitud.id_estado_solicitud.nombre == 'Atendida' %}
+        <a class="btn-action btn-primary" href="{% url 'usuarios:mis_equipos' %}">Ver mis equipos</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

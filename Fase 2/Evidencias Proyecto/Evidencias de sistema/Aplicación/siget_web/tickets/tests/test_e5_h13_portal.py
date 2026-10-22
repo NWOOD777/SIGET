@@ -139,7 +139,7 @@ class TicketCreateFormTests(SimpleTestCase):
                 self.assertEqual(form.errors.as_data()["id_activo"][0].code, "invalid_choice")
 
 
-@override_settings(ROOT_URLCONF=__name__)
+@override_settings(ROOT_URLCONF=__name__, SESSION_ENGINE="django.contrib.sessions.backends.cache")
 class TicketWebTests(SimpleTestCase):
     def setUp(self):
         self.usuario = Usuario(id_usuario=3, nombres="Ana", apellidos="Pérez", activo=True)
@@ -310,6 +310,9 @@ class TicketWebTests(SimpleTestCase):
                     self.assertTrue(response.context["form"].non_field_errors())
 
     def test_confirmacion_del_propietario_muestra_ticket(self):
+        session = self.client.session
+        session["ticket_recien_registrado"] = self.ticket.pk
+        session.save()
         response = self.client.get(self.confirmacion)
 
         self.assertTemplateUsed(response, "tickets/confirmacion.html")
@@ -327,7 +330,11 @@ class TicketWebTests(SimpleTestCase):
 
     def test_actualizar_confirmacion_no_repite_creacion(self):
         for _ in range(2):
-            self.assertEqual(self.client.get(self.confirmacion).status_code, 200)
+            self.assertRedirects(
+                self.client.get(self.confirmacion),
+                reverse("tickets_web:detalle", kwargs={"pk": self.ticket.pk}),
+                fetch_redirect_response=False,
+            )
         self.crear.assert_not_called()
 
     def test_csrf_ausente_invalido_u_origen_ajeno_bloquea_creacion(self):
@@ -419,7 +426,7 @@ class TicketWebTests(SimpleTestCase):
         self.crear.assert_not_called()
 
 
-@override_settings(ROOT_URLCONF="siget.urls")
+@override_settings(ROOT_URLCONF="siget.urls", SESSION_ENGINE="django.contrib.sessions.backends.cache")
 class TicketIntegracionPortalTests(SimpleTestCase):
     """Comprueba el enrutamiento real sin acceder a PostgreSQL ni Auth0."""
 

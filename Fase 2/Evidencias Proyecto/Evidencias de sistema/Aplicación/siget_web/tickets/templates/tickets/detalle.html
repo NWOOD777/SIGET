@@ -1,0 +1,22 @@
+{% extends 'usuarios/base_portal.html' %}
+{% block titulo %}Detalle de ticket{% endblock %}
+{% block encabezado %}Detalle de ticket{% endblock %}
+{% block subtitulo %}Consulta los datos y el estado actual de tu solicitud de soporte.{% endblock %}
+{% block contenido %}
+<section class="session-card" aria-labelledby="titulo-ticket">
+    <div class="session-header"><h2 id="titulo-ticket">{{ ticket.codigo_ticket }}</h2></div>
+    <dl class="portal-datos">
+        <dt>Asunto</dt><dd>{{ ticket.asunto }}</dd>
+        <dt>Estado actual</dt><dd>{{ ticket.id_estado_ticket.nombre }}</dd>
+        <dt>Prioridad</dt><dd>{{ ticket.id_prioridad.nombre }}</dd>
+        <dt>Descripción</dt><dd>{{ ticket.descripcion|linebreaksbr }}</dd>
+        <dt>Equipo asociado</dt><dd>{% if ticket.id_activo %}{{ ticket.id_activo.codigo_inventario }}{% else %}Sin equipo específico{% endif %}</dd>
+        <dt>Técnico asignado</dt><dd>{% if ticket.id_tecnico_asignado %}{{ ticket.id_tecnico_asignado.nombres }} {{ ticket.id_tecnico_asignado.apellidos }}{% else %}Sin técnico asignado{% endif %}</dd>
+        <dt>Fecha de creación</dt><dd>{{ ticket.fecha_creacion|date:'d/m/Y H:i' }}</dd>
+        {% if ticket.fecha_resolucion %}
+        <dt>Fecha de resolución</dt><dd>{{ ticket.fecha_resolucion|date:'d/m/Y H:i' }}</dd>
+        {% endif %}
+    </dl>
+    <a class="btn-action btn-outline" href="{% url 'inicio' %}">Volver al inicio</a>
+</section>
+{% endblock %}

@@ -118,7 +118,7 @@ class SolicitudAsignacionFormTests(SimpleTestCase):
         self.assertEqual(form.errors.as_data()["id_categoria"][0].code, "invalid_choice")
 
 
-@override_settings(ROOT_URLCONF=__name__)
+@override_settings(ROOT_URLCONF=__name__, SESSION_ENGINE="django.contrib.sessions.backends.cache")
 class SolicitudAsignacionWebTests(SimpleTestCase):
     def setUp(self):
         self.usuario = Usuario(
@@ -319,6 +319,9 @@ class SolicitudAsignacionWebTests(SimpleTestCase):
         self.crear.assert_called_once()
 
     def test_confirmacion_propia_muestra_identificador_categoria_y_estado(self):
+        session = self.client.session
+        session["solicitud_recien_registrado"] = self.solicitud.pk
+        session.save()
         response = self.client.get(self.confirmacion)
 
         self.assertTemplateUsed(response, "asignaciones/confirmacion.html")
@@ -337,7 +340,11 @@ class SolicitudAsignacionWebTests(SimpleTestCase):
 
     def test_actualizar_confirmacion_no_crea_otra_solicitud(self):
         for _ in range(2):
-            self.assertEqual(self.client.get(self.confirmacion).status_code, 200)
+            self.assertRedirects(
+                self.client.get(self.confirmacion),
+                reverse("asignaciones_web:detalle", kwargs={"pk": self.solicitud.pk}),
+                fetch_redirect_response=False,
+            )
         self.crear.assert_not_called()
 
     def test_metodos_no_admitidos(self):
@@ -346,7 +353,7 @@ class SolicitudAsignacionWebTests(SimpleTestCase):
         self.crear.assert_not_called()
 
 
-@override_settings(ROOT_URLCONF="siget.urls")
+@override_settings(ROOT_URLCONF="siget.urls", SESSION_ENGINE="django.contrib.sessions.backends.cache")
 class SolicitudAsignacionIntegracionPortalTests(SimpleTestCase):
     """Enrutamiento y navegación reales, con lecturas de negocio simuladas."""
 

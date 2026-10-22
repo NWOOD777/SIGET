@@ -1,6 +1,7 @@
 """Flujo web de E3-H7, compartiendo las reglas de negocio de la API."""
 
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_http_methods
 from rest_framework.exceptions import ValidationError
@@ -59,6 +60,7 @@ def solicitar_equipo(request):
                 for error in errores if isinstance(errores, (list, tuple)) else [errores]:
                     form.add_error(destino, str(error))
         else:
+            request.session["solicitud_recien_registrado"] = solicitud.pk
             return redirect("asignaciones_web:confirmacion", pk=solicitud.pk)
 
     categorias_disponibles = form.campo_categoria.queryset
@@ -73,17 +75,40 @@ def solicitar_equipo(request):
     )
 
 
+def _solicitud_propio(usuario, pk):
+    return get_object_or_404(
+        SolicitudAsignacion.objects.select_related("id_categoria", "id_estado_solicitud"),
+        pk=pk,
+        id_usuario=usuario,
+    )
+
+
 @require_GET
+@never_cache
+def detalle_solicitud(request, pk):
+    usuario = _solicitante_actual(request)
+    if usuario is None:
+        return _acceso_denegado(request)
+
+    solicitud = _solicitud_propio(usuario, pk)
+    return render(
+        request,
+        "asignaciones/detalle.html",
+        {"solicitud": solicitud, "usuario": usuario, **identidad_portal(usuario)},
+    )
+
+
+@require_GET
+@never_cache
 def confirmacion_solicitud(request, pk):
     usuario = _solicitante_actual(request)
     if usuario is None:
         return _acceso_denegado(request)
 
-    solicitud = get_object_or_404(
-        SolicitudAsignacion.objects.select_related("id_categoria", "id_estado_solicitud"),
-        pk=pk,
-        id_usuario=usuario,
-    )
+    solicitud = _solicitud_propio(usuario, pk)
+    if request.session.get("solicitud_recien_registrado") != solicitud.pk:
+        return redirect("asignaciones_web:detalle", pk=solicitud.pk)
+    del request.session["solicitud_recien_registrado"]
     return render(
         request,
         "asignaciones/confirmacion.html",
