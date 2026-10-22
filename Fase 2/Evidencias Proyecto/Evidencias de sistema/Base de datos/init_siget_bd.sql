@@ -530,6 +530,13 @@ CREATE TABLE notificacion (
     fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_ultimo_intento TIMESTAMPTZ,
     fecha_envio TIMESTAMPTZ,
+    clave_evento VARCHAR(255),
+    datos_envio JSONB NOT NULL DEFAULT '{}'::jsonb,
+    referencia JSONB NOT NULL DEFAULT '{}'::jsonb,
+    id_proveedor VARCHAR(100),
+    reintento_permitido BOOLEAN NOT NULL DEFAULT TRUE,
+    proximo_intento TIMESTAMPTZ,
+    fecha_primer_intento TIMESTAMPTZ,
     CONSTRAINT ck_notificacion_canal
         CHECK (canal IN ('PLATAFORMA', 'CORREO_API', 'AMBOS')),
     CONSTRAINT ck_notificacion_estado_envio
@@ -744,3 +751,5 @@ WHERE codigo IN (
 );
 
 COMMIT;
+
+CREATE UNIQUE INDEX uq_notificacion_clave_evento ON notificacion(clave_evento);

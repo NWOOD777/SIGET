@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     "activos",
     "asignaciones",
     "tickets",
-    "ordenes_trabajo"
+    "ordenes_trabajo",
+    "notificaciones",
 ]
 
 MIDDLEWARE = [
@@ -156,23 +157,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH0_DOMAIN = env.str("AUTH0_DOMAIN")
 AUTH0_CLIENT_ID = env.str("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = env.str("AUTH0_CLIENT_SECRET")
-AUTH0_DB_CONNECTION = env.str(
-    "AUTH0_DB_CONNECTION", default="Username-Password-Authentication"
-)
+AUTH0_DB_CONNECTION = env.str("AUTH0_DB_CONNECTION", default="Username-Password-Authentication")
 
 AUTH0_MGMT_CLIENT_ID = env.str("AUTH0_MGMT_CLIENT_ID", default=AUTH0_CLIENT_ID)
-AUTH0_MGMT_CLIENT_SECRET = env.str(
-    "AUTH0_MGMT_CLIENT_SECRET", default=AUTH0_CLIENT_SECRET
-)
+AUTH0_MGMT_CLIENT_SECRET = env.str("AUTH0_MGMT_CLIENT_SECRET", default=AUTH0_CLIENT_SECRET)
 AUTH0_MGMT_AUDIENCE = env.str(
     "AUTH0_MGMT_AUDIENCE",
     default=f"https://{AUTH0_DOMAIN}/api/v2/" if AUTH0_DOMAIN else "",
 )
 
 AUTH0_ISSUER = f"https://{AUTH0_DOMAIN}/" if AUTH0_DOMAIN else ""
-AUTH0_METADATA_URL = (
-    f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration" if AUTH0_DOMAIN else ""
-)
+AUTH0_METADATA_URL = f"https://{AUTH0_DOMAIN}/.well-known/openid-configuration" if AUTH0_DOMAIN else ""
 
 # Access tokens de la API de SIGET (aplicación de Escritorio, Authorization Code + PKCE).
 # AUTH0_API_AUDIENCE es el "Identifier" de la API registrada en Auth0. Si está vacío,
@@ -180,9 +175,7 @@ AUTH0_METADATA_URL = (
 AUTH0_API_AUDIENCE = env.str("AUTH0_API_AUDIENCE", default="")
 # client_id de las aplicaciones autorizadas a llamar la API (claim azp). Vacío = sin restricción.
 AUTH0_API_ALLOWED_CLIENT_IDS = [
-    client_id.strip()
-    for client_id in env.str("AUTH0_API_ALLOWED_CLIENT_IDS", default="").split(",")
-    if client_id.strip()
+    client_id.strip() for client_id in env.str("AUTH0_API_ALLOWED_CLIENT_IDS", default="").split(",") if client_id.strip()
 ]
 AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json" if AUTH0_DOMAIN else ""
 AUTH0_JWKS_CACHE_SEGUNDOS = env.int("AUTH0_JWKS_CACHE_SEGUNDOS", default=600)
@@ -206,3 +199,10 @@ REST_FRAMEWORK = {
 TEST_RUNNER = "siget.testing.PostgreSQLTestRunner"
 
 SIGET_PUBLIC_URL = env.str("SIGET_PUBLIC_URL", default="").rstrip("/")
+
+# Correo transaccional: secretos solo en el backend y despacho mediante Resend.
+RESEND_API_KEY = env.str("RESEND_API_KEY", default="")
+RESEND_FROM_EMAIL = env.str("RESEND_FROM_EMAIL", default="")  # Debe ser un remitente verificado en Resend.
+RESEND_TIMEOUT_SECONDS = env.int("RESEND_TIMEOUT_SECONDS", default=10)
+RESEND_MAX_ATTEMPTS = env.int("RESEND_MAX_ATTEMPTS", default=5)
+RESEND_RETRY_SECONDS = env.int("RESEND_RETRY_SECONDS", default=60)

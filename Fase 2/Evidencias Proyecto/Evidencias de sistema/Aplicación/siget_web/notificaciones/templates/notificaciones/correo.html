@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>{{ titulo }}</title></head>
+<body style="font-family:Arial,sans-serif;color:#172033;line-height:1.6">
+<h1 style="font-size:22px">{{ titulo }}</h1>
+<p>Hola {{ nombre }},</p>
+<div>{{ mensaje|linebreaksbr }}</div>
+{% if enlace %}<p><a href="{{ enlace }}">Revisar en SIGET</a></p>{% endif %}
+<hr><p>SIGET — Sistema Integral de Gestión de Equipos y Soporte Tecnológico<br>
+Este es un aviso automático. No respondas a este remitente.</p>
+</body></html>

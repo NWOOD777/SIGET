@@ -21,6 +21,7 @@ services:
       start_period: 5s
 
   web:
+    image: siget-web
     build:
       context: .
       dockerfile: siget_web/Dockerfile
@@ -45,6 +46,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  correo:
+    image: siget-web
+    restart: unless-stopped
+    command: ["python", "manage.py", "procesar_notificaciones", "--continuo", "--intervalo", "60"]
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      SIGET_DDL_PATH: /opt/siget/schema/init_siget_bd.sql
+    volumes:
+      - ./siget_web:/app
+      - "../Base de datos/init_siget_bd.sql:/opt/siget/schema/init_siget_bd.sql:ro"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      web:
+        condition: service_started
 
 volumes:
   postgres_data:

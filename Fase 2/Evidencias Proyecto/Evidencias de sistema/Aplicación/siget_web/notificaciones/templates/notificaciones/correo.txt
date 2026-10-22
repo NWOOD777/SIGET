@@ -1,0 +1,9 @@
+Hola {{ nombre }},
+
+{{ mensaje }}
+{% if enlace %}
+Puedes revisar el detalle en SIGET:
+{{ enlace }}
+{% endif %}
+SIGET — Sistema Integral de Gestión de Equipos y Soporte Tecnológico
+Este es un aviso automático. No respondas a este remitente.
