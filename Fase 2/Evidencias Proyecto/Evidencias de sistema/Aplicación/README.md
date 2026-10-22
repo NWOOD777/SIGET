@@ -11,6 +11,7 @@ Aplicación/
 │   ├── usuarios/       # Identidad y RBAC
 │   ├── activos/        # Inventario
 │   ├── asignaciones/   # Solicitudes, entregas y devoluciones
+│   ├── notificaciones/ # Correo transaccional y proceso programado
 │   ├── tickets/        # Service Desk
 │   ├── templates/
 │   ├── static/
@@ -62,6 +63,10 @@ docker compose down
 ```
 
 La base se inicializa desde [init_siget_bd.sql](../Base%20de%20datos/init_siget_bd.sql) al crear un volumen vacío. Los datos permanecen en el volumen de PostgreSQL al detener los servicios.
+
+## Notificaciones por correo
+
+El servicio Docker `correo` procesa los avisos pendientes y los recordatorios cada 60 segundos. Completar las variables RESEND del `.env`. Para actualizar bases existentes se requiere la ampliación aditiva descrita en [configuración y uso de Resend](api_docs/externas/resend/README.md); no reinicializar el volumen PostgreSQL.
 
 ## Ejecutar el escritorio
 

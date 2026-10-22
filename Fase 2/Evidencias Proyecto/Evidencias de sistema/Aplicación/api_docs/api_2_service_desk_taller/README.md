@@ -2,7 +2,7 @@
 
 Corresponde a la segunda API propia de la sección 4.3 y del Anexo B de la arquitectura preliminar. Actualmente expone creación y consulta de tickets, prioridades, estados y políticas SLA.
 
-Las operaciones previstas por la arquitectura que aún no están disponibles se detallan en [alcance y pendientes](../alcance_y_pendientes.md).
+Consultar la [organización de las APIs](../alcance_y_pendientes.md) para conocer la relación de estos servicios con el resto del backend.
 
 | Métodos | Ruta | Documento |
 |---|---|---|

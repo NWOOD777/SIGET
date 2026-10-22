@@ -18,6 +18,7 @@ Las rutas de acceso Web devuelven páginas o redirecciones. `/admin/` es el pane
 | GET | `/` | [Acceder al portal](web/inicio.md) |
 | GET | `/mis-equipos/` y `/mis-equipos/{id_asignacion}/` | [Mis equipos y su detalle](web/mis_equipos.md) |
 | GET | `/perfil/` | [Mi perfil](web/perfil.md) |
+| GET | `/solicitudes/{id}/` y `/tickets/{id}/` | [Detalles de solicitudes y tickets](web/detalles.md) |
 | GET | `/auth/login/` | [Iniciar sesión Web](web/login.md) |
 | GET | `/auth/callback/` | [Completar el acceso Web](web/callback.md) |
 | GET | `/auth/logout/` | [Cerrar sesión Web](web/logout.md) |

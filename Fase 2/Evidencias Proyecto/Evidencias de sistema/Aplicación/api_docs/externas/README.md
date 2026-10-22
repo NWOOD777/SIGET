@@ -1,7 +1,10 @@
 # APIs externas
 
-La integración disponible se documenta en [Auth0 y sus endpoints](auth0/README.md).
+| Servicio | Uso | Documentación |
+|---|---|---|
+| Auth0 | Autenticación, recuperación de acceso y administración de identidades. | [Auth0 y sus endpoints](auth0/README.md) |
+| Resend | Envío de notificaciones por correo desde el backend. | [Configuración y uso de Resend](resend/README.md) |
 
-El estado del correo transaccional, la generación QR y su relación con las integraciones de identidad y dispositivos se mantiene en [alcance y pendientes](../alcance_y_pendientes.md).
+Las credenciales de las integraciones se configuran en el backend. Consultar la [configuración de la aplicación](../../configuracion.md) y la [organización de las APIs](../alcance_y_pendientes.md).
 
 [Índice general](../README.md)
