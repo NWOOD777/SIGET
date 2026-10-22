@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("SIGET - Sistema Integral de Gestión de Equipos y Soporte")
+        self.setWindowTitle("SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico")
         self.resize(1280, 800)
         self.setMinimumSize(1000, 650)
         self._init_ui()
@@ -105,7 +105,8 @@ class MainWindow(QMainWindow):
         titles = QVBoxLayout()
         name = QLabel("SIGET")
         name.setObjectName("brandName")
-        caption = QLabel("Gestión tecnológica")
+        caption = QLabel("Sistema Integral de Gestión de Equipos y Soporte Tecnológico")
+        caption.setWordWrap(True)
         caption.setObjectName("brandCaption")
         titles.addWidget(name)
         titles.addWidget(caption)
@@ -129,7 +130,8 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(header)
         layout.setContentsMargins(24, 12, 24, 12)
         layout.setSpacing(12)
-        caption = QLabel("Gestión de equipos y soporte")
+        caption = QLabel("Sistema Integral de Gestión de Equipos y Soporte Tecnológico")
+        caption.setWordWrap(True)
         caption.setObjectName("headerCaption")
         layout.addWidget(caption)
         layout.addStretch()

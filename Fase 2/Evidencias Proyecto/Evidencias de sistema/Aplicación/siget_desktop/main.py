@@ -1,6 +1,5 @@
 """
 Punto de entrada principal para la Aplicación de Escritorio SIGET (PySide6).
-Sprint 6: 'Preparar aplicación de Escritorio PySide6'.
 """
 
 from __future__ import annotations

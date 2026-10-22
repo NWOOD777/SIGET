@@ -28,8 +28,8 @@ def _valor(key: str, default: str = "") -> str:
 
 @dataclass(frozen=True)
 class DesktopConfig:
-    app_name: str = "SIGET - Sistema Integral de Gestión de Equipos y Soporte"
-    app_version: str = "1.0.0 (Sprint 6)"
+    app_name: str = "SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico"
+    app_version: str = "1.0.0"
     api_base_url: str = field(default_factory=lambda: _valor("SIGET_PUBLIC_URL", "http://localhost:8000").rstrip("/"))
     http_timeout: int = field(default_factory=lambda: int(_valor("SIGET_HTTP_TIMEOUT", "10")))
     auth0_domain: str = field(default_factory=lambda: _valor("AUTH0_DOMAIN"))

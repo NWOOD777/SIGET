@@ -84,7 +84,7 @@ class TicketsView(QWidget):
 
         self.btn_atender = QPushButton("Atender Ticket")
         self.btn_atender.setEnabled(False)
-        self.btn_atender.setToolTip("Atención técnica pendiente de integración de órdenes de trabajo y diagnósticos en el backend")
+        self.btn_atender.setToolTip("La atención técnica no está disponible desde esta vista.")
         layout_encabezado.addWidget(self.btn_atender)
 
         layout.addLayout(layout_encabezado)
