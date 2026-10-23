@@ -40,8 +40,16 @@
                 <li class="nav-item{% if request.resolver_match.namespace == 'asignaciones_web' %} active{% endif %}">
                     <a href="{% url 'asignaciones_web:solicitar' %}"><span>Solicitudes</span></a>
                 </li>
-                <li class="nav-item{% if request.resolver_match.namespace == 'tickets_web' %} active{% endif %}">
-                    <a href="{% url 'tickets_web:nuevo' %}"><span>Soporte / Tickets</span></a>
+                <li class="nav-item{% if request.resolver_match.namespace == 'tickets_web' and request.resolver_match.url_name != 'seguimiento' %} active{% endif %}">
+                    <a href="{% url 'tickets_web:nuevo' %}">
+                        <span>Soporte / Tickets</span>
+                    </a>
+                </li>
+
+                <li class="nav-item{% if request.resolver_match.namespace == 'tickets_web' and request.resolver_match.url_name == 'seguimiento' %} active{% endif %}">
+                    <a href="{% url 'tickets_web:seguimiento' %}">
+                        <span>Seguimiento de tickets</span>
+                    </a>
                 </li>
                 <li class="nav-item">
                     <span class="nav-pendiente" aria-disabled="true" title="Disponible en un próximo incremento">Notificaciones (próximamente)</span>

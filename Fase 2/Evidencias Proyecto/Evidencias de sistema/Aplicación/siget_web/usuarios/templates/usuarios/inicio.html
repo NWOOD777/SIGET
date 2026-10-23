@@ -4,19 +4,87 @@
 {% block subtitulo %}Bienvenido/a, {{ nombre }}. Aquí está el resumen de tu actividad.{% endblock %}
 {% block contenido %}
 <section class="kpi-grid">
- <div class="kpi-card kpi-blue"><div class="kpi-num">{{ cantidad_equipos }}</div><div class="kpi-label">Equipos asignados</div></div>
- <div class="kpi-card kpi-amber"><div class="kpi-num">{{ cantidad_solicitudes }}</div><div class="kpi-label">Solicitudes activas</div></div>
- <div class="kpi-card kpi-sky"><div class="kpi-num">{{ cantidad_tickets }}</div><div class="kpi-label">Tickets abiertos</div></div>
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-num">{{ cantidad_equipos }}</div>
+        <div class="kpi-label">Equipos asignados</div>
+    </div>
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-num">{{ cantidad_solicitudes }}</div>
+        <div class="kpi-label">Solicitudes activas</div>
+    </div>
+    <div class="kpi-card kpi-sky">
+        <div class="kpi-num">{{ cantidad_tickets }}</div>
+        <div class="kpi-label">Tickets abiertos</div>
+    </div>
 </section>
+
 <div class="dashboard-sections" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px">
- <section class="session-card"><div class="session-header"><h2>Mis equipos recientes</h2></div>
- {% for a in equipos_recientes %}<p><a href="{% url 'usuarios:detalle_equipo' a.pk %}">{{ a.id_activo.codigo_inventario }}</a> · {{ a.id_activo.id_modelo.nombre }}</p>{% empty %}<p>No tienes equipos asignados.</p>{% endfor %}
- <a href="{% url 'usuarios:mis_equipos' %}">Ver mis equipos</a></section>
- <section class="session-card"><div class="session-header"><h2>Solicitudes recientes</h2></div>
- {% for s in solicitudes_recientes %}<p><a href="{% url 'asignaciones_web:detalle' s.pk %}">Solicitud #{{ s.pk }}</a> · {{ s.id_categoria.nombre }} · {{ s.id_estado_solicitud.nombre }}</p>{% empty %}<p>No has registrado solicitudes.</p>{% endfor %}
- <a href="{% url 'asignaciones_web:solicitar' %}">Solicitar equipo</a></section>
- <section class="session-card"><div class="session-header"><h2>Tickets recientes</h2></div>
- {% for t in tickets_recientes %}<p><a href="{% url 'tickets_web:detalle' t.pk %}">{{ t.codigo_ticket }}</a> · {{ t.asunto }} · {{ t.id_estado_ticket.nombre }}</p>{% empty %}<p>No has registrado tickets.</p>{% endfor %}
- <a href="{% url 'tickets_web:nuevo' %}">Solicitar soporte</a></section>
+
+    <section class="session-card">
+        <div class="session-header">
+            <h2>Mis equipos recientes</h2>
+        </div>
+
+        {% for a in equipos_recientes %}
+            <p>
+                <a href="{% url 'usuarios:detalle_equipo' a.pk %}">
+                    {{ a.id_activo.codigo_inventario }}
+                </a>
+                · {{ a.id_activo.id_modelo.nombre }}
+            </p>
+        {% empty %}
+            <p>No tienes equipos asignados.</p>
+        {% endfor %}
+
+        <a href="{% url 'usuarios:mis_equipos' %}">Ver mis equipos</a>
+    </section>
+
+    <section class="session-card">
+        <div class="session-header">
+            <h2>Solicitudes recientes</h2>
+        </div>
+
+        {% for s in solicitudes_recientes %}
+            <p>
+                <a href="{% url 'asignaciones_web:detalle' s.pk %}">
+                    Solicitud #{{ s.pk }}
+                </a>
+                · {{ s.id_categoria.nombre }}
+                · {{ s.id_estado_solicitud.nombre }}
+            </p>
+        {% empty %}
+            <p>No has registrado solicitudes.</p>
+        {% endfor %}
+
+        <a href="{% url 'asignaciones_web:solicitar' %}">Solicitar equipo</a>
+    </section>
+
+    <section class="session-card">
+        <div class="session-header">
+            <h2>Tickets recientes</h2>
+        </div>
+
+        {% for t in tickets_recientes %}
+            <p>
+                <a href="{% url 'tickets_web:detalle' t.pk %}">
+                    {{ t.codigo_ticket }}
+                </a>
+                · {{ t.asunto }}
+                · {{ t.id_estado_ticket.nombre }}
+            </p>
+        {% empty %}
+            <p>No has registrado tickets.</p>
+        {% endfor %}
+
+        <p>
+            <a href="{% url 'tickets_web:nuevo' %}">Solicitar soporte</a>
+        </p>
+        <p>
+            <a href="{% url 'tickets_web:seguimiento' %}">
+                Ver seguimiento de tickets
+            </a>
+        </p>
+    </section>
+
 </div>
 {% endblock %}

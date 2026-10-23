@@ -118,3 +118,41 @@ def confirmacion_ticket(request, pk):
         "tickets/confirmacion.html",
         {"ticket": ticket, "usuario": usuario, **identidad_portal(usuario)},
     )
+
+
+
+@require_GET
+@never_cache
+def seguimiento_tickets(request):
+    usuario = _solicitante_actual(request)
+    if usuario is None:
+        return _acceso_denegado(request)
+
+    codigo = request.GET.get("codigo", "").strip()
+
+    tickets = (
+        Ticket.objects
+        .filter(id_usuario_solicitante=usuario)
+        .select_related(
+            "id_estado_ticket",
+            "id_prioridad",
+            "id_activo",
+            "id_tecnico_asignado",
+        )
+        .order_by("-fecha_creacion", "-id_ticket")
+    )
+
+    if codigo:
+        tickets = tickets.filter(codigo_ticket__icontains=codigo)
+
+    return render(
+        request,
+        "tickets/seguimiento.html",
+        {
+            "tickets": tickets,
+            "codigo": codigo,
+            "usuario": usuario,
+            **identidad_portal(usuario),
+        },
+    )
+

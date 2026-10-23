@@ -7,6 +7,7 @@ from tickets import web_views
 app_name = "tickets_web"
 
 urlpatterns = [
+    path("seguimiento/", web_views.seguimiento_tickets, name="seguimiento"),
     path("<int:pk>/", web_views.detalle_ticket, name="detalle"),
     path("nuevo/", web_views.crear_ticket_web, name="nuevo"),
     # Alias conservado para las referencias de la Etapa 2.

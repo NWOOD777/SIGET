@@ -1,0 +1,412 @@
+
+{% extends 'usuarios/base_portal.html' %}
+
+{% block titulo %}Seguimiento de tickets{% endblock %}
+{% block encabezado %}Seguimiento de tickets{% endblock %}
+{% block subtitulo %}Consulta el estado y la información de tus solicitudes de soporte.{% endblock %}
+
+{% block contenido %}
+<style>
+    .tracking-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .tracking-panel {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    .tracking-heading {
+        margin: 0 0 6px;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .tracking-description {
+        margin: 0 0 20px;
+        color: var(--text-muted, #64748b);
+        font-size: 0.92rem;
+    }
+
+    .tracking-search {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .tracking-field {
+        flex: 1 1 240px;
+    }
+
+    .tracking-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .tracking-field input {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color, #cbd5e1);
+        border-radius: 9px;
+        background: var(--input-bg, #ffffff);
+        color: inherit;
+        font: inherit;
+    }
+
+    .tracking-field input:focus {
+        outline: 2px solid #93c5fd;
+        outline-offset: 1px;
+    }
+
+    .tracking-button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 16px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background: #2563eb;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .tracking-button:hover {
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    .tracking-button-secondary {
+        background: transparent;
+        color: var(--text-color, #334155);
+        border-color: var(--border-color, #cbd5e1);
+    }
+
+    .tracking-button-secondary:hover {
+        background: var(--hover-bg, #f1f5f9);
+        color: inherit;
+    }
+
+    .tracking-results-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .tracking-count {
+        color: var(--text-muted, #64748b);
+        font-size: 0.9rem;
+    }
+
+    .tracking-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+        gap: 16px;
+    }
+
+    .tracking-ticket {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+        padding: 20px;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        background: var(--card-bg, #ffffff);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .tracking-ticket:hover {
+        border-color: #93c5fd;
+        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.07);
+    }
+
+    .tracking-ticket-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .tracking-code {
+        color: #2563eb;
+        font-weight: 700;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+
+    .tracking-code:hover {
+        text-decoration: underline;
+    }
+
+    .tracking-subject {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .tracking-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .tracking-priority {
+        color: var(--text-muted, #64748b);
+        font-size: 0.82rem;
+    }
+
+    .tracking-meta {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+    }
+
+    .tracking-meta div {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .tracking-meta dt {
+        color: var(--text-muted, #64748b);
+        font-size: 0.8rem;
+    }
+
+    .tracking-meta dd {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .tracking-ticket-actions {
+        margin-top: auto;
+        padding-top: 4px;
+    }
+
+    .tracking-empty {
+        padding: 32px 16px;
+        border: 1px dashed var(--border-color, #cbd5e1);
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .tracking-empty h3 {
+        margin: 0 0 8px;
+    }
+
+    .tracking-empty p {
+        margin: 0 0 18px;
+        color: var(--text-muted, #64748b);
+    }
+
+    .tracking-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    @media (max-width: 480px) {
+        .tracking-panel {
+            padding: 16px;
+        }
+
+        .tracking-search .tracking-button {
+            width: 100%;
+        }
+
+        .tracking-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .tracking-footer .tracking-button {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="tracking-page">
+
+    <section class="tracking-panel">
+        <h2 class="tracking-heading">Buscar mis tickets</h2>
+        <p class="tracking-description">
+            Introduce el código de un ticket para localizar una solicitud concreta.
+        </p>
+
+        <form
+            class="tracking-search"
+            method="get"
+            action="{% url 'tickets_web:seguimiento' %}"
+        >
+            <div class="tracking-field">
+                <label for="codigo">Código del ticket</label>
+                <input
+                    type="text"
+                    id="codigo"
+                    name="codigo"
+                    value="{{ codigo }}"
+                    placeholder="Ej.: TCK-0001"
+                    autocomplete="off"
+                >
+            </div>
+
+            <button type="submit" class="tracking-button">
+                Buscar
+            </button>
+
+            {% if codigo %}
+                <a
+                    class="tracking-button tracking-button-secondary"
+                    href="{% url 'tickets_web:seguimiento' %}"
+                >
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </section>
+
+    <section class="tracking-panel">
+        <div class="tracking-results-header">
+            <div>
+                <h2 class="tracking-heading">Mis tickets</h2>
+                <p class="tracking-description" style="margin-bottom: 0;">
+                    Revisa el estado y los detalles de tus solicitudes.
+                </p>
+            </div>
+
+            <span class="tracking-count">
+                {% if tickets %}
+                    Resultados disponibles
+                {% else %}
+                    Sin resultados
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="tracking-list">
+            {% for ticket in tickets %}
+                <article class="tracking-ticket">
+                    <div class="tracking-ticket-top">
+                        <a
+                            class="tracking-code"
+                            href="{% url 'tickets_web:detalle' ticket.pk %}"
+                        >
+                            {{ ticket.codigo_ticket }}
+                        </a>
+
+                        <span class="tracking-badge">
+                            {{ ticket.id_estado_ticket.nombre }}
+                        </span>
+                    </div>
+
+                    <h3 class="tracking-subject">{{ ticket.asunto }}</h3>
+
+                    <div class="tracking-priority">
+                        Prioridad: {{ ticket.id_prioridad.nombre }}
+                    </div>
+
+                    <dl class="tracking-meta">
+                        <div>
+                            <dt>Fecha de creación</dt>
+                            <dd>{{ ticket.fecha_creacion|date:'d/m/Y H:i' }}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Técnico asignado</dt>
+                            <dd>
+                                {% if ticket.id_tecnico_asignado %}
+                                    {{ ticket.id_tecnico_asignado }}
+                                {% else %}
+                                    Pendiente de asignación
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="tracking-ticket-actions">
+                        <a
+                            class="tracking-button tracking-button-secondary"
+                            href="{% url 'tickets_web:detalle' ticket.pk %}"
+                        >
+                            Ver detalle →
+                        </a>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="tracking-empty">
+                    {% if codigo %}
+                        <h3>No encontramos ese ticket</h3>
+                        <p>
+                            No hay tickets tuyos que coincidan con el código
+                            introducido. Revisa el código e inténtalo nuevamente.
+                        </p>
+                        <a
+                            class="tracking-button tracking-button-secondary"
+                            href="{% url 'tickets_web:seguimiento' %}"
+                        >
+                            Ver todos mis tickets
+                        </a>
+                    {% else %}
+                        <h3>Aún no tienes tickets</h3>
+                        <p>
+                            Cuando registres una solicitud de soporte,
+                            podrás consultar aquí su estado.
+                        </p>
+                        <a
+                            class="tracking-button"
+                            href="{% url 'tickets_web:nuevo' %}"
+                        >
+                            Levantar un ticket
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="tracking-footer">
+        <a
+            class="tracking-button tracking-button-secondary"
+            href="{% url  'tickets_web:seguimiento' %}"
+        >
+            ← Volver al inicio
+        </a>
+
+        <a
+            class="tracking-button"
+            href="{% url 'tickets_web:nuevo' %}"
+        >
+            + Levantar un ticket
+        </a>
+    </div>
+
+</div>
+{% endblock %}

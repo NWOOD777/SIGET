@@ -17,6 +17,6 @@
         <dt>Fecha de resolución</dt><dd>{{ ticket.fecha_resolucion|date:'d/m/Y H:i' }}</dd>
         {% endif %}
     </dl>
-    <a class="btn-action btn-outline" href="{% url 'inicio' %}">Volver al inicio</a>
+    <a class="btn-action btn-outline" href="{% url 'tickets_web:seguimiento' %}">Volver</a>
 </section>
 {% endblock %}
