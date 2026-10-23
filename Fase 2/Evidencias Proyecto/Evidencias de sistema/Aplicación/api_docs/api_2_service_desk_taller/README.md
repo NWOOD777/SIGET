@@ -15,6 +15,9 @@ Consultar la [organización de las APIs](../alcance_y_pendientes.md) para conoce
 | POST | `/api/tickets/{id}/atenciones/` | [Registrar atención](#registrar-una-atención-técnica) |
 | PATCH | `/api/tickets/{id}/estado/` | [Cambiar estado](#cambiar-el-estado-de-un-ticket) |
 | POST | `/api/tickets/{id}/tomar/` | [Tomar un ticket disponible](#tomar-un-ticket-disponible) |
+| GET, POST | `/api/tickets/{id}/csat/` | [Calificación de servicio (CSAT)](tickets/csat.md) |
+| GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico-definición-técnica-de-implementación) |
+| GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico-definición-técnica-de-implementación) |
 
 ## Gestión de tickets — E5-H14
 
@@ -190,5 +193,14 @@ La creación de OT y la gestión del ticket comparten su bloqueo de fila. Cada o
 - Las validaciones de entrada se ejecutan antes de llamar al servicio. Un cuerpo inválido puede devolver **400** antes de comprobar la existencia o el estado del ticket.
 
 Los mecanismos de autenticación se detallan en [uso general](../uso_general.md).
+
+## Calificación de servicio (CSAT) — E5-H30
+
+Permite al **Usuario solicitante** activo y titular de un ticket evaluar por única vez la atención recibida cuando el ticket ha finalizado su ciclo de vida y se encuentra en estado **Cerrado** (tanto si requirió una orden de trabajo como si se resolvió directamente en Service Desk).
+
+- **`GET, POST /api/tickets/{id}/csat/`**: consulta en solo lectura (`GET`) y registro único (`POST`) de puntuación entera de `1` a `5` estrellas y comentario opcional, con bloqueo transaccional sobre el ticket y auditoría `TICKET_CSAT_REGISTRADO`.
+- **`GET /api/tickets/indicadores-csat/`** y **`GET /api/tickets/indicadores-csat/{id_tecnico}/`**: consulta de `cantidad_evaluaciones` y `promedio_estrellas` calculados dinámicamente por técnico asignado (disponible para **Administrador del sistema** sobre todos los técnicos y para **Técnico de soporte** sobre sus propios indicadores).
+
+Véase el detalle de contratos, validaciones, concurrencia e indicadores en [Calificación de servicio (CSAT)](tickets/csat.md).
 
 [Índice general](../README.md)

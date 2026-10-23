@@ -96,3 +96,42 @@ class PuedeAtenderTickets(permissions.BasePermission):
         if usuario_tiene_rol(usuario, ROL_TECNICO) and usuario_tiene_permiso(usuario, "TICKET_ATENDER"):
             return True
         raise exceptions.PermissionDenied("Se requiere rol Técnico de soporte y permiso TICKET_ATENDER.")
+
+
+class PuedeGestionarCSAT(permissions.BasePermission):
+    """
+    Permite consultar y registrar calificaciones CSAT (E5-H30) exclusivamente
+    a cuentas activas con rol 'Usuario solicitante'.
+    """
+
+    def has_permission(self, request: Request, view) -> bool:
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para consultar o registrar la evaluación CSAT del ticket."
+            )
+        if usuario.activo and usuario_tiene_rol(usuario, ROL_USUARIO_SOLICITANTE):
+            return True
+        raise exceptions.PermissionDenied(
+            "Se requiere rol Usuario solicitante para evaluar o consultar la calificación CSAT."
+        )
+
+
+class PuedeConsultarIndicadoresCSAT(permissions.BasePermission):
+    """
+    Permite consultar los indicadores agregados CSAT de técnicos a cuentas activas
+    con rol 'Administrador del sistema' o 'Técnico de soporte'.
+    """
+
+    def has_permission(self, request: Request, view) -> bool:
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para consultar indicadores CSAT."
+            )
+        if usuario.activo and (es_administrador(usuario) or usuario_tiene_rol(usuario, ROL_TECNICO)):
+            return True
+        raise exceptions.PermissionDenied(
+            "Se requiere rol Administrador del sistema o Técnico de soporte para consultar indicadores CSAT."
+        )
+

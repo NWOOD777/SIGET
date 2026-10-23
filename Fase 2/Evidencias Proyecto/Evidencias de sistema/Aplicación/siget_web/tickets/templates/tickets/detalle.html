@@ -19,4 +19,58 @@
     </dl>
     <a class="btn-action btn-outline" href="{% url 'tickets_web:seguimiento' %}">Volver</a>
 </section>
+
+<section class="session-card" aria-labelledby="titulo-csat">
+    <div class="session-header">
+        <h2 id="titulo-csat">Calificación de servicio (CSAT)</h2>
+    </div>
+
+    {% if csat_confirmado %}
+    <div class="alert-box alert-success" role="status">
+        ¡Muchas gracias por calificar nuestro servicio! Tu evaluación fue registrada exitosamente.
+    </div>
+    {% endif %}
+
+    {% if form_csat and form_csat.non_field_errors %}
+        {% for error in form_csat.non_field_errors %}
+        <div class="alert-box alert-danger" role="alert">{{ error }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if evaluacion_csat %}
+    <p>Evaluación registrada en modo de solo lectura.</p>
+    <dl class="portal-datos">
+        <dt>Puntuación otorgada</dt>
+        <dd>{{ evaluacion_csat.calificacion_estrellas }} de 5 estrellas</dd>
+        <dt>Comentario</dt>
+        <dd>{% if evaluacion_csat.comentario %}{{ evaluacion_csat.comentario|linebreaksbr }}{% else %}Sin comentario adicional{% endif %}</dd>
+        <dt>Fecha de evaluación</dt>
+        <dd>{{ evaluacion_csat.fecha_evaluacion|date:'d/m/Y H:i' }}</dd>
+    </dl>
+    {% elif ticket_cerrado %}
+    <p>Tu ticket ha sido cerrado. Por favor, califica la atención recibida con una puntuación de 1 a 5 estrellas.</p>
+    <form method="post" action="{% url 'tickets_web:detalle' ticket.pk %}" novalidate>
+        {% csrf_token %}
+        <fieldset class="form-group">
+            <legend class="form-label">{{ form_csat.calificacion_estrellas.label }}</legend>
+            {{ form_csat.calificacion_estrellas }}
+            {% for error in form_csat.calificacion_estrellas.errors %}
+            <div class="form-error" role="alert">{{ error }}</div>
+            {% endfor %}
+        </fieldset>
+        <div class="form-group">
+            <label for="{{ form_csat.comentario.id_for_label }}" class="form-label">{{ form_csat.comentario.label }}</label>
+            {{ form_csat.comentario }}
+            {% for error in form_csat.comentario.errors %}
+            <div class="form-error" role="alert">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn-login btn-submit">Enviar calificación</button>
+    </form>
+    {% else %}
+    <p>
+        La calificación de satisfacción estará disponible únicamente cuando el ticket haya finalizado su atención y se encuentre en estado <strong>Cerrado</strong> (estado actual: <strong>{{ ticket.id_estado_ticket.nombre }}</strong>).
+    </p>
+    {% endif %}
+</section>
 {% endblock %}

@@ -9,7 +9,6 @@ from asignaciones.models import (
     HistorialEstadoActivo,
 )
 
-
 from .models import (
     Activo,
     CategoriaActivo,
