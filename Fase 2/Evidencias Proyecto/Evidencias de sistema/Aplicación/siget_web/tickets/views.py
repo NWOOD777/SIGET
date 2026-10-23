@@ -16,24 +16,41 @@ from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
 from tickets.permissions import (
     PuedeAsignarTickets,
     PuedeAtenderTickets,
+    PuedeConsultarIndicadoresCSAT,
     PuedeConsultarTickets,
     PuedeCrearTicket,
+    PuedeGestionarCSAT,
     _obtener_usuario_siget,
 )
-from tickets.selectors import activos_reportables_por_usuario
+from tickets.selectors import (
+    activos_reportables_por_usuario,
+    indicadores_csat_por_tecnico,
+    listar_indicadores_csat_tecnicos,
+)
 from tickets.serializers import (
+    EstadoTicketSerializer,
+    EvaluacionCSATCreateSerializer,
+    EvaluacionCSATReadSerializer,
+    IndicadoresCSATTecnicoSerializer,
+    PrioridadTicketSerializer,
+    SLASerializer,
     TicketAsignacionSerializer,
     TicketAtencionCreateSerializer,
     TicketAtencionReadSerializer,
-    TicketEstadoSerializer,
-    EstadoTicketSerializer,
-    PrioridadTicketSerializer,
-    SLASerializer,
     TicketCreateSerializer,
+    TicketEstadoSerializer,
     TicketReadSerializer,
 )
-from tickets.services import asignar_ticket, cambiar_estado_ticket, crear_ticket, registrar_atencion_ticket, tomar_ticket
-from tickets.services import ESTADO_TICKET_ABIERTO
+from tickets.services import (
+    ESTADO_TICKET_ABIERTO,
+    asignar_ticket,
+    cambiar_estado_ticket,
+    consultar_evaluacion_csat,
+    crear_ticket,
+    registrar_atencion_ticket,
+    registrar_evaluacion_csat,
+    tomar_ticket,
+)
 from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
@@ -225,11 +242,13 @@ class TicketAsignarView(APIView):
     def post(self, request, pk):
         serializer = TicketAsignacionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        assert isinstance(data, dict)
         ticket = asignar_ticket(
             id_ticket=pk,
             administrador=_obtener_usuario_siget(request),
-            id_tecnico_asignado=serializer.validated_data["id_tecnico_asignado"],
-            motivo=serializer.validated_data["motivo"],
+            id_tecnico_asignado=data["id_tecnico_asignado"],
+            motivo=data["motivo"],
             ip_origen=direccion_ip_cliente(request),
         )
         return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
@@ -241,10 +260,12 @@ class TicketAtencionCreateView(APIView):
     def post(self, request, pk):
         serializer = TicketAtencionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        assert isinstance(data, dict)
         atencion = registrar_atencion_ticket(
             id_ticket=pk,
             tecnico=_obtener_usuario_siget(request),
-            mensaje=serializer.validated_data["mensaje"],
+            mensaje=data["mensaje"],
             ip_origen=direccion_ip_cliente(request),
         )
         return Response(TicketAtencionReadSerializer(atencion).data, status=status.HTTP_201_CREATED)
@@ -256,10 +277,14 @@ class TicketEstadoView(APIView):
     def patch(self, request, pk):
         serializer = TicketEstadoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        assert isinstance(data, dict)
         ticket = cambiar_estado_ticket(
-            id_ticket=pk, tecnico=_obtener_usuario_siget(request),
-            id_estado_ticket=serializer.validated_data["id_estado_ticket"],
-            mensaje=serializer.validated_data["mensaje"], ip_origen=direccion_ip_cliente(request),
+            id_ticket=pk,
+            tecnico=_obtener_usuario_siget(request),
+            id_estado_ticket=data["id_estado_ticket"],
+            mensaje=data["mensaje"],
+            ip_origen=direccion_ip_cliente(request),
         )
         return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
 
@@ -274,3 +299,123 @@ class TicketTomarView(APIView):
             id_ticket=pk, tecnico=_obtener_usuario_siget(request), ip_origen=direccion_ip_cliente(request),
         )
         return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
+
+
+class TicketCSATView(APIView):
+    """
+    Consulta (GET) y registro único (POST) de la evaluación de satisfacción
+    CSAT sobre un ticket propio en estado Cerrado (E5-H30).
+    No expone edición ni eliminación.
+    """
+
+    permission_classes = [PuedeGestionarCSAT]
+
+    def get(self, request: Request, pk: int):
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para consultar la evaluación de servicio."
+            )
+        evaluacion = consultar_evaluacion_csat(id_ticket=pk, solicitante=usuario)
+        return Response(
+            EvaluacionCSATReadSerializer(evaluacion).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request: Request, pk: int):
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para calificar el servicio."
+            )
+        serializer = EvaluacionCSATCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        assert isinstance(data, dict)
+
+        evaluacion = registrar_evaluacion_csat(
+            id_ticket=pk,
+            solicitante=usuario,
+            calificacion_estrellas=data["calificacion_estrellas"],
+            comentario=data.get("comentario"),
+            ip_origen=direccion_ip_cliente(request),
+        )
+        return Response(
+            EvaluacionCSATReadSerializer(evaluacion).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class IndicadoresCSATListView(APIView):
+    """
+    Consulta de indicadores CSAT por técnico (E5-H30):
+    - Administrador: lista todos los técnicos o filtra por ?tecnico=<id>.
+    - Técnico: retorna exclusivamente sus propios indicadores.
+    """
+
+    permission_classes = [PuedeConsultarIndicadoresCSAT]
+
+    def get(self, request: Request):
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para consultar indicadores CSAT."
+            )
+
+        tecnico_param = request.GET.get("tecnico", "").strip()
+        if tecnico_param:
+            try:
+                id_tecnico = int(tecnico_param)
+            except ValueError:
+                id_tecnico = 0
+            if not tecnico_param.isdigit() or id_tecnico <= 0:
+                raise exceptions.ValidationError(
+                    {"tecnico": ["Debe indicar un identificador numérico de técnico válido."]}
+                )
+            if not es_administrador(usuario) and usuario.id_usuario != id_tecnico:
+                raise exceptions.PermissionDenied(
+                    "Un técnico únicamente puede consultar sus propios indicadores CSAT."
+                )
+            indicador = indicadores_csat_por_tecnico(id_tecnico)
+            return Response(
+                IndicadoresCSATTecnicoSerializer(indicador).data,
+                status=status.HTTP_200_OK,
+            )
+
+        if es_administrador(usuario):
+            indicadores = listar_indicadores_csat_tecnicos()
+            return Response(
+                IndicadoresCSATTecnicoSerializer(indicadores, many=True).data,
+                status=status.HTTP_200_OK,
+            )
+
+        indicador = indicadores_csat_por_tecnico(usuario.id_usuario)
+        return Response(
+            IndicadoresCSATTecnicoSerializer(indicador).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class IndicadoresCSATDetailView(APIView):
+    """
+    Consulta de indicadores CSAT de un técnico específico (E5-H30).
+    Administrador puede consultar cualquier técnico; Técnico solo el propio.
+    """
+
+    permission_classes = [PuedeConsultarIndicadoresCSAT]
+
+    def get(self, request: Request, id_tecnico: int):
+        usuario = _obtener_usuario_siget(request)
+        if not usuario:
+            raise exceptions.NotAuthenticated(
+                "Inicie sesión para consultar indicadores CSAT."
+            )
+        if not es_administrador(usuario) and usuario.id_usuario != id_tecnico:
+            raise exceptions.PermissionDenied(
+                "Un técnico únicamente puede consultar sus propios indicadores CSAT."
+            )
+        indicador = indicadores_csat_por_tecnico(id_tecnico)
+        return Response(
+            IndicadoresCSATTecnicoSerializer(indicador).data,
+            status=status.HTTP_200_OK,
+        )

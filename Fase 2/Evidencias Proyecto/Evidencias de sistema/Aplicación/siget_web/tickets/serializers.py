@@ -1,9 +1,10 @@
 """
-Serializadores DRF para Service Desk y Tickets de Soporte (E5-H13).
+Serializadores DRF para Service Desk y Tickets de Soporte (E5-H13, E5-H14, E5-H30).
 """
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 
-from tickets.models import SLA, ComentarioTicket, EstadoTicket, PrioridadTicket, Ticket
+from tickets.models import SLA, ComentarioTicket, EstadoTicket, EvaluacionCSAT, PrioridadTicket, Ticket
+from tickets.services import limpiar_comentario_csat, validar_calificacion_csat
 
 
 class PrioridadTicketSerializer(serializers.ModelSerializer):
@@ -124,3 +125,78 @@ class TicketAtencionReadSerializer(serializers.ModelSerializer):
         model = ComentarioTicket
         fields = ["id_comentario", "id_ticket", "id_usuario", "mensaje", "fecha_registro"]
         read_only_fields = fields
+
+
+class CalificacionEstrellasSerializerField(serializers.Field):
+    default_error_messages = {
+        "required": "La calificación en estrellas es obligatoria.",
+        "null": "La calificación en estrellas es obligatoria.",
+        "invalid": "Ingrese un número entero válido entre 1 y 5.",
+        "out_of_range": "La calificación debe estar entre 1 y 5 estrellas.",
+    }
+
+    def to_internal_value(self, data):
+        try:
+            return validar_calificacion_csat(data)
+        except exceptions.ValidationError as exc:
+            codigos = exc.get_codes()
+            codigo = (
+                codigos.get("calificacion_estrellas", ["invalid"])[0]
+                if isinstance(codigos, dict)
+                else "invalid"
+            )
+            self.fail(codigo if codigo in self.error_messages else "invalid")
+
+    def to_representation(self, value):
+        return int(value)
+
+
+class ComentarioCSATSerializerField(serializers.Field):
+    default_error_messages = {
+        "invalid": "El comentario debe ser un texto válido.",
+    }
+
+    def to_internal_value(self, data):
+        try:
+            return limpiar_comentario_csat(data)
+        except exceptions.ValidationError:
+            self.fail("invalid")
+
+    def to_representation(self, value):
+        return value
+
+
+class EvaluacionCSATCreateSerializer(serializers.Serializer):
+    calificacion_estrellas = CalificacionEstrellasSerializerField(required=True, allow_null=False)
+    comentario = ComentarioCSATSerializerField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        attrs.setdefault("comentario", None)
+        return attrs
+
+
+class EvaluacionCSATReadSerializer(serializers.ModelSerializer):
+    codigo_ticket = serializers.CharField(source="id_ticket.codigo_ticket", read_only=True)
+
+    class Meta:
+        model = EvaluacionCSAT
+        fields = [
+            "id_evaluacion",
+            "id_ticket",
+            "codigo_ticket",
+            "id_usuario",
+            "calificacion_estrellas",
+            "comentario",
+            "fecha_evaluacion",
+        ]
+        read_only_fields = fields
+
+
+class IndicadoresCSATTecnicoSerializer(serializers.Serializer):
+    id_tecnico = serializers.IntegerField(read_only=True)
+    nombres = serializers.CharField(read_only=True)
+    apellidos = serializers.CharField(read_only=True)
+    correo = serializers.EmailField(read_only=True)
+    cantidad_evaluaciones = serializers.IntegerField(read_only=True)
+    promedio_estrellas = serializers.FloatField(read_only=True, allow_null=True)
+

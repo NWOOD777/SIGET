@@ -56,8 +56,12 @@ class EstadoTicket(models.Model):
 
 class Ticket(models.Model):
     if TYPE_CHECKING:
-        # Django genera este identificador a partir de la ForeignKey.
+        # Django genera estos identificadores a partir de las ForeignKey.
+        id_usuario_solicitante_id: int
+        id_tecnico_asignado_id: int | None
         id_activo_id: int | None
+        id_estado_ticket_id: int
+        id_prioridad_id: int
 
     id_ticket = models.AutoField(primary_key=True)
     codigo_ticket = models.CharField(max_length=50, unique=True)
@@ -156,6 +160,10 @@ class AdjuntoTicket(models.Model):
 
 
 class EvaluacionCSAT(models.Model):
+    if TYPE_CHECKING:
+        id_ticket_id: int
+        id_usuario_id: int
+
     id_evaluacion = models.AutoField(primary_key=True)
     id_ticket = models.OneToOneField(
         Ticket,

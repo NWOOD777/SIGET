@@ -1,17 +1,27 @@
 """
-Servicios de dominio para el módulo Service Desk y Tickets de Soporte (E5-H13).
+Servicios de dominio para el módulo Service Desk y Tickets de Soporte (E5-H13, E5-H14, E5-H30).
 Gestiona persistencia atómica, generación de código secuencial, reglas de negocio y auditoría.
 """
-from django.db import transaction
+import re
+from typing import Any
+
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import exceptions
 
 from activos.models import Activo
 from notificaciones.services import notificar_actualizacion_ticket
 from siget.db import bloquear_operacion, siguiente_codigo, transaccion_operacion
-from tickets.models import ComentarioTicket, EstadoTicket, PrioridadTicket, Ticket
+from tickets.models import ComentarioTicket, EstadoTicket, EvaluacionCSAT, PrioridadTicket, Ticket
 from usuarios.models import Usuario
-from usuarios.services import ROL_TECNICO, es_administrador, registrar_auditoria, usuario_tiene_permiso, usuario_tiene_rol
+from usuarios.services import (
+    ROL_TECNICO,
+    ROL_USUARIO_SOLICITANTE,
+    es_administrador,
+    registrar_auditoria,
+    usuario_tiene_permiso,
+    usuario_tiene_rol,
+)
 
 ESTADO_TICKET_ABIERTO = "Abierto"
 ESTADO_TICKET_EN_PROCESO = "En Proceso"
@@ -315,3 +325,173 @@ def asignar_ticket(*, id_ticket, administrador, id_tecnico_asignado, motivo, ip_
         ),
     )
     return ticket
+
+
+MENSAJE_CSAT_NO_CERRADO = (
+    "La calificación CSAT solo está disponible cuando el ticket se encuentra en estado Cerrado."
+)
+MENSAJE_CSAT_DUPLICADO = "Este ticket ya cuenta con una evaluación CSAT registrada."
+
+
+def validar_calificacion_csat(valor: Any) -> int:
+    """
+    Valida que la puntuación CSAT sea un entero estricto entre 1 y 5.
+    Rechaza valores nulos, vacíos, booleanos, decimales (incluidos 3.0 o '3.0') y fuera de rango.
+    Acepta cadenas de dígitos provenientes de formularios HTML mediante conversión validada.
+    """
+    if valor is None or (isinstance(valor, str) and not valor.strip()):
+        raise exceptions.ValidationError(
+            {"calificacion_estrellas": ["La calificación en estrellas es obligatoria."]},
+            code="required",
+        )
+    if isinstance(valor, bool):
+        raise exceptions.ValidationError(
+            {"calificacion_estrellas": ["Ingrese un número entero válido entre 1 y 5."]},
+            code="invalid",
+        )
+    if isinstance(valor, int):
+        estrellas = valor
+    elif isinstance(valor, str):
+        texto = valor.strip()
+        if not re.fullmatch(r"[+-]?[0-9]+", texto):
+            raise exceptions.ValidationError(
+                {"calificacion_estrellas": ["Ingrese un número entero válido entre 1 y 5."]},
+                code="invalid",
+            )
+        try:
+            estrellas = int(texto)
+        except ValueError as exc:
+            raise exceptions.ValidationError(
+                {"calificacion_estrellas": ["Ingrese un número entero válido entre 1 y 5."]},
+                code="invalid",
+            ) from exc
+    else:
+        raise exceptions.ValidationError(
+            {"calificacion_estrellas": ["Ingrese un número entero válido entre 1 y 5."]},
+            code="invalid",
+        )
+
+    if estrellas < 1 or estrellas > 5:
+        raise exceptions.ValidationError(
+            {"calificacion_estrellas": ["La calificación debe estar entre 1 y 5 estrellas."]},
+            code="out_of_range",
+        )
+    return estrellas
+
+
+def limpiar_comentario_csat(comentario: Any) -> str | None:
+    """Normaliza el comentario opcional CSAT, devolviendo None si se omite o queda vacío."""
+    if comentario is None:
+        return None
+    if not isinstance(comentario, str):
+        raise exceptions.ValidationError(
+            {"comentario": ["El comentario debe ser un texto válido."]},
+            code="invalid",
+        )
+    limpio = comentario.strip()
+    return limpio if limpio else None
+
+
+def registrar_evaluacion_csat(
+    *,
+    id_ticket: int,
+    solicitante: Usuario | None,
+    calificacion_estrellas: Any,
+    comentario: Any = None,
+    ip_origen: str | None = None,
+) -> EvaluacionCSAT:
+    """
+    Registra la evaluación CSAT (E5-H30) para un ticket Cerrado propio del Usuario solicitante.
+    Bloquea la fila del ticket para serializar envíos concurrentes y registra auditoría atómicamente.
+    """
+    if (
+        not solicitante
+        or not solicitante.activo
+        or not usuario_tiene_rol(solicitante, ROL_USUARIO_SOLICITANTE)
+    ):
+        raise exceptions.PermissionDenied(
+            "Se requiere una cuenta activa con rol Usuario solicitante para evaluar el servicio."
+        )
+
+    estrellas = validar_calificacion_csat(calificacion_estrellas)
+    comentario_limpio = limpiar_comentario_csat(comentario)
+
+    try:
+        with transaction.atomic():
+            try:
+                ticket = Ticket.objects.select_for_update(of=("self",)).get(pk=id_ticket)
+            except Ticket.DoesNotExist:
+                raise exceptions.NotFound("Ticket no encontrado.")
+
+            if ticket.id_usuario_solicitante_id != solicitante.pk:
+                raise exceptions.PermissionDenied(
+                    "Solo el Usuario solicitante titular del ticket puede evaluarlo."
+                )
+
+            if ticket.id_estado_ticket.nombre != ESTADO_TICKET_CERRADO:
+                raise exceptions.ValidationError({"detail": MENSAJE_CSAT_NO_CERRADO})
+
+            if EvaluacionCSAT.objects.filter(id_ticket=ticket).exists():
+                raise exceptions.ValidationError({"detail": MENSAJE_CSAT_DUPLICADO})
+
+            evaluacion = EvaluacionCSAT.objects.create(
+                id_ticket=ticket,
+                id_usuario=solicitante,
+                calificacion_estrellas=estrellas,
+                comentario=comentario_limpio,
+                fecha_evaluacion=timezone.now(),
+            )
+
+            registrar_auditoria(
+                usuario=solicitante,
+                modulo="SERVICE_DESK",
+                accion="TICKET_CSAT_REGISTRADO",
+                entidad_afectada="evaluacion_csat",
+                id_registro_afectado=evaluacion.pk,
+                detalle_evento=(
+                    f"Evaluación CSAT #{evaluacion.pk} registrada en ticket "
+                    f"{ticket.codigo_ticket} (#{ticket.pk}) por solicitante #{solicitante.pk}. "
+                    f"Calificación: {estrellas}/5."
+                ),
+                direccion_ip=ip_origen,
+            )
+    except IntegrityError as exc:
+        raise exceptions.ValidationError({"detail": MENSAJE_CSAT_DUPLICADO}) from exc
+
+    return evaluacion
+
+
+def consultar_evaluacion_csat(
+    *,
+    id_ticket: int,
+    solicitante: Usuario | None,
+) -> EvaluacionCSAT:
+    """
+    Consulta la evaluación CSAT existente de un ticket propio del Usuario solicitante.
+    No modifica datos ni genera registros de auditoría.
+    """
+    if (
+        not solicitante
+        or not solicitante.activo
+        or not usuario_tiene_rol(solicitante, ROL_USUARIO_SOLICITANTE)
+    ):
+        raise exceptions.PermissionDenied(
+            "Se requiere una cuenta activa con rol Usuario solicitante para consultar la evaluación."
+        )
+
+    try:
+        ticket = Ticket.objects.get(pk=id_ticket)
+    except Ticket.DoesNotExist:
+        raise exceptions.NotFound("Ticket no encontrado.")
+
+    if ticket.id_usuario_solicitante_id != solicitante.pk:
+        raise exceptions.PermissionDenied(
+            "Solo el Usuario solicitante titular del ticket puede consultar su evaluación CSAT."
+        )
+
+    evaluacion = EvaluacionCSAT.objects.filter(id_ticket=ticket).first()
+    if evaluacion is None:
+        raise exceptions.NotFound("El ticket no registra una evaluación CSAT.")
+
+    return evaluacion
+
