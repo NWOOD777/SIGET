@@ -1,7 +1,7 @@
 
 from django.urls import path
 
-from .views import OrdenTrabajoListCreateView, IniciarReparacionView
+from .views import IniciarReparacionView, OrdenTrabajoListCreateView
 
 urlpatterns = [
     path("", OrdenTrabajoListCreateView.as_view(), name="ordenes-trabajo"),

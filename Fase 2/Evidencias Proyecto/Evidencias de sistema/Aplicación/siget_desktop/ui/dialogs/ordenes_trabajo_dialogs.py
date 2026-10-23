@@ -7,7 +7,6 @@ from typing import Any
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDialogButtonBox,
     QFormLayout,
     QLabel,
@@ -15,8 +14,8 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QPlainTextEdit,
+    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,

@@ -10,7 +10,6 @@ from usuarios.services import registrar_auditoria
 
 from .models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
 
-
 ESTADO_OT_DIAGNOSTICO = "En Diagnóstico"
 ESTADO_OT_REPARACION = "En Reparación"
 ESTADOS_OT_VIGENTES = ["En Diagnóstico", "En Reparación", "Pausada"]

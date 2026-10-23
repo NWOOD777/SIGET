@@ -26,11 +26,11 @@ from siget_desktop.auth.manager import auth_manager
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.views.activos_view import ActivosView
 from siget_desktop.ui.views.dashboard_view import DashboardView
+from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
 from siget_desktop.ui.views.solicitudes_view import SolicitudesView
 from siget_desktop.ui.views.tickets_view import TicketsView
 from siget_desktop.ui.views.usuarios_view import UsuariosView
 from siget_desktop.ui.workers import ApiWorker
-from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
 
 
 class MainWindow(QMainWindow):

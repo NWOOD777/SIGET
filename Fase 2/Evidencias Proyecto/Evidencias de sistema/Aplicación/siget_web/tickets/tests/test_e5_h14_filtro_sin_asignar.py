@@ -1,12 +1,12 @@
 """Filtro de disponibles: integración PostgreSQL sin alterar el alcance RBAC."""
 from django.db import connection
+from django.test import override_settings
 
 from notificaciones.models import Notificacion
 from tickets.models import EstadoTicket
 from tickets.services import crear_ticket
 from usuarios.models import BitacoraAuditoria
 from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
-from django.test import override_settings
 
 
 @override_settings(SIGET_PUBLIC_URL="", RESEND_FROM_EMAIL="SIGET <avisos@example.invalid>")
