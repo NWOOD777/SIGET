@@ -15,7 +15,11 @@ from asignaciones.models import (
     HistorialEstadoActivo,
     SolicitudAsignacion,
 )
-from notificaciones.services import notificar_resolucion_solicitud
+from notificaciones.services import (
+    notificar_devolucion_asignacion,
+    notificar_entrega_asignacion,
+    notificar_resolucion_solicitud,
+)
 from siget.db import bloquear_operacion, transaccion_operacion
 from tickets.models import Ticket
 from tickets.services import crear_ticket
@@ -346,6 +350,8 @@ def registrar_entrega_asignacion(
             direccion_ip=ip_origen,
         )
 
+        notificar_entrega_asignacion(asignacion)
+
     return asignacion
 
 
@@ -505,5 +511,7 @@ def registrar_devolucion_asignacion(
             detalle_evento=detalle_auditoria,
             direccion_ip=ip_origen,
         )
+
+        notificar_devolucion_asignacion(devolucion, ticket=ticket_generado)
 
     return devolucion

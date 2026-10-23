@@ -51,8 +51,13 @@
                         <span>Seguimiento de tickets</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <span class="nav-pendiente" aria-disabled="true" title="Disponible en un próximo incremento">Notificaciones (próximamente)</span>
+                <li class="nav-item{% if request.resolver_match.namespace == 'notificaciones_web' or request.resolver_match.url_name == 'notificaciones' or request.resolver_match.url_name == 'detalle_notificacion' %} active{% endif %}">
+                    <a href="{% url 'usuarios:notificaciones' %}">
+                        <span>Notificaciones</span>
+                        {% if notificaciones_pendientes %}
+                            <span class="nav-notif-badge">{{ notificaciones_pendientes }}</span>
+                        {% endif %}
+                    </a>
                 </li>
                 <li class="nav-item{% if request.resolver_match.url_name == 'perfil' %} active{% endif %}">
                     <a href="{% url 'usuarios:perfil' %}"><span>Mi perfil</span></a>
@@ -78,9 +83,24 @@
                 <p>{% block subtitulo %}Portal de autoservicio{% endblock %}</p>
             </div>
 
-            <div class="top-user-pill">
-                <div class="top-avatar">{{ iniciales }}</div>
-                <span class="top-user-meta">{{ nombre }}</span>
+            <div class="top-navbar-actions">
+                <a href="{% url 'usuarios:notificaciones' %}"
+                   class="top-notif-btn"
+                   id="top-notificaciones-link"
+                   aria-label="Centro de notificaciones{% if notificaciones_pendientes %}, {{ notificaciones_pendientes }} avisos pendientes{% endif %}"
+                   title="Centro de notificaciones">
+                    <svg class="top-notif-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    {% if notificaciones_pendientes %}
+                        <span class="top-notif-badge" id="top-notificaciones-contador" data-pendientes="{{ notificaciones_pendientes }}">{{ notificaciones_pendientes }}</span>
+                    {% endif %}
+                </a>
+
+                <div class="top-user-pill">
+                    <div class="top-avatar">{{ iniciales }}</div>
+                    <span class="top-user-meta">{{ nombre }}</span>
+                </div>
             </div>
         </header>
 

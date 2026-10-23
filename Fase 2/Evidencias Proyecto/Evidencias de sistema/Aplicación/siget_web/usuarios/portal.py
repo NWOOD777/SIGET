@@ -4,9 +4,17 @@ from django.views.decorators.http import require_GET
 
 from asignaciones.models import Asignacion, SolicitudAsignacion
 from asignaciones.services import ESTADO_ASIGNACION_ACTIVA
+from notificaciones.services import contar_notificaciones_pendientes
 from tickets.models import Ticket
 from tickets.services import ESTADOS_TICKET_ACTIVOS
 from usuarios.services import ROL_USUARIO_SOLICITANTE, obtener_usuario_actual, usuario_tiene_rol
+
+
+def _contar_pendientes_seguro(usuario) -> int:
+    try:
+        return contar_notificaciones_pendientes(usuario)
+    except AssertionError:
+        return 0
 
 
 def contexto_portal(request):
@@ -20,7 +28,11 @@ def identidad_portal(usuario):
     """Identidad visual común para todas las páginas del portal."""
     nombre = f"{usuario.nombres} {usuario.apellidos}".strip()
     iniciales = "".join(p[0] for p in (usuario.nombres, usuario.apellidos) if p).upper()
-    return {"nombre": nombre, "iniciales": iniciales or "US"}
+    return {
+        "nombre": nombre,
+        "iniciales": iniciales or "US",
+        "notificaciones_pendientes": _contar_pendientes_seguro(usuario),
+    }
 
 
 def acceso_denegado(request):
@@ -48,6 +60,7 @@ def resumen_usuario(usuario):
         "cantidad_equipos": equipos.count(),
         "cantidad_solicitudes": solicitudes.filter(id_estado_solicitud__nombre__in=["Pendiente", "Aprobada"]).count(),
         "cantidad_tickets": tickets.filter(id_estado_ticket__nombre__in=ESTADOS_TICKET_ACTIVOS).count(),
+        "notificaciones_pendientes": _contar_pendientes_seguro(usuario),
         "equipos_recientes": equipos[:5], "solicitudes_recientes": solicitudes[:5],
         "tickets_recientes": tickets[:5],
     }

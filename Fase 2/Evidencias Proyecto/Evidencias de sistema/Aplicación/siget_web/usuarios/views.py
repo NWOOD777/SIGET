@@ -221,6 +221,7 @@ def inicio(request: HttpRequest) -> HttpResponse:
         "usuario_id": usuario.id_usuario,
         "nombre": nombre,
         "iniciales": iniciales,
+        "notificaciones_pendientes": 0,
     }
     context.update(resumen_usuario(usuario))
     return render(request, "usuarios/inicio.html", context)

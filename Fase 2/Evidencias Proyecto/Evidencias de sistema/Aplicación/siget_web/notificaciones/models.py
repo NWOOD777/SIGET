@@ -3,6 +3,11 @@
 from django.db import models
 from django.utils import timezone
 
+CANAL_PLATAFORMA = "PLATAFORMA"
+CANAL_CORREO_API = "CORREO_API"
+CANAL_AMBOS = "AMBOS"
+CANALES_PLATAFORMA = (CANAL_PLATAFORMA, CANAL_AMBOS)
+
 
 class Notificacion(models.Model):
     id_notificacion = models.AutoField(primary_key=True)
@@ -10,7 +15,7 @@ class Notificacion(models.Model):
     modulo_origen = models.CharField(max_length=50)
     titulo = models.CharField(max_length=150)
     mensaje = models.TextField()
-    canal = models.CharField(max_length=20, default="CORREO_API")
+    canal = models.CharField(max_length=20, default=CANAL_CORREO_API)
     leida = models.BooleanField(default=False)
     estado_envio = models.CharField(max_length=20, default="PENDIENTE")
     intentos_envio = models.SmallIntegerField(default=0)

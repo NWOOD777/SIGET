@@ -1,0 +1,70 @@
+{% extends 'usuarios/base_portal.html' %}
+{% block titulo %}Notificaciones{% endblock %}
+{% block encabezado %}Centro de notificaciones{% endblock %}
+{% block subtitulo %}Consulta los avisos sobre tus solicitudes de equipos, asignaciones y tickets de soporte.{% endblock %}
+{% block contenido %}
+<section class="session-card">
+    <div class="portal-toolbar">
+        <div class="portal-toolbar-group" role="group" aria-label="Filtrar notificaciones">
+            <a class="btn-action {% if not solo_pendientes %}btn-primary{% else %}btn-outline{% endif %}" href="{% url 'usuarios:notificaciones' %}">Todas</a>
+            <a class="btn-action {% if solo_pendientes %}btn-primary{% else %}btn-outline{% endif %}" href="{% url 'usuarios:notificaciones' %}?filtro=pendientes">Pendientes ({{ notificaciones_pendientes }})</a>
+        </div>
+    </div>
+
+    {% if not notificaciones_pendientes %}
+        <div class="notificaciones-aviso-pendientes" role="status">
+            No tienes notificaciones pendientes en este momento
+        </div>
+    {% endif %}
+
+    {% if avisos %}
+        <ul class="notificaciones-lista">
+            {% for item in avisos %}
+                <li class="notificacion-item {% if not item.notificacion.leida %}no-leida{% else %}leida{% endif %}">
+                    <div class="notificacion-cabecera">
+                        <h2 class="notificacion-titulo">
+                            <form method="post" action="{% url 'usuarios:marcar_notificacion_leida' item.notificacion.pk %}" class="notificacion-form-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="notificacion-titulo-btn">{{ item.notificacion.titulo }}</button>
+                            </form>
+                        </h2>
+                        <div class="notificacion-meta">
+                            <span class="badge badge-role">{{ item.modulo_etiqueta }}</span>
+                            {% if item.notificacion.leida %}
+                                <span class="badge badge-inactive">Leída</span>
+                            {% else %}
+                                <span class="badge badge-active">Pendiente</span>
+                            {% endif %}
+                            <span>{{ item.notificacion.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="notificacion-mensaje">{{ item.notificacion.mensaje }}</div>
+
+                    <div class="notificacion-acciones">
+                        <form method="post" action="{% url 'usuarios:marcar_notificacion_leida' item.notificacion.pk %}" class="notificacion-form-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action btn-outline btn-sm">Ver detalle</button>
+                        </form>
+
+                        {% if item.recurso %}
+                            <form method="post" action="{% url 'usuarios:abrir_notificacion' item.notificacion.pk %}" class="notificacion-form-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-primary btn-sm">{{ item.recurso.etiqueta }}</button>
+                            </form>
+                        {% endif %}
+
+                        {% if not item.notificacion.leida %}
+                            <form method="post" action="{% url 'usuarios:marcar_notificacion_leida' item.notificacion.pk %}" class="notificacion-form-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-outline btn-sm">Marcar como leída</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</section>
+{% endblock %}
+

@@ -11,7 +11,7 @@ Aplicación/
 │   ├── usuarios/       # Identidad y RBAC
 │   ├── activos/        # Inventario
 │   ├── asignaciones/   # Solicitudes, entregas y devoluciones
-│   ├── notificaciones/ # Correo transaccional y proceso programado
+│   ├── notificaciones/ # Centro de avisos en plataforma, correo transaccional y proceso programado
 │   ├── tickets/        # Service Desk
 │   ├── templates/
 │   ├── static/

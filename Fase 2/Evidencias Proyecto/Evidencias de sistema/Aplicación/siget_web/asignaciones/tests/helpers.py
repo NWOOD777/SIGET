@@ -77,6 +77,12 @@ class AsignacionesTestBase(SimpleTestCase):
         correo_patch = patch("asignaciones.services.notificar_resolucion_solicitud")
         correo_patch.start()
         self.addCleanup(correo_patch.stop)
+        entrega_notif_patch = patch("asignaciones.services.notificar_entrega_asignacion")
+        entrega_notif_patch.start()
+        self.addCleanup(entrega_notif_patch.stop)
+        devolucion_notif_patch = patch("asignaciones.services.notificar_devolucion_asignacion")
+        devolucion_notif_patch.start()
+        self.addCleanup(devolucion_notif_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios

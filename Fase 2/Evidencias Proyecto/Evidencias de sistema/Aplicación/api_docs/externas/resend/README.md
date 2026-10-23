@@ -39,9 +39,9 @@ docker compose up -d web correo
 
 ## Funcionamiento
 
-Las decisiones de aprobación o rechazo generan un correo al solicitante. El proceso programado genera recordatorios para asignaciones activas cuya devolución prevista está dentro de las próximas 24 horas. Antes de enviar un recordatorio, comprueba nuevamente la vigencia de la asignación y su fecha.
+Las decisiones de aprobación o rechazo de solicitudes y las actualizaciones de tickets registran una única fila con canal `AMBOS` (visible en el [centro de notificaciones en plataforma](../../acceso_y_usuarios/web/notificaciones.md) y despachada por correo). Los eventos de entrega y devolución de equipos registran avisos internos con canal `PLATAFORMA`. El proceso programado genera recordatorios con canal `CORREO_API` para asignaciones activas cuya devolución prevista está dentro de las próximas 24 horas. Antes de enviar un recordatorio, comprueba nuevamente la vigencia de la asignación y su fecha.
 
-Los avisos se guardan junto con el evento de negocio y se despachan después de confirmar la transacción. Los errores temporales se registran y permiten reintentos con espera creciente, hasta el límite configurado. El control de eventos e idempotencia evita envíos duplicados.
+Los avisos se guardan junto con el evento de negocio y se despachan después de confirmar la transacción. Marcar un aviso como leído en el portal actualiza únicamente `leida`, sin reenviar, cancelar ni modificar la cola de correo. Los errores temporales de Resend se registran sin ocultar el aviso interno ni revertir el cambio de negocio, permitiendo reintentos con espera creciente hasta el límite configurado. El control de eventos e idempotencia evita envíos duplicados.
 
 Los enlaces de solicitudes y tickets abren la vista de detalle del registro, donde el solicitante puede consultar su estado actual.
 
