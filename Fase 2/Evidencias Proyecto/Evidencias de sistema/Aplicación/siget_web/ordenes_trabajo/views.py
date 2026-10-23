@@ -7,8 +7,9 @@ from siget.http import direccion_ip_cliente
 from tickets.permissions import _obtener_usuario_siget
 
 from .models import Diagnostico, OrdenTrabajo
+from usuarios.models import BitacoraAuditoria
 from .permissions import PuedeGestionarOrdenesTrabajo
-from .services import crear_orden_trabajo, iniciar_reparacion
+from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reasignar_orden_trabajo, reanudar_orden_trabajo
 
 
 def serializar_orden(orden):
@@ -18,6 +19,12 @@ def serializar_orden(orden):
 
     ticket = orden.id_ticket
     activo = ticket.id_activo
+    tecnico_responsable = orden.id_tecnico_responsable
+
+    nombre_tecnico = (
+        f"{tecnico_responsable.nombres} "
+        f"{tecnico_responsable.apellidos}"
+    ).strip() if tecnico_responsable else None
 
     return {
         "id_orden": orden.id_orden,
@@ -35,6 +42,11 @@ def serializar_orden(orden):
         "es_reparable": diagnostico.es_reparable if diagnostico else None,
         "fecha_inicio": orden.fecha_inicio,
         "fecha_termino": orden.fecha_termino,
+        "justificacion_pausa": orden.justificacion_pausa,
+        "id_tecnico_responsable": (
+            tecnico_responsable.pk if tecnico_responsable else None
+        ),
+        "tecnico_responsable": nombre_tecnico,
     }
 
 
@@ -92,6 +104,48 @@ class OrdenTrabajoListCreateView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+class HistorialOrdenTrabajoView(APIView):
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def get(self, request, pk):
+        if not OrdenTrabajo.objects.filter(pk=pk).exists():
+            raise exceptions.NotFound(
+                "La orden de trabajo no existe."
+            )
+
+        eventos = (
+            BitacoraAuditoria.objects.filter(
+                modulo="ORDENES_TRABAJO",
+                entidad_afectada="orden_trabajo",
+                id_registro_afectado=pk,
+            )
+            .select_related("id_usuario")
+            .order_by("-fecha_evento")
+        )
+
+        historial = []
+
+        for evento in eventos:
+            usuario = evento.id_usuario
+
+            nombre_usuario = (
+                f"{usuario.nombres} {usuario.apellidos}".strip()
+                if usuario
+                else "Usuario no disponible"
+            )
+
+            historial.append({
+                "id_auditoria": evento.id_auditoria,
+                "fecha": evento.fecha_evento,
+                "accion": evento.accion,
+                "usuario": nombre_usuario,
+                "detalles": evento.detalle_evento,
+            })
+
+        return Response(
+            historial,
+            status=status.HTTP_200_OK,
+        )
 
 class IniciarReparacionView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
@@ -113,3 +167,134 @@ class IniciarReparacionView(APIView):
             serializar_orden(orden),
             status=status.HTTP_200_OK,
         )
+
+
+
+class PausarOrdenTrabajoView(APIView):
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def post(self, request, pk):
+        tecnico = _obtener_usuario_siget(request)
+        justificacion = request.data.get("justificacion", "")
+
+        orden = pausar_orden_trabajo(
+            id_orden=pk,
+            tecnico=tecnico,
+            justificacion=justificacion,
+            ip_origen=direccion_ip_cliente(request),
+        )
+
+        orden = OrdenTrabajo.objects.select_related(
+            "id_ticket__id_activo",
+            "id_estado_ot",
+            "id_tecnico_responsable",
+        ).get(pk=orden.id_orden)
+
+        return Response(
+            serializar_orden(orden),
+            status=status.HTTP_200_OK,
+        )
+
+
+
+class ListarTecnicosOTView(APIView):
+    """Lista los técnicos activos que pueden recibir una OT."""
+
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def get(self, request):
+        from usuarios.models import UsuarioRol
+        from usuarios.services import ROL_TECNICO
+
+        asignaciones = (
+            UsuarioRol.objects.filter(
+                rol__nombre=ROL_TECNICO,
+                usuario__activo=True,
+            )
+            .select_related("usuario")
+            .order_by("usuario__nombres", "usuario__apellidos")
+        )
+
+        tecnicos = []
+        ids_incluidos = set()
+
+        for asignacion in asignaciones:
+            usuario = asignacion.usuario
+
+            if usuario.id_usuario in ids_incluidos:
+                continue
+
+            ids_incluidos.add(usuario.id_usuario)
+            tecnicos.append({
+                "id_usuario": usuario.id_usuario,
+                "nombre": (
+                    f"{usuario.nombres} {usuario.apellidos}"
+                ).strip(),
+                "correo": usuario.correo,
+            })
+
+        return Response(tecnicos, status=status.HTTP_200_OK)
+
+
+
+class ReasignarOrdenTrabajoView(APIView):
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def post(self, request, pk):
+        tecnico = _obtener_usuario_siget(request)
+        id_nuevo_tecnico = request.data.get("id_tecnico_responsable")
+        observaciones = request.data.get("observaciones", "")
+
+        if not str(id_nuevo_tecnico or "").isdigit():
+            raise exceptions.ValidationError({
+                "id_tecnico_responsable": [
+                    "Debe indicar un ID de técnico válido."
+                ]
+            })
+
+        from usuarios.models import Usuario
+
+        nuevo_tecnico = Usuario.objects.filter(
+            pk=int(id_nuevo_tecnico),
+            activo=True,
+        ).first()
+
+        if nuevo_tecnico is None:
+            raise exceptions.ValidationError({
+                "id_tecnico_responsable": [
+                    "El técnico no existe o está inactivo."
+                ]
+            })
+
+        orden = reasignar_orden_trabajo(
+            id_orden=pk,
+            tecnico=tecnico,
+            nuevo_tecnico=nuevo_tecnico,
+            observaciones=observaciones,
+            ip_origen=direccion_ip_cliente(request),
+        )
+
+        orden = OrdenTrabajo.objects.select_related(
+            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
+        ).get(pk=orden.id_orden)
+
+        return Response(serializar_orden(orden), status=status.HTTP_200_OK)
+
+
+class ReanudarOrdenTrabajoView(APIView):
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def post(self, request, pk):
+        tecnico = _obtener_usuario_siget(request)
+
+        orden = reanudar_orden_trabajo(
+            id_orden=pk,
+            tecnico=tecnico,
+            ip_origen=direccion_ip_cliente(request),
+        )
+
+        orden = OrdenTrabajo.objects.select_related(
+            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
+        ).get(pk=orden.id_orden)
+
+        return Response(serializar_orden(orden), status=status.HTTP_200_OK)

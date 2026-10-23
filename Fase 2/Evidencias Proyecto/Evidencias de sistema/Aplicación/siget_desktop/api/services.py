@@ -355,6 +355,12 @@ def listar_ordenes_trabajo() -> list[dict[str, Any]]:
     resultado = api_client.get("/api/ordenes-trabajo/")
     return _lista(resultado)
 
+def listar_tecnicos_ordenes_trabajo() -> list[dict[str, Any]]:
+    """Lista los técnicos activos disponibles para reasignar una OT."""
+    resultado = api_client.get(
+        "/api/ordenes-trabajo/tecnicos-disponibles/"
+    )
+    return _lista(resultado)
 
 def crear_orden_trabajo(
     id_ticket: int,
@@ -380,6 +386,54 @@ def iniciar_reparacion(id_orden: int) -> dict[str, Any]:
     )
     return _objeto(resultado)
 
+
+def pausar_orden_trabajo(
+    id_orden: int,
+    justificacion: str,
+) -> dict[str, Any]:
+    """Pausa una OT indicando el motivo."""
+    justificacion = justificacion.strip()
+    if not justificacion:
+        raise ValueError("La justificación de la pausa es obligatoria.")
+
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/pausar/",
+        json={"justificacion": justificacion},
+    )
+    return _objeto(resultado)
+
+
+def reasignar_orden_trabajo(
+    id_orden: int,
+    id_tecnico_responsable: int,
+    observaciones: str,
+) -> dict[str, Any]:
+    """Reasigna una OT a otro técnico."""
+    observaciones = observaciones.strip()
+    if not observaciones:
+        raise ValueError("Las observaciones de la reasignación son obligatorias.")
+
+    if id_tecnico_responsable <= 0:
+        raise ValueError("Debes indicar un ID de técnico válido.")
+
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/reasignar/",
+        json={
+            "id_tecnico_responsable": id_tecnico_responsable,
+            "observaciones": observaciones,
+        },
+    )
+    return _objeto(resultado)
+
+
+def reanudar_orden_trabajo(id_orden: int) -> dict[str, Any]:
+    """Reanuda una OT pausada."""
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/reanudar/"
+    )
+    return _objeto(resultado)
+
+
 def obtener_historial_activo(search: str) -> dict[str, Any]:
     """Consulta la trazabilidad de un activo mediante la API REST."""
     resultado = api_client.get(
@@ -387,3 +441,11 @@ def obtener_historial_activo(search: str) -> dict[str, Any]:
         params={"search": search},
     )
     return _objeto(resultado)
+
+def obtener_historial_orden_trabajo(
+    id_orden: int,
+) -> list[dict[str, Any]]:
+    resultado = api_client.get(
+        f"/api/ordenes-trabajo/{id_orden}/historial/"
+    )
+    return _lista(resultado)
