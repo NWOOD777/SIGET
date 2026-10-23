@@ -19,6 +19,7 @@ from notificaciones.models import (
     Notificacion,
 )
 from notificaciones.resend_client import ErrorCorreo, enviar_correo
+from notificaciones.senales import avisar_correo_pendiente
 
 
 def registrar_notificacion(
@@ -60,7 +61,7 @@ def registrar_notificacion(
         reintento_permitido = False
 
     es_asignaciones = evento.startswith(("solicitud:", "asignacion:", "devolucion:"))
-    notificacion, _ = Notificacion.objects.get_or_create(
+    notificacion, creada = Notificacion.objects.get_or_create(
         clave_evento=hashlib.sha256(evento.encode()).hexdigest(),
         defaults={
             "id_usuario": usuario,
@@ -74,6 +75,9 @@ def registrar_notificacion(
             "reintento_permitido": reintento_permitido,
         },
     )
+    if creada and canal in (CANAL_CORREO_API, CANAL_AMBOS):
+        # El aviso queda persistido aunque la señal no llegue al proceso de correo.
+        transaction.on_commit(avisar_correo_pendiente, robust=True)
     return notificacion
 
 

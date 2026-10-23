@@ -66,7 +66,7 @@ La base se inicializa desde [init_siget_bd.sql](../Base%20de%20datos/init_siget_
 
 ## Notificaciones por correo
 
-El servicio Docker `correo` procesa los avisos pendientes y los recordatorios cada 60 segundos. Completar las variables RESEND del `.env`. Para actualizar bases existentes se requiere la ampliación aditiva descrita en [configuración y uso de Resend](api_docs/externas/resend/README.md); no reinicializar el volumen PostgreSQL.
+Para configurar y utilizar el servicio de correo, consultar [configuración y uso de Resend](api_docs/externas/resend/README.md).
 
 ## Ejecutar el escritorio
 
