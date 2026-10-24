@@ -9,6 +9,7 @@ Las rutas de acceso Web devuelven páginas o redirecciones. `/admin/` es el pane
 | GET | `/api/usuarios/me/` | [Consultar identidad y acceso propios](identidad_actual.md) |
 | GET | `/api/usuarios/` | [Consultar usuarios](listado_usuarios.md) |
 | POST | `/api/usuarios/aprovisionar/` | [Aprovisionar un usuario](aprovisionar.md) |
+| PATCH, DELETE | `/api/usuarios/{id}/` | [Administrar estado y eliminación de cuentas](administracion_cuentas.md) |
 | GET | `/api/usuarios/{id}/acceso/` | [Consultar acceso de un usuario](acceso_usuario.md) |
 | POST | `/api/usuarios/{id}/roles/` | [Actualizar roles de un usuario](asignar_roles.md) |
 | DELETE | `/api/usuarios/{id}/roles/{id_rol}/` | [Retirar un rol de un usuario](retirar_rol.md) |

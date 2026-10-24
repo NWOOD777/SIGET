@@ -12,6 +12,7 @@ from asignaciones.models import (
     HistorialEstadoActivo,
     SolicitudAsignacion,
 )
+from siget.administracion import OperacionProtegida, tiene_referencias
 from siget.db import bloquear_operacion
 
 from .models import (
@@ -118,13 +119,13 @@ class ActivoListCreateView(APIView):
 
 class ActivoDetailView(APIView):
     """
-    Detalle (GET) y modificación de activos TI (PUT / PATCH).
+    Detalle (GET), modificación (PUT / PATCH) y eliminación protegida (DELETE).
     - GET requiere rol Técnico de soporte o Administrador.
-    - PUT/PATCH requiere exclusivamente rol Administrador del sistema.
+    - PUT/PATCH/DELETE requieren exclusivamente rol Administrador del sistema.
     """
 
     def get_permissions(self):
-        if self.request.method in ("PUT", "PATCH"):
+        if self.request.method in ("PUT", "PATCH", "DELETE"):
             return [PuedeAdministrarActivos()]
         return [PuedeConsultarActivos()]
 
@@ -199,6 +200,26 @@ class ActivoDetailView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+    def delete(self, request, pk):
+        try:
+            with transaction.atomic():
+                bloquear_operacion(70406)
+                bloquear_operacion(70403, pk)
+                activo = Activo.objects.select_for_update().filter(pk=pk).first()
+                if activo is None:
+                    return Response({"detail": "Activo no encontrado."}, status=404)
+                if tiene_referencias(activo):
+                    raise OperacionProtegida(
+                        "El activo tiene movimientos o registros asociados. Conserve su historial y utilice la baja del equipo."
+                    )
+                codigo = activo.codigo_inventario
+                activo.delete()
+                auditar_evento_activos(request, "ACTIVO_ELIMINADO", "activo", pk, f"Activo {codigo} sin movimientos eliminado.")
+        except IntegrityError as exc:
+            raise OperacionProtegida("El activo tiene registros asociados y no puede eliminarse.") from exc
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _CatalogoListCreateBaseView(APIView):
@@ -622,7 +643,7 @@ class ActivoHistorialView(APIView):
     """
     Consulta la trazabilidad de un activo:
     asignaciones, devoluciones y cambios de estado registrados.
-    Exclusivo para Administrador del sistema.
+    Disponible para cuentas autorizadas a consultar activos.
     """
 
     permission_classes = [PuedeConsultarActivos]

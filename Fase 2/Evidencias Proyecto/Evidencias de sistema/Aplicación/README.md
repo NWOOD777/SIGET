@@ -127,6 +127,22 @@ El [flujo de autenticación](api_docs/uso_general.md#mecanismos-de-autenticació
 Al cerrar la ventana se conserva el token de acceso vigente en el directorio local de datos del usuario que determina el sistema operativo mediante Qt. La caché es privada al usuario y contiene únicamente el token, su vencimiento y la identificación del entorno. No guarda contraseñas, roles ni permisos. Al abrir la aplicación se consulta nuevamente la identidad y el acceso en Django. «Cerrar sesión», la expiración o el rechazo de la cuenta eliminan la caché. Una sesión vencida requiere iniciar sesión nuevamente.
 
 
+## Administración de activos y cuentas
+
+En **Activos TI**, el Administrador puede seleccionar un registro y usar **Eliminar
+activo** cuando no tiene movimientos ni referencias asociadas. Los equipos con
+actividad conservan su ficha y su historial; su retiro se representa mediante la baja.
+
+En **Usuarios y roles**, **Eliminar usuario** elimina una cuenta sin actividad tanto
+de SIGET como de Auth0. **Desactivar acceso** bloquea una cuenta conservando sus
+registros, y **Reactivar acceso** vuelve a habilitarla. La propia cuenta administrativa
+queda protegida. Estas acciones solicitan confirmación y quedan registradas en auditoría.
+
+El historial de equipos se consulta en **Solicitudes y entregas → Historial y
+Trazabilidad**, seleccionando un equipo del inventario o ingresando su código.
+Muestra asignaciones, devoluciones y cambios de estado; una ficha recién registrada
+puede no tener movimientos todavía.
+
 ## Registro y confirmación de cambios
 
 Los formularios del escritorio solicitan confirmación antes de crear, modificar o

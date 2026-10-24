@@ -44,6 +44,9 @@ class ActivosTestBase(SimpleTestCase):
         code_patch = patch("activos.serializers.siguiente_codigo", return_value="ACT-0011")
         code_patch.start()
         self.addCleanup(code_patch.stop)
+        historial_patch = patch("asignaciones.models.HistorialEstadoActivo.objects.create")
+        historial_patch.start()
+        self.addCleanup(historial_patch.stop)
         self.factory = RequestFactory()
 
         # Usuarios de prueba

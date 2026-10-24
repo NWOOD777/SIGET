@@ -28,9 +28,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from shiboken6 import isValid
 
 from siget_desktop.api.services import (
     aprobar_solicitud,
+    listar_activos,
     listar_asignaciones,
     listar_solicitudes,
     obtener_historial_activo,
@@ -86,6 +88,7 @@ class SolicitudesView(QWidget):
         self._worker_sol: ApiWorker | None = None
         self._worker_asig: ApiWorker | None = None
         self._worker_historial: ApiWorker | None = None
+        self._worker_equipos_historial: ApiWorker | None = None
         self._movimientos_historial: list[dict[str, Any]] = []
         self._solicitudes_cargadas: list[dict[str, Any]] = []
         self._asignaciones_cargadas: list[dict[str, Any]] = []
@@ -314,6 +317,19 @@ class SolicitudesView(QWidget):
         lbl_desc.setWordWrap(True)
         layout.addWidget(lbl_desc)
 
+        fila_equipos = QHBoxLayout()
+        self.combo_equipo_historial = QComboBox()
+        self.combo_equipo_historial.addItem("Seleccione un equipo del inventario...", None)
+        self.combo_equipo_historial.setMinimumContentsLength(30)
+        self.combo_equipo_historial.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.combo_equipo_historial.activated.connect(self._seleccionar_equipo_historial)
+        fila_equipos.addWidget(self.combo_equipo_historial, 1)
+        self.btn_equipos_historial = QPushButton("Actualizar equipos")
+        self.btn_equipos_historial.setObjectName("btnSecundario")
+        self.btn_equipos_historial.clicked.connect(self.cargar_equipos_historial)
+        fila_equipos.addWidget(self.btn_equipos_historial)
+        layout.addLayout(fila_equipos)
+
         barra_busqueda, layout_busqueda = crear_filtros(self)
         self.input_search_historial = QLineEdit()
         self.input_search_historial.setPlaceholderText(
@@ -339,6 +355,7 @@ class SolicitudesView(QWidget):
         self.lbl_mensaje_historial.setWordWrap(True)
         self.lbl_mensaje_historial.hide()
         layout.addWidget(self.lbl_mensaje_historial)
+        mostrar_mensaje(self.lbl_mensaje_historial, "Seleccione un equipo o busque por su código para consultar sus movimientos.")
 
         self.tabla_historial = QTableWidget()
         self.tabla_historial.setColumnCount(len(self.COLUMNAS_HISTORIAL))
@@ -358,6 +375,11 @@ class SolicitudesView(QWidget):
         self._worker_sol = None
         self._worker_asig = None
         self._worker_historial = None
+        self._worker_equipos_historial = None
+        self.combo_equipo_historial.clear()
+        self.combo_equipo_historial.addItem("Seleccione un equipo del inventario...", None)
+        self.combo_equipo_historial.setEnabled(True)
+        self.btn_equipos_historial.setEnabled(True)
         self._solicitudes_cargadas = []
         self._asignaciones_cargadas = []
         self.tabla.setRowCount(0)
@@ -375,6 +397,49 @@ class SolicitudesView(QWidget):
     def _on_tab_cambiada(self, index: int):
         if index == 1 and self.tabla_asignaciones.rowCount() == 0:
             self.cargar_asignaciones()
+        elif index == 2:
+            self.cargar_equipos_historial()
+
+    def cargar_equipos_historial(self):
+        if not current_session.is_authenticated():
+            return
+        self.btn_equipos_historial.setEnabled(False)
+        self.combo_equipo_historial.setEnabled(False)
+        self._worker_equipos_historial = ApiWorker(listar_activos)
+        worker = self._worker_equipos_historial
+        generation = current_session.generation
+        worker.signals.finished.connect(lambda datos: self._equipos_historial_cargados(datos, generation) if worker is self._worker_equipos_historial else None)
+        worker.signals.error.connect(lambda exc: self._error_equipos_historial(exc, generation) if worker is self._worker_equipos_historial else None)
+        worker.start()
+
+    def _equipos_historial_cargados(self, equipos: list[dict[str, Any]], generation: int):
+        if not isValid(self) or not current_session.is_authenticated() or generation != current_session.generation:
+            return
+        anterior = self.combo_equipo_historial.currentData()
+        self.combo_equipo_historial.clear()
+        self.combo_equipo_historial.addItem("Seleccione un equipo del inventario...", None)
+        for equipo in equipos:
+            codigo = str(equipo.get("codigo_inventario") or "")
+            self.combo_equipo_historial.addItem(f"{codigo} — {equipo.get('numero_serie', '')} — {equipo.get('modelo', '')}", codigo)
+        indice = self.combo_equipo_historial.findData(anterior)
+        self.combo_equipo_historial.setCurrentIndex(max(0, indice))
+        self.combo_equipo_historial.setEnabled(bool(equipos))
+        self.btn_equipos_historial.setEnabled(True)
+        if not equipos:
+            mostrar_mensaje(self.lbl_mensaje_historial, "No hay equipos registrados para consultar su historial.", "empty")
+
+    def _error_equipos_historial(self, error: Exception, generation: int):
+        if not isValid(self) or not current_session.is_authenticated() or generation != current_session.generation:
+            return
+        self.btn_equipos_historial.setEnabled(True)
+        self.combo_equipo_historial.setEnabled(True)
+        mostrar_mensaje(self.lbl_mensaje_historial, f"No se pudo cargar el inventario: {error}", "error")
+
+    def _seleccionar_equipo_historial(self, indice: int):
+        codigo = self.combo_equipo_historial.itemData(indice)
+        if codigo:
+            self.input_search_historial.setText(str(codigo))
+            self.buscar_historial()
 
     def actualizar_permisos_ui(self):
         """Actualiza el estado de los controles según el rol RBAC y la selección actual."""
@@ -739,6 +804,7 @@ class SolicitudesView(QWidget):
                 movimiento.get("usuario_asignado")
                 or movimiento.get("usuario")
                 or movimiento.get("usuario_asociado")
+                or movimiento.get("registrado_por")
                 or "No hay usuario asociado"
             )
 

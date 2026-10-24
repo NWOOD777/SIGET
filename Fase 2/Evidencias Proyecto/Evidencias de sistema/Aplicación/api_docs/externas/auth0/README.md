@@ -13,7 +13,7 @@ Para preparar dominio, clientes y audiencias, consulta la [configuración de la 
 | GET | `https://{AUTH0_DOMAIN}/userinfo` | [Consultar perfil para vincular identidad](perfil.md) |
 | POST | `https://{AUTH0_DOMAIN}/dbconnections/change_password` | [Solicitar correo de restablecimiento de acceso](recuperacion.md) |
 | POST | `https://{AUTH0_DOMAIN}/api/v2/users` | [Crear una identidad externa](crear_usuario.md) |
-| DELETE | `https://{AUTH0_DOMAIN}/api/v2/users/{id}` | [Revertir una identidad creada](revertir_usuario.md) |
+| DELETE | `https://{AUTH0_DOMAIN}/api/v2/users/{id}` | [Eliminar una identidad externa](revertir_usuario.md) |
 | GET | `https://{AUTH0_DOMAIN}/v2/logout` | [Cerrar sesión del proveedor](cerrar_sesion.md) |
 
 [Índice general](../../README.md)

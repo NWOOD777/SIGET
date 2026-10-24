@@ -7,7 +7,8 @@ Los permisos y el alcance de consulta se indican en cada endpoint.
 | Métodos | Ruta | Documento |
 |---|---|---|
 | GET, POST | `/api/activos/` | [Consultar y registrar activos](activos/listado_y_registro.md) |
-| GET, PUT, PATCH | `/api/activos/{id}/` | [Consultar y modificar un activo](activos/detalle_y_modificacion.md) |
+| GET, PUT, PATCH, DELETE | `/api/activos/{id}/` | [Consultar, modificar y eliminar un activo](activos/detalle_y_modificacion.md) |
+| GET | `/api/activos/historial/` | [Historial y trazabilidad del equipo](activos/historial.md) |
 | GET, POST | `/api/activos/categorias/` | [Categorías de activos](activos/categorias.md) |
 | GET, PUT, PATCH, DELETE | `/api/activos/categorias/{id}/` | [Categorías de activos](activos/categorias.md) |
 | GET, POST | `/api/activos/marcas/` | [Marcas de activos](activos/marcas.md) |

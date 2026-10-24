@@ -23,8 +23,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from shiboken6 import isValid
 
-from siget_desktop.api.services import listar_activos
+from siget_desktop.api.services import eliminar_activo, listar_activos
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, notificar_cambio
 from siget_desktop.ui.dialogs.activos_dialogs import (
@@ -32,6 +33,7 @@ from siget_desktop.ui.dialogs.activos_dialogs import (
     DetalleModificarActivoDialog,
     RegistrarActivoDialog,
 )
+from siget_desktop.ui.dialogs.common import confirmar_operacion
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -52,6 +54,8 @@ class ActivosView(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._worker: ApiWorker | None = None
+        self._worker_mutacion: ApiWorker | None = None
+        self._mutacion_en_curso = False
         self._init_ui()
 
     def _init_ui(self):
@@ -78,6 +82,13 @@ class ActivosView(QWidget):
         self.btn_ver_detalle.setToolTip("Seleccione un activo para consultar o modificar su información")
         self.btn_ver_detalle.clicked.connect(self._abrir_detalle_seleccionado)
         layout_encabezado.addWidget(self.btn_ver_detalle)
+
+        self.btn_eliminar = QPushButton("Eliminar activo")
+        self.btn_eliminar.setObjectName("btnSecundario")
+        self.btn_eliminar.setEnabled(False)
+        self.btn_eliminar.setToolTip("Eliminar un registro sin movimientos; los activos en uso conservan su historial")
+        self.btn_eliminar.clicked.connect(self._eliminar_seleccionado)
+        layout_encabezado.addWidget(self.btn_eliminar)
 
         self.btn_catalogos = QPushButton("Administrar catálogos")
         self.btn_catalogos.setObjectName("btnSecundario")
@@ -110,7 +121,7 @@ class ActivosView(QWidget):
         self.combo_estado.addItem("Asignado", "Asignado")
         self.combo_estado.addItem("En revisión", "En revisión")
         self.combo_estado.addItem("En reparación", "En reparación")
-        self.combo_estado.addItem("Baja", "Baja")
+        self.combo_estado.addItem("Dado de baja", "Dado de baja")
         self.combo_estado.currentIndexChanged.connect(self.cargar_activos)
         layout_filtros.addWidget(self.combo_estado, 1)
 
@@ -156,7 +167,9 @@ class ActivosView(QWidget):
 
     def actualizar_permisos_ui(self):
         """Ajusta las acciones según los permisos efectivos del usuario."""
-        es_admin = current_session.is_admin()
+        es_admin = current_session.is_admin() and not self._mutacion_en_curso
+        self.btn_eliminar.setVisible(current_session.is_admin())
+        self._on_seleccion_cambiada()
         self.btn_nuevo_activo.setEnabled(es_admin)
         self.btn_catalogos.setEnabled(es_admin)
         if es_admin:
@@ -168,7 +181,8 @@ class ActivosView(QWidget):
 
     def _on_seleccion_cambiada(self):
         hay_seleccion = self.tabla.currentRow() >= 0
-        self.btn_ver_detalle.setEnabled(hay_seleccion)
+        self.btn_ver_detalle.setEnabled(hay_seleccion and not self._mutacion_en_curso)
+        self.btn_eliminar.setEnabled(hay_seleccion and current_session.is_admin() and not self._mutacion_en_curso)
 
     def _obtener_id_activo_seleccionado(self) -> int | None:
         fila = self.tabla.currentRow()
@@ -203,8 +217,58 @@ class ActivosView(QWidget):
             notificar_cambio(self)
             self.cargar_activos()
 
+    def limpiar_sesion(self):
+        self._worker = None
+        self._worker_mutacion = None
+        self._mutacion_en_curso = False
+        self.tabla.setEnabled(True)
+        self.tabla.setRowCount(0)
+        self.progreso.hide()
+        self.lbl_mensaje.hide()
+        self.actualizar_permisos_ui()
+
+    def _eliminar_seleccionado(self):
+        pk = self._obtener_id_activo_seleccionado()
+        if not pk or not current_session.is_admin() or self._mutacion_en_curso:
+            return
+        codigo = self.tabla.item(self.tabla.currentRow(), 1)
+        if not confirmar_operacion(
+            self, "Eliminar activo",
+            f"Activo: {codigo.text() if codigo else pk}\n"
+            "Se eliminará permanentemente el registro si no tiene movimientos ni información asociada.",
+        ):
+            return
+        self._mutacion_en_curso = True
+        self.tabla.setEnabled(False)
+        self.btn_buscar.setEnabled(False)
+        self.actualizar_permisos_ui()
+        self.progreso.show()
+        self._worker_mutacion = ApiWorker(eliminar_activo, id_activo=pk)
+        generation = current_session.generation
+        worker = self._worker_mutacion
+        worker.signals.finished.connect(lambda value: self._terminar_eliminacion(None, generation) if worker is self._worker_mutacion else None)
+        worker.signals.error.connect(lambda exc: self._terminar_eliminacion(exc, generation) if worker is self._worker_mutacion else None)
+        worker.start()
+
+    def _terminar_eliminacion(self, error: Exception | None, generation: int):
+        if not isValid(self) or not current_session.is_authenticated() or generation != current_session.generation:
+            return
+        self._mutacion_en_curso = False
+        self._worker_mutacion = None
+        self.tabla.setEnabled(True)
+        self.btn_buscar.setEnabled(True)
+        self.progreso.hide()
+        self.actualizar_permisos_ui()
+        if error is not None:
+            mostrar_mensaje(self.lbl_mensaje, str(error), "error")
+            return
+        notificar_cambio(self)
+        self.cargar_activos()
+
     def cargar_activos(self):
         """Inicia la consulta al backend de forma asíncrona para no congelar la UI."""
+        if self._mutacion_en_curso:
+            return
         self.actualizar_permisos_ui()
         self.progreso.show()
         self.lbl_mensaje.hide()
@@ -222,6 +286,8 @@ class ActivosView(QWidget):
 
     def _on_datos_cargados(self, activos: list[dict[str, Any]], request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
+            return
+        if self._mutacion_en_curso:
             return
         self.progreso.hide()
         self.btn_buscar.setEnabled(True)
@@ -256,6 +322,8 @@ class ActivosView(QWidget):
 
     def _on_error_carga(self, exc: Exception, request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
+            return
+        if self._mutacion_en_curso:
             return
         self.progreso.hide()
         self.btn_buscar.setEnabled(True)

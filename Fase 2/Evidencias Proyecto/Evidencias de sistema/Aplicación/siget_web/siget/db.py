@@ -25,7 +25,7 @@ def transaccion_operacion(func):
 
 def siguiente_codigo(tabla: str, prefijo: str) -> str:
     consultas = {
-        "activo": "SELECT COALESCE(MAX(substring(codigo_inventario FROM '^ACT-([0-9]+)$')::bigint), 0) + 1 FROM activo",
+        "activo": "SELECT GREATEST(COALESCE(MAX(substring(codigo_inventario FROM '^ACT-([0-9]+)$')::bigint), 0), COALESCE(pg_sequence_last_value(pg_get_serial_sequence('activo', 'id_activo')::regclass), 0)) + 1 FROM activo",
         "ticket": "SELECT COALESCE(MAX(substring(codigo_ticket FROM '^TCK-([0-9]+)$')::bigint), 0) + 1 FROM ticket",
     }
     with connection.cursor() as cursor:

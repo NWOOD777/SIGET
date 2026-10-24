@@ -5,13 +5,16 @@ Diseñadas para consumo por clientes administrativos autorizados (PySide6).
 
 import logging
 
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from siget.administracion import OperacionProtegida
 from siget.http import direccion_ip_cliente
+from usuarios.administracion import cambiar_estado_usuario, eliminar_usuario_sin_actividad
 from usuarios.models import Rol, Usuario
 from usuarios.permissions import EsUsuarioSigetAutenticado, PuedeAdministrarUsuarios
 from usuarios.serializers import (
@@ -130,6 +133,37 @@ class UsuarioAprovisionarAPIView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UsuarioEstadoSerializer(serializers.Serializer):
+    activo = serializers.BooleanField()
+
+
+class UsuarioAdministracionAPIView(APIView):
+    """Elimina cuentas sin actividad o habilita/deshabilita su acceso local."""
+
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def patch(self, request: Request, pk: int) -> Response:
+        serializer = UsuarioEstadoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        assert isinstance(datos, dict)
+        admin = obtener_usuario_actual(request._request)
+        assert admin is not None
+        usuario = cambiar_estado_usuario(pk, datos["activo"], admin, _obtener_ip(request))
+        return Response(consultar_usuario_detalle_rbac(usuario))
+
+    def delete(self, request: Request, pk: int) -> Response:
+        admin = obtener_usuario_actual(request._request)
+        assert admin is not None
+        try:
+            eliminar_usuario_sin_actividad(pk, admin, _obtener_ip(request))
+        except Auth0ManagementError:
+            return Response({"detail": "No se pudo eliminar la identidad externa. La cuenta local se conserva; intente nuevamente."}, status=502)
+        except IntegrityError as exc:
+            raise OperacionProtegida("El usuario tiene registros asociados. Desactive su acceso.") from exc
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UsuarioAccesoDetailAPIView(APIView):

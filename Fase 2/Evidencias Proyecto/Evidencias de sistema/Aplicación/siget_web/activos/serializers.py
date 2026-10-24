@@ -721,6 +721,16 @@ class ActivoSerializer(serializers.ModelSerializer):
             bloquear_operacion(70403, instance.pk)
             instance.refresh_from_db()
             self.validate(validated_data)
+            estado_anterior = instance.id_estado_activo
             activo = super().update(instance, validated_data)
+            nuevo_estado = validated_data.get("id_estado_activo")
+            if nuevo_estado is not None and nuevo_estado.pk != estado_anterior.pk:
+                from asignaciones.models import HistorialEstadoActivo
+                usuario = getattr(self.context.get("request"), "user", None)
+                HistorialEstadoActivo.objects.create(
+                    id_activo=activo, id_estado_activo=nuevo_estado,
+                    id_usuario=usuario if isinstance(usuario, Usuario) else None,
+                    observacion=f"Cambio administrativo: {estado_anterior.nombre} → {nuevo_estado.nombre}.",
+                )
             self._auditar(activo, "ACTIVO_MODIFICADO")
             return activo

@@ -364,7 +364,8 @@ class MainWindow(QMainWindow):
 
         # Limpiar datos de las vistas.
 
-        self.view_activos.tabla.setRowCount(0)
+        self.view_activos.limpiar_sesion()
+        self.view_usuarios.limpiar_sesion()
         self.view_solicitudes.limpiar_sesion()
         self.view_tickets.tabla.setRowCount(0)
         self.view_tickets._tickets_cargados = []

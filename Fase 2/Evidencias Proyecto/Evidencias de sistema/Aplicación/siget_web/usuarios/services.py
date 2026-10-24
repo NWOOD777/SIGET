@@ -1167,7 +1167,7 @@ def crear_usuario_auth0(
 def eliminar_usuario_auth0(auth0_user_id: str) -> bool:
     """
     Elimina una identidad de usuario en Auth0 (DELETE /api/v2/users/{id}).
-    Operación compensatoria para garantizar consistencia eventual ante fallos en PostgreSQL.
+    Utilizada para bajas administrativas y para revertir aprovisionamientos fallidos.
     """
     if not auth0_user_id:
         return False
@@ -1195,7 +1195,7 @@ def eliminar_usuario_auth0(auth0_user_id: str) -> bool:
             "Error al revertir identidad externa en Auth0."
         ) from exc
 
-    if resp.status_code not in (200, 204):
+    if resp.status_code not in (200, 204, 404):
         logger.error(
             "Auth0 respondió HTTP %s al intentar eliminar usuario %s",
             resp.status_code,
@@ -1206,7 +1206,7 @@ def eliminar_usuario_auth0(auth0_user_id: str) -> bool:
         )
 
     logger.info(
-        "Identidad externa %s eliminada exitosamente en Auth0 (compensación).",
+        "Identidad externa %s eliminada en Auth0 o previamente inexistente.",
         auth0_user_id,
     )
     return True

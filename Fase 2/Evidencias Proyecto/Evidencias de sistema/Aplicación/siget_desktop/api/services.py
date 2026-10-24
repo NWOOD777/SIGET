@@ -44,6 +44,16 @@ def listar_usuarios_rbac() -> list[dict[str, Any]]:
     return _lista(resultado)
 
 
+def eliminar_usuario(id_usuario: int) -> dict[str, Any]:
+    """Elimina una cuenta sin actividad de SIGET y de su proveedor de identidad."""
+    return _vacio_o_objeto(api_client.delete(f"/api/usuarios/{id_usuario}/"))
+
+
+def cambiar_estado_usuario(id_usuario: int, activo: bool) -> dict[str, Any]:
+    """Habilita o deshabilita el acceso local sin eliminar su historial."""
+    return _objeto(api_client.patch(f"/api/usuarios/{id_usuario}/", json={"activo": activo}))
+
+
 def aprovisionar_usuario(
     nombres: str,
     apellidos: str,
@@ -151,6 +161,11 @@ def actualizar_activo(id_activo: int, datos: dict[str, Any], parcial: bool = Tru
     metodo = api_client.patch if parcial else api_client.put
     resultado = metodo(f"/api/activos/{id_activo}/", json=datos)
     return _objeto(resultado)
+
+
+def eliminar_activo(id_activo: int) -> dict[str, Any]:
+    """Elimina un activo sin movimientos ni registros relacionados."""
+    return _vacio_o_objeto(api_client.delete(f"/api/activos/{id_activo}/"))
 
 
 def listar_categorias_activos(search: str | None = None) -> list[dict[str, Any]]:

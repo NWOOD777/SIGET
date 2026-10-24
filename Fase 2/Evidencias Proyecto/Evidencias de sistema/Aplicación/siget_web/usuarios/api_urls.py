@@ -15,6 +15,7 @@ urlpatterns = [
     # Gestión de usuarios
     path("", api_views.UsuarioListAPIView.as_view(), name="usuario_list"),
     path("aprovisionar/", api_views.UsuarioAprovisionarAPIView.as_view(), name="usuario_aprovisionar"),
+    path("<int:pk>/", api_views.UsuarioAdministracionAPIView.as_view(), name="usuario_administracion"),
     path("<int:pk>/acceso/", api_views.UsuarioAccesoDetailAPIView.as_view(), name="usuario_acceso_detail"),
     path("<int:pk>/roles/", api_views.UsuarioRolesAPIView.as_view(), name="usuario_roles"),
     path("<int:pk>/roles/<int:id_rol>/", api_views.UsuarioRolDeleteAPIView.as_view(), name="usuario_rol_delete"),

@@ -22,10 +22,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from shiboken6 import isValid
 
-from siget_desktop.api.services import listar_usuarios_rbac
+from siget_desktop.api.services import cambiar_estado_usuario, eliminar_usuario, listar_usuarios_rbac
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje, notificar_cambio
+from siget_desktop.ui.dialogs.common import confirmar_operacion
 from siget_desktop.ui.dialogs.usuarios_dialogs import (
     AprovisionarUsuarioDialog,
     CatalogoRolesPermisosDialog,
@@ -43,6 +45,8 @@ class UsuariosView(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._worker: ApiWorker | None = None
+        self._worker_mutacion: ApiWorker | None = None
+        self._mutacion_en_curso = False
         self._usuarios_cargados: list[dict[str, Any]] = []
         self._init_ui()
 
@@ -91,6 +95,15 @@ class UsuariosView(QWidget):
         self.btn_aprovisionar.setToolTip("Crear nueva cuenta institucional sincronizada con Auth0")
         self.btn_aprovisionar.clicked.connect(self._abrir_aprovisionamiento)
         layout_acciones.addWidget(self.btn_aprovisionar)
+
+        self.btn_cambiar_estado = QPushButton("Desactivar acceso")
+        self.btn_cambiar_estado.setObjectName("btnSecundario")
+        self.btn_cambiar_estado.clicked.connect(self._cambiar_estado_seleccionado)
+        layout_acciones.addWidget(self.btn_cambiar_estado)
+        self.btn_eliminar = QPushButton("Eliminar usuario")
+        self.btn_eliminar.setObjectName("btnSecundario")
+        self.btn_eliminar.clicked.connect(self._eliminar_seleccionado)
+        layout_acciones.addWidget(self.btn_eliminar)
 
         self.btn_actualizar = QPushButton("Actualizar")
         self.btn_actualizar.setObjectName("btnSecundario")
@@ -153,17 +166,28 @@ class UsuariosView(QWidget):
         es_admin = current_session.is_admin()
         self.panel_bloqueo.setVisible(not es_admin)
         self.contenedor_admin.setVisible(es_admin)
+        self.btn_eliminar.setVisible(es_admin)
+        self.btn_cambiar_estado.setVisible(es_admin)
         self.btn_aprovisionar.setVisible(es_admin)
         self.btn_catalogo_roles.setVisible(es_admin)
         self.btn_ver_acceso.setVisible(es_admin)
         self.btn_gestionar_roles.setVisible(es_admin)
         self.btn_actualizar.setVisible(es_admin)
-        self.btn_actualizar.setEnabled(es_admin)
+        self.btn_actualizar.setEnabled(es_admin and not self._mutacion_en_curso)
+        self.btn_aprovisionar.setEnabled(es_admin and not self._mutacion_en_curso)
+        self.btn_catalogo_roles.setEnabled(es_admin and not self._mutacion_en_curso)
         self._on_seleccion_cambiada()
 
     def _on_seleccion_cambiada(self):
         hay_sel = self.tabla.currentRow() >= 0
-        es_admin = current_session.is_admin()
+        es_admin = current_session.is_admin() and not self._mutacion_en_curso
+        usr = self._obtener_usuario_seleccionado()
+        es_otro = usr is not None and usr.get("id_usuario") != current_session.id_usuario
+        self.btn_eliminar.setEnabled(es_admin and es_otro)
+        self.btn_cambiar_estado.setEnabled(es_admin and es_otro)
+        self.btn_cambiar_estado.setText("Reactivar acceso" if usr and not usr.get("activo", True) else "Desactivar acceso")
+        self.btn_eliminar.setToolTip("Solo cuentas sin actividad; para conservar el historial use Desactivar acceso")
+        self.btn_cambiar_estado.setToolTip("Habilitar o bloquear el acceso a SIGET conservando la cuenta y sus registros")
         self.btn_ver_acceso.setEnabled(es_admin and hay_sel)
         self.btn_gestionar_roles.setEnabled(es_admin and hay_sel)
 
@@ -203,9 +227,73 @@ class UsuariosView(QWidget):
         dialogo.exec()
         notificar_cambio(self)
 
+    def limpiar_sesion(self):
+        self._worker = None
+        self._worker_mutacion = None
+        self._mutacion_en_curso = False
+        self._usuarios_cargados = []
+        self.tabla.setEnabled(True)
+        self.tabla.setRowCount(0)
+        self.progreso.hide()
+        self.lbl_mensaje.hide()
+        self.actualizar_visibilidad_rbac()
+
+    def _eliminar_seleccionado(self):
+        self._administrar_seleccionado(eliminar=True)
+
+    def _cambiar_estado_seleccionado(self):
+        self._administrar_seleccionado(eliminar=False)
+
+    def _administrar_seleccionado(self, eliminar: bool):
+        usr = self._obtener_usuario_seleccionado()
+        if not usr or not current_session.is_admin() or self._mutacion_en_curso:
+            return
+        pk = int(usr["id_usuario"])
+        if pk == current_session.id_usuario:
+            return
+        activar = not usr.get("activo", True)
+        titulo = "Eliminar usuario" if eliminar else ("Reactivar acceso" if activar else "Desactivar acceso")
+        detalle = (
+            "Se eliminará permanentemente la cuenta de SIGET y de Auth0 si no tiene actividad asociada."
+            if eliminar else
+            ("La cuenta podrá volver a acceder a SIGET con sus roles actuales." if activar else "La cuenta no podrá acceder a SIGET. Su historial se conservará.")
+        )
+        if not confirmar_operacion(self, titulo, f"Usuario: {usr.get('nombres', '')} {usr.get('apellidos', '')}\nCorreo: {usr.get('correo', '')}\n{detalle}"):
+            return
+        self._mutacion_en_curso = True
+        self.tabla.setEnabled(False)
+        self.btn_actualizar.setEnabled(False)
+        self.btn_aprovisionar.setEnabled(False)
+        self.btn_catalogo_roles.setEnabled(False)
+        self._on_seleccion_cambiada()
+        self.progreso.show()
+        self._worker_mutacion = ApiWorker(eliminar_usuario, id_usuario=pk) if eliminar else ApiWorker(cambiar_estado_usuario, id_usuario=pk, activo=activar)
+        generation = current_session.generation
+        worker = self._worker_mutacion
+        worker.signals.finished.connect(lambda value: self._terminar_administracion(None, generation) if worker is self._worker_mutacion else None)
+        worker.signals.error.connect(lambda exc: self._terminar_administracion(exc, generation) if worker is self._worker_mutacion else None)
+        worker.start()
+
+    def _terminar_administracion(self, error: Exception | None, generation: int):
+        if not isValid(self) or not current_session.is_authenticated() or generation != current_session.generation:
+            return
+        self._mutacion_en_curso = False
+        self._worker_mutacion = None
+        self.progreso.hide()
+        self.tabla.setEnabled(True)
+        self.btn_actualizar.setEnabled(True)
+        self.btn_aprovisionar.setEnabled(True)
+        self.btn_catalogo_roles.setEnabled(True)
+        self._on_seleccion_cambiada()
+        if error is not None:
+            mostrar_mensaje(self.lbl_mensaje, str(error), "error")
+            return
+        notificar_cambio(self)
+        self.cargar_usuarios()
+
     def cargar_usuarios(self):
         """Consulta los usuarios del sistema mediante worker asíncrono."""
-        if not current_session.is_admin():
+        if not current_session.is_admin() or self._mutacion_en_curso:
             return
 
         self.progreso.show()
@@ -221,6 +309,8 @@ class UsuariosView(QWidget):
 
     def _on_datos(self, usuarios: list[dict[str, Any]], request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
+            return
+        if self._mutacion_en_curso:
             return
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
@@ -259,6 +349,8 @@ class UsuariosView(QWidget):
 
     def _on_error_carga(self, exc: Exception, request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
+            return
+        if self._mutacion_en_curso:
             return
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
