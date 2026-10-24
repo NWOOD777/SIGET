@@ -39,7 +39,7 @@ Cada registro utiliza la estructura de la [consulta de detalle del activo](detal
 
 | Campo de entrada | Condición |
 | --- | --- |
-| `numero_serie` | Obligatorio y único; máximo 100 caracteres. |
+| `numero_serie` | Obligatorio y único; máximo 100 caracteres. Admite letras ASCII y números, con `-`, `_`, `.` o `/` entre grupos alfanuméricos. No admite espacios, otros símbolos, separadores repetidos ni separadores al inicio o al final. |
 | `id_modelo` | Obligatorio; debe existir en el catálogo de modelos. |
 | `id_ubicacion` | Obligatorio; debe existir en el catálogo de ubicaciones. |
 | `valor_adquisicion` | Opcional; valor inicial `0`. No admite montos negativos. |

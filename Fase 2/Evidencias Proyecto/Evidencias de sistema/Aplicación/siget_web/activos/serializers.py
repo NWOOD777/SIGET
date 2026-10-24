@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -650,10 +651,19 @@ class ActivoSerializer(serializers.ModelSerializer):
         ]
 
         extra_kwargs = {
+            "numero_serie": {"trim_whitespace": False},
             "id_estado_activo": {
                 "required": False,
             },
         }
+
+    def validate_numero_serie(self, value):
+        if re.fullmatch(r"[A-Za-z0-9]+(?:[-_./][A-Za-z0-9]+)*", value) is None:
+            raise serializers.ValidationError(
+                "Ingrese letras A-Z o números, sin espacios. Puede usar - _ . / entre grupos, "
+                "sin repetir separadores ni dejarlos al inicio o al final."
+            )
+        return value
 
     def validate_valor_adquisicion(self, value):
         if value < 0:

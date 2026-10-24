@@ -10,6 +10,8 @@ Ruta: `/api/activos/{id}/`
 
 `id` es el identificador del activo. La consulta devuelve `id_activo`, `codigo_inventario`, `numero_serie`, `id_modelo`, `id_ubicacion`, `id_estado_activo`, `valor_adquisicion`, `fecha_compra`, `fecha_garantia`, `fecha_registro`, `modelo`, `marca`, `categoria`, `ubicacion` y `estado`.
 
+El número de serie admite letras ASCII y números, con `-`, `_`, `.` o `/` entre grupos alfanuméricos (máximo 100 caracteres). No admite espacios, otros símbolos, separadores repetidos ni separadores al inicio o al final.
+
 `PUT` recibe al menos `numero_serie`, `id_modelo` e `id_ubicacion`. `PATCH` recibe únicamente los campos a modificar:
 
 ```json

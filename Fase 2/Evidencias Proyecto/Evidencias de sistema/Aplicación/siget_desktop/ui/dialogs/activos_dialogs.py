@@ -51,7 +51,12 @@ from siget_desktop.api.services import (
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion, fecha_opcional, monto_decimal
-from siget_desktop.ui.inputs import MontoLineEdit
+from siget_desktop.ui.inputs import (
+    ERROR_NUMERO_SERIE,
+    MontoLineEdit,
+    NumeroSerieLineEdit,
+    numero_serie_valido,
+)
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -1111,7 +1116,7 @@ class RegistrarActivoDialog(SessionDialog):
         form = QFormLayout()
         form.setSpacing(10)
 
-        self.input_serie = QLineEdit()
+        self.input_serie = NumeroSerieLineEdit()
         self.input_serie.setPlaceholderText("Ej. SN-LNV-2026-9988")
         form.addRow("Número de serie *:", self.input_serie)
 
@@ -1122,6 +1127,9 @@ class RegistrarActivoDialog(SessionDialog):
         form.addRow("Ubicación física *:", self.combo_ubicacion)
 
         self.input_valor = MontoLineEdit()
+        self.input_valor.setToolTip(
+            "Ingrese el valor de adquisición en pesos enteros. Si lo deja vacío, se registra $0."
+        )
         form.addRow("Valor adquisición ($):", self.input_valor)
 
         compra_widget, self.chk_compra, self.date_compra = fecha_opcional()
@@ -1250,13 +1258,16 @@ class RegistrarActivoDialog(SessionDialog):
         mostrar_mensaje(self.lbl_mensaje, f"Error al cargar catálogos: {exc}", "error")
 
     def _guardar(self):
-        serie = self.input_serie.text().strip()
+        serie = self.input_serie.text()
         id_modelo = self.combo_modelo.currentData()
         id_ubicacion = self.combo_ubicacion.currentData()
         valor_str = self.input_valor.text()
 
         if not serie:
             mostrar_mensaje(self.lbl_mensaje, "El número de serie es obligatorio.", "error")
+            return
+        if not numero_serie_valido(serie):
+            mostrar_mensaje(self.lbl_mensaje, ERROR_NUMERO_SERIE, "error")
             return
         if not id_modelo or not id_ubicacion:
             mostrar_mensaje(self.lbl_mensaje, "Debe seleccionar un modelo y ubicación válidos.", "error")
@@ -1388,7 +1399,7 @@ class DetalleModificarActivoDialog(SessionDialog):
         form_edit = QFormLayout()
         form_edit.setSpacing(10)
 
-        self.input_serie = QLineEdit()
+        self.input_serie = NumeroSerieLineEdit()
         form_edit.addRow("Número de serie:", self.input_serie)
         self.combo_modelo = QComboBox()
         form_edit.addRow("Modelo:", self.combo_modelo)
@@ -1399,6 +1410,9 @@ class DetalleModificarActivoDialog(SessionDialog):
         form_edit.addRow("Actualizar estado:", self.combo_estado_edit)
 
         self.input_valor = MontoLineEdit()
+        self.input_valor.setToolTip(
+            "Ingrese el valor de adquisición en pesos enteros. Si lo deja vacío, se registra $0."
+        )
         form_edit.addRow("Valor adquisición ($):", self.input_valor)
 
         compra_widget, self.chk_compra, self.date_compra = fecha_opcional()
@@ -1613,6 +1627,11 @@ class DetalleModificarActivoDialog(SessionDialog):
     def _guardar_cambios(self):
         if not self._activo_datos or not current_session.is_admin():
             return
+        serie = self.input_serie.text()
+        if serie != self._activo_datos.get("numero_serie"):
+            if not numero_serie_valido(serie):
+                mostrar_mensaje(self.lbl_mensaje, ERROR_NUMERO_SERIE, "error")
+                return
         try:
             value = monto_decimal(self.input_valor.text())
         except ValueError as exc:
@@ -1622,7 +1641,7 @@ class DetalleModificarActivoDialog(SessionDialog):
             mostrar_mensaje(self.lbl_mensaje, "La garantía no puede vencer antes de la fecha de compra.", "error")
             return
         proposed = {
-            "numero_serie": self.input_serie.text().strip(),
+            "numero_serie": serie,
             "id_ubicacion": self.combo_ubicacion.currentData(),
             "valor_adquisicion": value,
             "fecha_compra": self.date_compra.date().toString(Qt.DateFormat.ISODate) if self.chk_compra.isChecked() else None,

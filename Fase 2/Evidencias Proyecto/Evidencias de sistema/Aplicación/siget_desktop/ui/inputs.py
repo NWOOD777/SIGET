@@ -1,4 +1,4 @@
-"""Campos de entrada con presentación local y conservación del valor numérico."""
+"""Campos de entrada para importes y números de serie."""
 from __future__ import annotations
 
 import re
@@ -26,6 +26,51 @@ def monto_local(texto: str) -> str:
     entero, _, fraccion = monto_decimal(texto).partition(".")
     # Los montos existentes con fracciones se muestran íntegros; no se redondean.
     return agrupar_monto(entero) + ("," + fraccion if int(fraccion) else "")
+
+
+PATRON_NUMERO_SERIE = re.compile(r"[A-Za-z0-9]+(?:[-_./][A-Za-z0-9]+)*")
+ERROR_NUMERO_SERIE = (
+    "Ingrese letras A-Z o números, sin espacios. Puede usar - _ . / entre grupos, "
+    "sin repetir separadores ni dejarlos al inicio o al final (máximo 100 caracteres)."
+)
+
+
+def numero_serie_valido(texto: str) -> bool:
+    """Comprueba la sintaxis admitida, sin verificar autenticidad del fabricante."""
+    return len(texto) <= 100 and PATRON_NUMERO_SERIE.fullmatch(texto) is not None
+
+
+class _ValidadorNumeroSerie(QValidator):
+    """Permite completar grupos alfanuméricos separados por - _ . /."""
+
+    def validate(self, texto: str, posicion: int):
+        if numero_serie_valido(texto):
+            estado = self.State.Acceptable
+        elif not texto or (
+            len(texto) < 100 and texto[-1] in "-_./" and numero_serie_valido(texto[:-1])
+        ):
+            estado = self.State.Intermediate
+        else:
+            estado = self.State.Invalid
+        return estado, texto, posicion
+
+
+class NumeroSerieLineEdit(QLineEdit):
+    """Admite números de serie alfanuméricos con separadores entre grupos."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMaxLength(100)
+        self.setValidator(_ValidadorNumeroSerie(self))
+        self.setToolTip(ERROR_NUMERO_SERIE)
+        self.setAcceptDrops(False)
+
+    def insert(self, texto: str):
+        if not texto or numero_serie_valido(texto):
+            super().insert(texto)
+
+    def paste(self):
+        self.insert(QApplication.clipboard().text())
 
 
 class _ValidadorMontoEntero(QValidator):
