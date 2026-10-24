@@ -16,6 +16,12 @@ def _objeto(value: Any) -> dict[str, Any]:
     return value
 
 
+def _vacio_o_objeto(value: Any) -> dict[str, Any]:
+    if value is None or value == "" or value == {}:
+        return {}
+    return _objeto(value)
+
+
 def _lista(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list) or any(not isinstance(row, dict) for row in value):
         raise ServerApiError("El servidor devolvió un listado con un formato inesperado.")
@@ -147,28 +153,160 @@ def actualizar_activo(id_activo: int, datos: dict[str, Any], parcial: bool = Tru
     return _objeto(resultado)
 
 
-def listar_categorias_activos() -> list[dict[str, Any]]:
+def listar_categorias_activos(search: str | None = None) -> list[dict[str, Any]]:
     """Consulta el catálogo de categorías de activos TI."""
-    resultado = api_client.get("/api/activos/categorias/")
+    if search and search.strip():
+        resultado = api_client.get(
+            "/api/activos/categorias/",
+            params={"search": search.strip()},
+        )
+    else:
+        resultado = api_client.get("/api/activos/categorias/")
     return _lista(resultado)
 
 
-def listar_marcas_activos() -> list[dict[str, Any]]:
+def obtener_categoria_activo(id_categoria: int) -> dict[str, Any]:
+    """Consulta el detalle de una categoría de activo TI."""
+    resultado = api_client.get(f"/api/activos/categorias/{id_categoria}/")
+    return _objeto(resultado)
+
+
+def crear_categoria_activo(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra una nueva categoría de activo TI (exclusivo Administrador)."""
+    resultado = api_client.post("/api/activos/categorias/", json=datos)
+    return _objeto(resultado)
+
+
+def actualizar_categoria_activo(
+    id_categoria: int, datos: dict[str, Any], parcial: bool = True
+) -> dict[str, Any]:
+    """Modifica una categoría de activo TI (exclusivo Administrador)."""
+    metodo = api_client.patch if parcial else api_client.put
+    resultado = metodo(f"/api/activos/categorias/{id_categoria}/", json=datos)
+    return _objeto(resultado)
+
+
+def eliminar_categoria_activo(id_categoria: int) -> dict[str, Any]:
+    """Elimina una categoría de activo TI sin referencias (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/activos/categorias/{id_categoria}/")
+    return _vacio_o_objeto(resultado)
+
+
+def listar_marcas_activos(search: str | None = None) -> list[dict[str, Any]]:
     """Consulta el catálogo de marcas de activos TI."""
-    resultado = api_client.get("/api/activos/marcas/")
+    if search and search.strip():
+        resultado = api_client.get(
+            "/api/activos/marcas/",
+            params={"search": search.strip()},
+        )
+    else:
+        resultado = api_client.get("/api/activos/marcas/")
     return _lista(resultado)
 
 
-def listar_modelos_activos() -> list[dict[str, Any]]:
+def obtener_marca_activo(id_marca: int) -> dict[str, Any]:
+    """Consulta el detalle de una marca de activo TI."""
+    resultado = api_client.get(f"/api/activos/marcas/{id_marca}/")
+    return _objeto(resultado)
+
+
+def crear_marca_activo(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra una nueva marca de activo TI (exclusivo Administrador)."""
+    resultado = api_client.post("/api/activos/marcas/", json=datos)
+    return _objeto(resultado)
+
+
+def actualizar_marca_activo(
+    id_marca: int, datos: dict[str, Any], parcial: bool = True
+) -> dict[str, Any]:
+    """Modifica una marca de activo TI (exclusivo Administrador)."""
+    metodo = api_client.patch if parcial else api_client.put
+    resultado = metodo(f"/api/activos/marcas/{id_marca}/", json=datos)
+    return _objeto(resultado)
+
+
+def eliminar_marca_activo(id_marca: int) -> dict[str, Any]:
+    """Elimina una marca de activo TI sin referencias (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/activos/marcas/{id_marca}/")
+    return _vacio_o_objeto(resultado)
+
+
+def listar_modelos_activos(search: str | None = None) -> list[dict[str, Any]]:
     """Consulta el catálogo de modelos de activos TI."""
-    resultado = api_client.get("/api/activos/modelos/")
+    if search and search.strip():
+        resultado = api_client.get(
+            "/api/activos/modelos/",
+            params={"search": search.strip()},
+        )
+    else:
+        resultado = api_client.get("/api/activos/modelos/")
     return _lista(resultado)
 
 
-def listar_ubicaciones_activos() -> list[dict[str, Any]]:
+def obtener_modelo_activo(id_modelo: int) -> dict[str, Any]:
+    """Consulta el detalle de un modelo de activo TI."""
+    resultado = api_client.get(f"/api/activos/modelos/{id_modelo}/")
+    return _objeto(resultado)
+
+
+def crear_modelo_activo(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra un nuevo modelo de activo TI (exclusivo Administrador)."""
+    resultado = api_client.post("/api/activos/modelos/", json=datos)
+    return _objeto(resultado)
+
+
+def actualizar_modelo_activo(
+    id_modelo: int, datos: dict[str, Any], parcial: bool = True
+) -> dict[str, Any]:
+    """Modifica un modelo de activo TI (exclusivo Administrador)."""
+    metodo = api_client.patch if parcial else api_client.put
+    resultado = metodo(f"/api/activos/modelos/{id_modelo}/", json=datos)
+    return _objeto(resultado)
+
+
+def eliminar_modelo_activo(id_modelo: int) -> dict[str, Any]:
+    """Elimina un modelo de activo TI sin referencias (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/activos/modelos/{id_modelo}/")
+    return _vacio_o_objeto(resultado)
+
+
+def listar_ubicaciones_activos(search: str | None = None) -> list[dict[str, Any]]:
     """Consulta el catálogo de ubicaciones físicas de activos TI."""
-    resultado = api_client.get("/api/activos/ubicaciones/")
+    if search and search.strip():
+        resultado = api_client.get(
+            "/api/activos/ubicaciones/",
+            params={"search": search.strip()},
+        )
+    else:
+        resultado = api_client.get("/api/activos/ubicaciones/")
     return _lista(resultado)
+
+
+def obtener_ubicacion_activo(id_ubicacion: int) -> dict[str, Any]:
+    """Consulta el detalle de una ubicación física de activo TI."""
+    resultado = api_client.get(f"/api/activos/ubicaciones/{id_ubicacion}/")
+    return _objeto(resultado)
+
+
+def crear_ubicacion_activo(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra una nueva ubicación física de activo TI (exclusivo Administrador)."""
+    resultado = api_client.post("/api/activos/ubicaciones/", json=datos)
+    return _objeto(resultado)
+
+
+def actualizar_ubicacion_activo(
+    id_ubicacion: int, datos: dict[str, Any], parcial: bool = True
+) -> dict[str, Any]:
+    """Modifica una ubicación física de activo TI (exclusivo Administrador)."""
+    metodo = api_client.patch if parcial else api_client.put
+    resultado = metodo(f"/api/activos/ubicaciones/{id_ubicacion}/", json=datos)
+    return _objeto(resultado)
+
+
+def eliminar_ubicacion_activo(id_ubicacion: int) -> dict[str, Any]:
+    """Elimina una ubicación física de activo TI sin referencias (exclusivo Administrador)."""
+    resultado = api_client.delete(f"/api/activos/ubicaciones/{id_ubicacion}/")
+    return _vacio_o_objeto(resultado)
 
 
 def listar_estados_activos() -> list[dict[str, Any]]:
@@ -452,7 +590,7 @@ def obtener_historial_orden_trabajo(
 
 
 # ============================================================================
-# AUDITORÍA INTERNA (E9-H22)
+# AUDITORÍA INTERNA
 # ============================================================================
 
 def consultar_bitacora_auditoria(

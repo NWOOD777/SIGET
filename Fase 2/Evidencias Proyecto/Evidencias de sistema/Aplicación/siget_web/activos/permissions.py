@@ -65,7 +65,7 @@ class PuedeConsultarActivos(permissions.BasePermission):
 
 class PuedeAdministrarActivos(permissions.BasePermission):
     """
-    Permite registrar (E2-H4) y modificar (E2-H5) activos exclusivamente
+    Permite registrar y modificar activos exclusivamente
     a usuarios con rol 'Administrador del sistema' verificado en PostgreSQL.
     Rechaza peticiones de usuarios sin autenticar o sin privilegios administrativos,
     incluso si intentan manipular la sesión del cliente.

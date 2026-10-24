@@ -28,6 +28,7 @@ from siget_desktop.api.services import listar_activos
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, notificar_cambio
 from siget_desktop.ui.dialogs.activos_dialogs import (
+    AdministrarCatalogosActivosDialog,
     DetalleModificarActivoDialog,
     RegistrarActivoDialog,
 )
@@ -77,6 +78,13 @@ class ActivosView(QWidget):
         self.btn_ver_detalle.setToolTip("Seleccione un activo para consultar o modificar su información")
         self.btn_ver_detalle.clicked.connect(self._abrir_detalle_seleccionado)
         layout_encabezado.addWidget(self.btn_ver_detalle)
+
+        self.btn_catalogos = QPushButton("Administrar catálogos")
+        self.btn_catalogos.setObjectName("btnSecundario")
+        self.btn_catalogos.setEnabled(False)
+        self.btn_catalogos.setToolTip("Administrar categorías, marcas, modelos y ubicaciones (exclusivo Administrador)")
+        self.btn_catalogos.clicked.connect(self._abrir_catalogos)
+        layout_encabezado.addWidget(self.btn_catalogos)
 
         # Botón administrativo (control RBAC en UI)
         self.btn_nuevo_activo = QPushButton("+ Registrar activo")
@@ -150,10 +158,13 @@ class ActivosView(QWidget):
         """Ajusta las acciones según los permisos efectivos del usuario."""
         es_admin = current_session.is_admin()
         self.btn_nuevo_activo.setEnabled(es_admin)
+        self.btn_catalogos.setEnabled(es_admin)
         if es_admin:
             self.btn_nuevo_activo.setToolTip("Dar de alta un nuevo equipo tecnológico en inventario")
+            self.btn_catalogos.setToolTip("Administrar categorías, marcas, modelos y ubicaciones de activos TI")
         else:
             self.btn_nuevo_activo.setToolTip("El alta de activos está restringida a Administradores del sistema")
+            self.btn_catalogos.setToolTip("La administración de catálogos está restringida a Administradores del sistema")
 
     def _on_seleccion_cambiada(self):
         hay_seleccion = self.tabla.currentRow() >= 0
@@ -167,6 +178,15 @@ class ActivosView(QWidget):
         if item_id and item_id.text().isdigit():
             return int(item_id.text())
         return None
+
+    def _abrir_catalogos(self):
+        if not current_session.is_admin():
+            return
+        dialogo = AdministrarCatalogosActivosDialog(self)
+        dialogo.exec()
+        if dialogo.hubo_cambios:
+            notificar_cambio(self)
+            self.cargar_activos()
 
     def _abrir_registro_activo(self):
         dialogo = RegistrarActivoDialog(self)

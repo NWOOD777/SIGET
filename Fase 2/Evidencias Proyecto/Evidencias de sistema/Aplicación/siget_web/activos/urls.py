@@ -22,9 +22,19 @@ urlpatterns = [
         name="categorias",
     ),
     path(
+        "categorias/<int:pk>/",
+        views.CategoriaActivoDetailView.as_view(),
+        name="categoria_detail",
+    ),
+    path(
         "marcas/",
         views.MarcaListView.as_view(),
         name="marcas",
+    ),
+    path(
+        "marcas/<int:pk>/",
+        views.MarcaDetailView.as_view(),
+        name="marca_detail",
     ),
     path(
         "modelos/",
@@ -32,9 +42,19 @@ urlpatterns = [
         name="modelos",
     ),
     path(
+        "modelos/<int:pk>/",
+        views.ModeloActivoDetailView.as_view(),
+        name="modelo_detail",
+    ),
+    path(
         "ubicaciones/",
         views.UbicacionListView.as_view(),
         name="ubicaciones",
+    ),
+    path(
+        "ubicaciones/<int:pk>/",
+        views.UbicacionDetailView.as_view(),
+        name="ubicacion_detail",
     ),
     path(
         "estados/",

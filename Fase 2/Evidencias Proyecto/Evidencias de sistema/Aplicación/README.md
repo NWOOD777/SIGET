@@ -64,6 +64,26 @@ docker compose down
 
 La base se inicializa desde [init_siget_bd.sql](../Base%20de%20datos/init_siget_bd.sql) al crear un volumen vacío. Los datos permanecen en el volumen de PostgreSQL al detener los servicios.
 
+### Configuración inicial de catálogos
+
+La inicialización crea el esquema relacional, roles, permisos y asociaciones RBAC,
+estados del sistema, prioridades y políticas SLA. Los catálogos de categorías,
+marcas, modelos y ubicaciones comienzan vacíos.
+
+En el escritorio, el Administrador accede a **Activos TI → Administrar catálogos**
+para crear, buscar y editar estos registros. Primero se registran las categorías,
+marcas y ubicaciones; luego se crean los modelos asociando una marca y una categoría.
+Con un modelo y una ubicación disponibles se puede registrar un activo.
+
+El mantenedor también permite eliminar registros sin referencias. Los catálogos
+asociados a modelos, activos o solicitudes quedan protegidos. Las operaciones se
+registran en la bitácora de auditoría.
+
+Los formularios de registro y modificación de activos incluyen acceso al mantenedor
+y actualización de selectores sin perder los datos ingresados. La configuración de
+catálogos se realiza desde la aplicación; el arranque no carga datos de ejemplo.
+Las instalaciones existentes conservan sus registros en el volumen de PostgreSQL.
+
 ## Notificaciones por correo
 
 Para configurar y utilizar el servicio de correo, consultar [configuración y uso de Resend](api_docs/externas/resend/README.md).
@@ -94,7 +114,7 @@ Pueden ejecutarse desde otra carpeta usando su ruta completa. Comprueban Python 
 
 En Windows, usar `iniciar_escritorio.bat --version`.
 
-El backend se inicia por separado con Docker Compose. Los launchers no instalan paquetes ni modifican la configuración. También se conserva el inicio manual, desde `Aplicación` y con el entorno virtual activo:
+El backend se inicia por separado con Docker Compose. Los launchers no instalan paquetes ni modifican la configuración. Para iniciar manualmente, desde `Aplicación` y con el entorno virtual activo:
 
 ```bash
 python -m siget_desktop.main

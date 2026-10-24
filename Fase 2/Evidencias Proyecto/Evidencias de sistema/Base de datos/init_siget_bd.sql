@@ -1,9 +1,9 @@
 BEGIN;
 
 -- ============================================================================
--- 0. LIMPIEZA TOTAL EN CASCADA
--- Incluye nombres antiguos para permitir reconstruir una BD creada con el DDL
--- previo de Fase 1.
+-- 0. RECREACIÓN DEL ESQUEMA
+-- Elimina las tablas del esquema antes de crearlas nuevamente.
+-- Ejecutar únicamente al inicializar una base vacía o una base de pruebas.
 -- ============================================================================
 
 DROP TABLE IF EXISTS bitacora_auditoria CASCADE;
@@ -676,42 +676,7 @@ INSERT INTO estado_orden_trabajo (nombre, descripcion) VALUES
 ('Pausada', 'Orden temporalmente pausada, por ejemplo por espera de repuestos'),
 ('Completada', 'Intervención técnica concluida y resultado registrado');
 
--- Maestros de activos
-INSERT INTO categoria_activo (nombre, descripcion) VALUES
-('Notebook', 'Equipo portátil'),
-('PC Desktop', 'Equipo de escritorio'),
-('Proyector', 'Equipo de proyección audiovisual'),
-('Impresora', 'Equipo de impresión'),
-('Monitor', 'Pantalla o monitor externo');
-
-INSERT INTO marca (nombre) VALUES
-('Dell'), ('HP'), ('Lenovo'), ('Epson'), ('Samsung');
-
-
-
-
--- Modelos de activos
-INSERT INTO modelo_activo (id_marca, id_categoria, nombre) VALUES
-(1, 1, 'Latitude 5520'),
-(2, 1, 'ProBook 450'),
-(3, 1, 'ThinkPad E14'),
-(1, 2, 'OptiPlex 7090'),
-(2, 2, 'ProDesk 400'),
-(3, 2, 'ThinkCentre M70'),
-(4, 3, 'PowerLite X49'),
-(2, 4, 'LaserJet Pro'),
-(5, 5, 'S24R350'),
-(5, 5, 'ViewFinity S24');
-
-
-
-
-INSERT INTO ubicacion (nombre_area, edificio, piso) VALUES
-('Departamento TI', 'Edificio Central', 'Piso 2'),
-('Bodega TI', 'Edificio Central', 'Piso 1'),
-('Laboratorio', 'Edificio A', 'Piso 1');
-
--- Permisos base mínimos de demostración
+-- Permisos del sistema
 INSERT INTO permiso (codigo, descripcion) VALUES
 ('CATALOGO_CONSULTAR', 'Consultar catálogo y disponibilidad de activos'),
 ('SOLICITUD_CREAR', 'Registrar solicitud de asignación'),
