@@ -399,6 +399,18 @@ class ViewsIntegrationTests(unittest.TestCase):
         view._on_seleccion_asignacion_cambiada()
         self.assertFalse(view.btn_devolver.isEnabled())
 
+    def test_ordenes_trabajo_solo_ofrece_estados_del_catalogo(self):
+        from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
+
+        vista = OrdenesTrabajoView()
+        estados = {
+            vista.combo_estado.itemData(indice)
+            for indice in range(vista.combo_estado.count())
+            if vista.combo_estado.itemData(indice)
+        }
+        self.assertEqual(estados, {"En Diagnóstico", "En Reparación", "Pausada", "Completada"})
+        self.assertEqual(vista.ESTADOS_TERMINALES, ("Completada",))
+
     def test_tickets_view_habilitacion_registro_y_bloqueo_atencion(self):
         current_session.update_user_info({
             "id_usuario": 2,

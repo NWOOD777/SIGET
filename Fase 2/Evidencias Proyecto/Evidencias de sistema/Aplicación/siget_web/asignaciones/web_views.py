@@ -1,4 +1,4 @@
-"""Flujo web de E3-H7, compartiendo las reglas de negocio de la API."""
+"""Vistas web de solicitudes de asignación con reglas de negocio compartidas con la API."""
 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache

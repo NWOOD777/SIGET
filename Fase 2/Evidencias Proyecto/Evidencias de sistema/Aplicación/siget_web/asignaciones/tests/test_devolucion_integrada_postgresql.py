@@ -44,7 +44,7 @@ class DevolucionIntegradaPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(historial.id_usuario, self.tecnico)
         self.assertEqual(historial.id_estado_activo.nombre, "En revisión")
         self.assertEqual(historial.fecha_cambio, devolucion.fecha_devolucion)
-        self.assertIn("E4-H11", historial.observacion or "")
+        self.assertIn("Evaluación inicial", historial.observacion or "")
         auditoria = BitacoraAuditoria.objects.get(accion="DEVOLUCION_REGISTRADA")
         self.assertEqual(auditoria.id_usuario, self.tecnico)
         self.assertEqual(auditoria.entidad_afectada, "devolucion_activo")

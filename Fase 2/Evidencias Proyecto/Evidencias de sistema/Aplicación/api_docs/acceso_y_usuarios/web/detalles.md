@@ -3,7 +3,7 @@
 | Método | Ruta | Contenido |
 |---|---|---|
 | GET | `/solicitudes/{id}/` | Categoría, motivo, estado actual, fechas y motivo del rechazo cuando corresponda. |
-| GET, POST | `/tickets/{id}/` | Código, asunto, descripción, prioridad, estado actual, equipo, técnico, fechas disponibles y sección de calificación CSAT (E5-H30). |
+| GET, POST | `/tickets/{id}/` | Código, asunto, descripción, prioridad, estado actual, equipo, técnico, fechas disponibles y sección de calificación CSAT. |
 | POST | `/tickets/{id}/csat/` | Ruta auxiliar de envío del formulario CSAT integrada con el detalle del ticket. |
 
 Estas vistas requieren sesión Web de un Usuario solicitante activo. Solo permiten consultar registros propios. Un registro ajeno o inexistente devuelve `404`; una cuenta sin acceso al portal recibe `403`. Las consultas `GET` no crean registros ni cambian estados.

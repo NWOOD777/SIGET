@@ -5,11 +5,11 @@ from rest_framework.views import APIView
 
 from siget.http import direccion_ip_cliente
 from tickets.permissions import _obtener_usuario_siget
+from usuarios.models import BitacoraAuditoria
 
 from .models import Diagnostico, OrdenTrabajo
-from usuarios.models import BitacoraAuditoria
 from .permissions import PuedeGestionarOrdenesTrabajo
-from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reasignar_orden_trabajo, reanudar_orden_trabajo
+from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo
 
 
 def serializar_orden(orden):
@@ -86,6 +86,10 @@ class OrdenTrabajoListCreateView(APIView):
             )
 
         tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para gestionar órdenes de trabajo."
+            )
         orden = crear_orden_trabajo(
             id_ticket=int(id_ticket),
             tecnico=tecnico,
@@ -152,6 +156,10 @@ class IniciarReparacionView(APIView):
 
     def post(self, request, pk):
         tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para gestionar órdenes de trabajo."
+            )
 
         orden = iniciar_reparacion(
             id_orden=pk,
@@ -175,6 +183,10 @@ class PausarOrdenTrabajoView(APIView):
 
     def post(self, request, pk):
         tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para gestionar órdenes de trabajo."
+            )
         justificacion = request.data.get("justificacion", "")
 
         orden = pausar_orden_trabajo(
@@ -242,6 +254,10 @@ class ReasignarOrdenTrabajoView(APIView):
 
     def post(self, request, pk):
         tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para gestionar órdenes de trabajo."
+            )
         id_nuevo_tecnico = request.data.get("id_tecnico_responsable")
         observaciones = request.data.get("observaciones", "")
 
@@ -286,6 +302,10 @@ class ReanudarOrdenTrabajoView(APIView):
 
     def post(self, request, pk):
         tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para gestionar órdenes de trabajo."
+            )
 
         orden = reanudar_orden_trabajo(
             id_orden=pk,

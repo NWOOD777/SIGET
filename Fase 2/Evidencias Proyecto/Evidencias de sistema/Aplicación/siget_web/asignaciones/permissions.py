@@ -38,7 +38,7 @@ def _obtener_usuario_siget(request: Request) -> Usuario | None:
 
 class PuedeCrearSolicitudAsignacion(permissions.BasePermission):
     """
-    Permite crear solicitudes de asignación (E3-H7) a usuarios con rol
+    Permite crear solicitudes de asignación a usuarios con rol
     'Usuario solicitante' validado en PostgreSQL.
     """
 
@@ -61,7 +61,7 @@ class PuedeCrearSolicitudAsignacion(permissions.BasePermission):
 
 class PuedeResolverSolicitudAsignacion(permissions.BasePermission):
     """
-    Permite aprobar o rechazar solicitudes de asignación (E3-H8) exclusivamente
+    Permite aprobar o rechazar solicitudes de asignación exclusivamente
     a usuarios con rol 'Administrador del sistema' en PostgreSQL.
     """
 
@@ -99,7 +99,7 @@ class PuedeConsultarSolicitudes(permissions.BasePermission):
 
 class PuedeConsultarAsignaciones(permissions.BasePermission):
     """
-    Permite consultar el listado y detalle de asignaciones (E3-H9).
+    Permite consultar el listado y detalle de asignaciones.
     Habilitado para Administrador del sistema, Técnico de soporte,
     o solicitante consultando sus propias asignaciones.
     """
@@ -126,7 +126,7 @@ class PuedeConsultarAsignaciones(permissions.BasePermission):
 
 class PuedeRegistrarEntrega(permissions.BasePermission):
     """
-    Permite registrar la entrega física de un equipo (E3-H20) a usuarios
+    Permite registrar la entrega física de un equipo a usuarios
     con rol 'Técnico de soporte' en PostgreSQL.
     """
 
@@ -149,7 +149,7 @@ class PuedeRegistrarEntrega(permissions.BasePermission):
 
 class PuedeRegistrarDevolucion(permissions.BasePermission):
     """
-    Permite registrar la devolución y evaluación inicial del equipo (E4-H10 / E4-H11)
+    Permite registrar la devolución y evaluación inicial del equipo
     a usuarios con rol 'Técnico de soporte' en PostgreSQL.
     """
 

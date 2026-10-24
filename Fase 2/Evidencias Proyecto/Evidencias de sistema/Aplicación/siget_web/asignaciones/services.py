@@ -60,7 +60,7 @@ def crear_solicitud_asignacion(
     ip_origen: str | None = None,
 ) -> SolicitudAsignacion:
     """
-    Registra una nueva solicitud de asignación por tipo o categoría de equipo (E3-H7).
+    Registra una nueva solicitud de asignación por tipo o categoría de equipo.
     Reglas de negocio:
     1. Motivo obligatorio.
     2. Existencia de la categoría solicitada.
@@ -140,12 +140,12 @@ def aprobar_solicitud_asignacion(
     ip_origen: str | None = None,
 ) -> SolicitudAsignacion:
     """
-    Aprueba una solicitud de asignación pendiente (E3-H8).
+    Aprueba una solicitud de asignación pendiente.
     Reglas de negocio:
     1. La solicitud debe encontrarse en estado 'Pendiente'.
     2. Si ya fue aprobada, rechazada o atendida, se rechaza la operación informando que ya fue gestionada.
     3. Verifica que aún exista disponibilidad para la categoría solicitada.
-    4. NO se selecciona un activo físico serializado en esta etapa (corresponde a la entrega física E3-H20).
+    4. NO se selecciona un activo físico serializado en esta etapa (corresponde a la entrega física).
     5. Actualiza estado a 'Aprobada', administrador resolutor y fecha de resolución.
     6. Registro atómico y auditoría.
     """
@@ -201,7 +201,7 @@ def rechazar_solicitud_asignacion(
     ip_origen: str | None = None,
 ) -> SolicitudAsignacion:
     """
-    Rechaza una solicitud de asignación pendiente (E3-H8).
+    Rechaza una solicitud de asignación pendiente.
     Reglas de negocio:
     1. La solicitud debe encontrarse en estado 'Pendiente'.
     2. Si ya fue gestionada, se rechaza.
@@ -262,7 +262,7 @@ def registrar_entrega_asignacion(
     ip_origen: str | None = None,
 ) -> Asignacion:
     """
-    Registra la entrega física de un equipo compatible con una solicitud aprobada (E3-H20).
+    Registra la entrega física de un equipo compatible con una solicitud aprobada.
     Reglas de negocio:
     1. La solicitud debe estar en estado 'Aprobada'.
     2. La solicitud no debe tener una asignación ya registrada (prevención de entregas duplicadas).
@@ -366,12 +366,12 @@ def registrar_devolucion_asignacion(
     ip_origen: str | None = None,
 ) -> DevolucionActivo:
     """
-    Registra la devolución de un equipo y la evaluación inicial de su estado (E4-H10 / E4-H11).
+    Registra la devolución de un equipo y la evaluación inicial de su estado.
     Reglas de negocio:
     1. Debe existir una asignación activa asociada.
     2. Si la asignación ya está finalizada o ya tiene devolución registrada, se impide el registro duplicado.
     3. La condición física es obligatoria y debe ser 'Buen estado', 'Con falla técnica' o 'Con daño físico'.
-    4. Evaluación de estado resultante (E4-H11):
+    4. Evaluación de estado resultante:
        - 'Buen estado' -> El activo pasa a 'Disponible'.
        - 'Con falla técnica' o 'Con daño físico' -> El activo pasa a 'En revisión' y se genera o asocia un ticket de soporte.
     5. Transacción atómica:
@@ -402,7 +402,7 @@ def registrar_devolucion_asignacion(
             ]
         })
 
-    # Determinar estado de activo resultante según E4-H11
+    # Determinar estado de activo resultante
     if condicion_fisica == CONDICION_BUEN_ESTADO:
         estado_resultante_nombre = ESTADO_ACTIVO_DISPONIBLE
     else:
@@ -431,7 +431,7 @@ def registrar_devolucion_asignacion(
         activo.id_estado_activo = estado_resultante
         activo.save(update_fields=["id_estado_activo"])
 
-        # E4-H11: Si presenta falla técnica o daño físico, generar o asociar ticket de soporte
+        # Si presenta falla técnica o daño físico, generar o asociar ticket de soporte
         if condicion_fisica != CONDICION_BUEN_ESTADO:
             from tickets.services import ESTADOS_TICKET_ACTIVOS
             bloquear_operacion(70405)
@@ -489,7 +489,7 @@ def registrar_devolucion_asignacion(
             observacion=(
                 f"Devolución de la asignación {asignacion.pk}. "
                 f"Condición física: {condicion_fisica}. "
-                f"Evaluación inicial E4-H11: {estado_resultante.nombre}."
+                f"Evaluación inicial: {estado_resultante.nombre}."
             ),
         )
 

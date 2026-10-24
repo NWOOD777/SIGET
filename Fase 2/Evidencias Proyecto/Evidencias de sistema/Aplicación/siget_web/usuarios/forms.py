@@ -1,6 +1,6 @@
 """
 Formularios para el módulo de usuarios en SIGET.
-Define los formularios de interacción no acoplados a modelos locales (E1-H2).
+Define los formularios de interacción no acoplados a modelos locales.
 """
 from django import forms
 

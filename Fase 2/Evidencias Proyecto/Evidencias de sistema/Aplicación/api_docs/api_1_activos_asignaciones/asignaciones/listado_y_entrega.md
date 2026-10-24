@@ -30,6 +30,6 @@ Los registros del listado y la respuesta de creación utilizan la estructura del
 
 Una solicitud inexistente responde `404`. Un activo inexistente responde `400`. Incompatibilidad de categoría, falta de disponibilidad o entrega duplicada responde `400`. También puede usarse [la entrega por solicitud](../solicitudes/entregar.md).
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

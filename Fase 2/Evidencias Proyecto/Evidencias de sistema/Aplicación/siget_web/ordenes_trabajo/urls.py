@@ -7,8 +7,8 @@ from .views import (
     ListarTecnicosOTView,
     OrdenTrabajoListCreateView,
     PausarOrdenTrabajoView,
-    ReasignarOrdenTrabajoView,
     ReanudarOrdenTrabajoView,
+    ReasignarOrdenTrabajoView,
 )
 
 urlpatterns = [

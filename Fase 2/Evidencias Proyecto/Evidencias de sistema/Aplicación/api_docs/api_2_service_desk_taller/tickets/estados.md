@@ -10,6 +10,6 @@ Entrega `id_estado_ticket`, `nombre` y `descripcion` por registro.
 
 No recibe cuerpo.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Service Desk y Taller/Reparaciones](../README.md) · [Índice general](../../README.md)

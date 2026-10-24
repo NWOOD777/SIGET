@@ -229,7 +229,7 @@ def inicio(request: HttpRequest) -> HttpResponse:
 
 def auth_recover(request: HttpRequest) -> HttpResponse:
     """
-    Gestiona el flujo de recuperación de acceso institucional (E1-H2).
+    Gestiona el flujo de recuperación de acceso institucional.
 
     GET: Presenta el formulario para ingresar correo electrónico.
     POST: Valida el correo y solicita el restablecimiento a Auth0 mediante

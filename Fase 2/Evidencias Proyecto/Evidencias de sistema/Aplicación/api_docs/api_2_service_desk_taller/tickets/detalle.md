@@ -14,6 +14,6 @@ La respuesta contiene `id_ticket`, `codigo_ticket`, `id_usuario_solicitante`, `s
 
 Un ticket inexistente responde `404` y un ticket de otra persona fuera del alcance permitido, `403`. Esta ruta ofrece consulta; no incluye asignación de Técnico ni resolución.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Service Desk y Taller/Reparaciones](../README.md) · [Índice general](../../README.md)

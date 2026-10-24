@@ -24,6 +24,6 @@ La respuesta utiliza la [ficha de acceso del usuario](acceso_usuario.md).
 
 Un usuario duplicado produce `409`; los datos inválidos, `400`; un fallo de comunicación con Auth0, `502`; y un error de persistencia, `500`.
 
-Consulta [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](README.md) · [Índice general](../README.md)

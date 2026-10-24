@@ -1,4 +1,6 @@
 
+from datetime import timedelta
+
 from django.utils import timezone
 from rest_framework import exceptions
 
@@ -6,14 +8,10 @@ from activos.models import Activo, EstadoActivo
 from asignaciones.models import HistorialEstadoActivo
 from siget.db import bloquear_operacion, transaccion_operacion
 from tickets.models import SLA, Ticket
-from usuarios.models import Usuario
+from usuarios.models import BitacoraAuditoria, Usuario
 from usuarios.services import registrar_auditoria
 
-
-from datetime import timedelta
-from usuarios.models import BitacoraAuditoria
 from .models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
-
 
 ESTADO_OT_DIAGNOSTICO = "En Diagnóstico"
 ESTADO_OT_REPARACION = "En Reparación"

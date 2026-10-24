@@ -1,5 +1,5 @@
 """
-Vistas API REST para gestión de usuarios, roles y permisos RBAC (E1-H3).
+Vistas API REST para gestión de usuarios, roles y permisos RBAC.
 Diseñadas para consumo por clientes administrativos autorizados (PySide6).
 """
 

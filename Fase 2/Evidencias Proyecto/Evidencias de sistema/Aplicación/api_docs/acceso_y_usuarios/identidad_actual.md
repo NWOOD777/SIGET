@@ -36,6 +36,6 @@ Respuesta (`200 OK`):
 
 El campo `acceso_escritorio` es `true` si el usuario posee al menos uno de los roles autorizados para la aplicación de escritorio (`Técnico de soporte` o `Administrador del sistema`). Un usuario con rol exclusivo de `Usuario solicitante` recibe `acceso_escritorio: false`.
 
-Consulta [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](README.md) · [Índice general](../README.md)

@@ -66,11 +66,11 @@ class UrlsRoutingTests(SimpleTestCase):
         ):
             resolve("/auth/admin/")
 
-    def test_11_rutas_soporte_web_ya_no_existen(self):
+    def test_11_portal_no_expone_rutas_de_administracion_de_soporte(self):
         """
         Valida que las rutas web operativas de soporte (/soporte/, /soporte/activos/)
-        fueron retiradas de la Web de autoservicio según la arquitectura oficial
-        (canal definitivo: consola de escritorio PySide6).
+        no se exponen en el portal de autoservicio. Las operaciones administrativas
+        se realizan desde el cliente de escritorio mediante las APIs.
         """
         rutas_soporte = [
             "/soporte/",

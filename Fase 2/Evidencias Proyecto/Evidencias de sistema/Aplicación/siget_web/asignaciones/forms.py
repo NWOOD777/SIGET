@@ -1,4 +1,4 @@
-"""Formulario web de E3-H7; la creación corresponde al servicio existente."""
+"""Formulario web para solicitar la asignación de un equipo."""
 
 from typing import cast
 
@@ -42,4 +42,4 @@ class SolicitudAsignacionForm(forms.Form):
         ).order_by("nombre")
 
     # ModelChoiceField devuelve CategoriaActivo en cleaned_data["id_categoria"].
-    # La futura vista pasará su pk al servicio, que revalida stock y duplicados.
+    # La vista pasa el identificador al servicio, que revalida disponibilidad y duplicados.

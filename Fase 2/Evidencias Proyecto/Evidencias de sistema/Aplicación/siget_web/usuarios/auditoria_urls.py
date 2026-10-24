@@ -1,5 +1,5 @@
 """
-Rutas URL para la API REST de auditoría interna (E9-H22).
+Rutas URL para la API REST de auditoría interna.
 Consumidas por la aplicación de escritorio PySide6 para consulta histórica protegida.
 """
 

@@ -102,7 +102,7 @@ Los resultados se ordenan de forma estable y determinista utilizando orden crono
 }
 ```
 
-### Búsqueda sin coincidencias (Criterio 4)
+### Búsqueda sin coincidencias
 Cuando los criterios ingresados no coinciden con ninguna operación registrada, el endpoint retorna **200 OK** con resultado vacío:
 
 ```json

@@ -1,5 +1,5 @@
 """
-Serializadores DRF para Service Desk y Tickets de Soporte (E5-H13, E5-H14, E5-H30).
+Serializadores DRF para Service Desk y Tickets de Soporte.
 """
 from rest_framework import exceptions, serializers
 

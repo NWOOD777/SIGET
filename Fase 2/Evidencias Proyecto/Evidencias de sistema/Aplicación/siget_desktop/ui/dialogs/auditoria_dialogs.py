@@ -1,5 +1,5 @@
 """
-Diálogos de solo lectura para la bitácora de auditoría en PySide6 (E9-H22).
+Diálogos de solo lectura para la bitácora de auditoría en PySide6.
 Permite la visualización íntegra del detalle del evento. No expone operaciones de escritura.
 """
 

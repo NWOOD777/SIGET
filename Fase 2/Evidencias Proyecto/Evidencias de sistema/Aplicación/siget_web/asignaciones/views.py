@@ -1,6 +1,5 @@
 """
 Vistas API REST para solicitudes de asignación, asignaciones y devoluciones.
-Implementa E3-H7, E3-H8, E3-H9, E3-H20, E4-H10 y E4-H11.
 """
 from django.db.models import Q
 from rest_framework import exceptions, status
@@ -52,7 +51,7 @@ def _extraer_ip(request: Request) -> str | None:
 
 class SolicitudAsignacionListCreateView(APIView):
     """
-    Lista solicitudes de asignación (GET) y registra una nueva solicitud (POST - E3-H7).
+    Lista solicitudes de asignación (GET) y registra una nueva solicitud (POST).
     - POST: Requiere rol Usuario solicitante.
     - GET: Solicitante consulta únicamente sus propias solicitudes;
            Administrador y Técnico pueden consultar todas con filtros.
@@ -177,7 +176,7 @@ class SolicitudAsignacionDetailView(APIView):
 
 class SolicitudAsignacionAprobarView(APIView):
     """
-    Aprobar solicitud de asignación (POST - E3-H8).
+    Aprobar solicitud de asignación (POST).
     Exclusivo para Administrador del sistema.
     """
     permission_classes = [PuedeResolverSolicitudAsignacion]
@@ -207,7 +206,7 @@ class SolicitudAsignacionAprobarView(APIView):
 
 class SolicitudAsignacionRechazarView(APIView):
     """
-    Rechazar solicitud de asignación (POST - E3-H8).
+    Rechazar solicitud de asignación (POST).
     Exclusivo para Administrador del sistema.
     """
     permission_classes = [PuedeResolverSolicitudAsignacion]
@@ -244,7 +243,7 @@ class SolicitudAsignacionRechazarView(APIView):
 
 class SolicitudAsignacionEntregarView(APIView):
     """
-    Registrar entrega física y materializar asignación (POST - E3-H20).
+    Registrar entrega física y materializar asignación (POST).
     Exclusivo para Técnico de soporte.
     """
     permission_classes = [PuedeRegistrarEntrega]
@@ -282,7 +281,7 @@ class SolicitudAsignacionEntregarView(APIView):
 
 class AsignacionListCreateView(APIView):
     """
-    Consulta de asignaciones (GET - E3-H9) y registro directo de asignación/entrega (POST - E3-H20).
+    Consulta de asignaciones (GET) y registro directo de asignación/entrega (POST).
     - GET: Habilitado para Administrador, Técnico, y Solicitante (para sus asignaciones).
     - POST: Habilitado para Técnico de soporte.
     """
@@ -315,7 +314,7 @@ class AsignacionListCreateView(APIView):
         if not es_privilegiado:
             asignaciones = asignaciones.filter(id_solicitud__id_usuario=usuario)
 
-        # Filtros E3-H9: usuario, equipo, estado
+        # Filtros: usuario, equipo, estado
         usuario_param = request.GET.get("usuario", "").strip()
         equipo_param = request.GET.get("equipo", "").strip() or request.GET.get("activo", "").strip()
         estado_param = request.GET.get("estado", "").strip()
@@ -398,7 +397,7 @@ class AsignacionListCreateView(APIView):
 
 class AsignacionDetailView(APIView):
     """
-    Detalle de una asignación física (GET - E3-H9).
+    Detalle de una asignación física (GET).
     """
     permission_classes = [PuedeConsultarAsignaciones]
 
@@ -433,7 +432,7 @@ class AsignacionDetailView(APIView):
 
 class AsignacionDevolucionView(APIView):
     """
-    Registrar devolución y evaluación de equipo devuelto (POST - E4-H10 / E4-H11).
+    Registrar devolución y evaluación de equipo devuelto (POST).
     Exclusivo para Técnico de soporte.
     """
     permission_classes = [PuedeRegistrarDevolucion]

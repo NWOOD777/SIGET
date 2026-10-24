@@ -20,29 +20,28 @@ from PySide6.QtWidgets import (
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
-    QTextEdit,
-    QTabWidget,
 )
 
 from siget_desktop.api.services import (
     iniciar_reparacion,
     listar_ordenes_trabajo,
-    pausar_orden_trabajo,
-    reasignar_orden_trabajo,
-    reanudar_orden_trabajo,
     listar_tecnicos_ordenes_trabajo,
     obtener_historial_orden_trabajo,
-
+    pausar_orden_trabajo,
+    reanudar_orden_trabajo,
+    reasignar_orden_trabajo,
 )
 from siget_desktop.auth.session import current_session
-from siget_desktop.ui.dialogs.ordenes_trabajo_dialogs import (
-    CrearOrdenTrabajoDialog,
-)
 from siget_desktop.ui.dialogs.acciones_orden_trabajo_dialogs import (
     PausarOTDialog,
     ReasignarOTDialog,
+)
+from siget_desktop.ui.dialogs.ordenes_trabajo_dialogs import (
+    CrearOrdenTrabajoDialog,
 )
 from siget_desktop.ui.workers import ApiWorker
 
@@ -185,29 +184,6 @@ class DetalleMovimientoHistorialDialog(QDialog):
                 clave, valor = linea.split(":", 1)
                 campos[clave.strip().casefold()] = valor.strip()
 
-        # Compatibilidad con registros antiguos de reasignación.
-        if (
-            not campos
-            and "reasignada del técnico " in texto_detalles
-        ):
-            import re
-
-            coincidencia = re.search(
-                r"OT\s+(.+?)\s+reasignada del técnico\s+(.+?)"
-                r"\s+al técnico\s+(.+?)\.\s*Observaciones:\s*(.*)",
-                texto_detalles,
-                re.IGNORECASE | re.DOTALL,
-            )
-
-            if coincidencia:
-                campos = {
-                    "orden de trabajo": coincidencia.group(1).strip(),
-                    "acción": "Reasignación de técnico",
-                    "técnico anterior": coincidencia.group(2).strip(),
-                    "técnico nuevo": coincidencia.group(3).strip(),
-                    "observaciones": coincidencia.group(4).strip(),
-                }
-
         formulario = QFormLayout()
         formulario.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
@@ -309,7 +285,7 @@ class OrdenesTrabajoView(QWidget):
         "Reparable",
     ]
 
-    ESTADOS_TERMINALES = ("Completada", "Finalizada", "Cancelada")
+    ESTADOS_TERMINALES = ("Completada",)
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -407,8 +383,6 @@ class OrdenesTrabajoView(QWidget):
             "En Reparación",
             "Pausada",
             "Completada",
-            "Finalizada",
-            "Cancelada",
         ):
             self.combo_estado.addItem(estado, estado)
         self.combo_estado.currentIndexChanged.connect(self._aplicar_filtros)
@@ -622,7 +596,7 @@ class OrdenesTrabajoView(QWidget):
         )
 
         layout.addWidget(self.tabla_historial, 1)
-    
+
     def _buscar_historial(self):
         texto = self.input_busqueda_historial.text().strip()
 
@@ -1082,7 +1056,7 @@ class OrdenesTrabajoView(QWidget):
             mensaje="Orden de trabajo pausada correctamente.",
         )
 
-    
+
     def _reasignar_orden(self):
         orden = self._orden_seleccionada()
         if not orden:

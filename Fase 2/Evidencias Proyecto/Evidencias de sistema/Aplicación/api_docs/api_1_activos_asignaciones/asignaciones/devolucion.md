@@ -37,6 +37,6 @@ La respuesta incluye `id_devolucion`, `id_asignacion`, `id_tecnico_receptor`, `t
 
 Una asignación inexistente responde `404`. Una asignación finalizada, una devolución duplicada o una condición inválida responde `400`.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

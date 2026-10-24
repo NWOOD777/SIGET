@@ -131,7 +131,7 @@ def crear_mock_permiso(
 
 class RbacTestBase(SimpleTestCase):
     """
-    Clase base con configuración común para pruebas de RBAC (E1-H3).
+    Clase base con configuración común para pruebas de RBAC.
     No contiene métodos test_* para evitar ejecuciones directas redundantes.
     """
 

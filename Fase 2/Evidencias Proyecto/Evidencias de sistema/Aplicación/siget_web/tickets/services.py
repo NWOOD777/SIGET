@@ -1,5 +1,5 @@
 """
-Servicios de dominio para el módulo Service Desk y Tickets de Soporte (E5-H13, E5-H14, E5-H30).
+Servicios de dominio para el módulo Service Desk y Tickets de Soporte.
 Gestiona persistencia atómica, generación de código secuencial, reglas de negocio y auditoría.
 """
 import re
@@ -60,7 +60,7 @@ def crear_ticket(
     ip_origen: str | None = None,
 ) -> Ticket:
     """
-    Crea un nuevo ticket de soporte en PostgreSQL (E5-H13).
+    Crea un nuevo ticket de soporte en PostgreSQL.
     Aplica validaciones de negocio:
     - Campos obligatorios (asunto, descripcion).
     - Unicidad / prevención de tickets activos duplicados para el mismo asunto y activo por el mismo usuario.
@@ -401,7 +401,7 @@ def registrar_evaluacion_csat(
     ip_origen: str | None = None,
 ) -> EvaluacionCSAT:
     """
-    Registra la evaluación CSAT (E5-H30) para un ticket Cerrado propio del Usuario solicitante.
+    Registra la evaluación CSAT para un ticket Cerrado propio del Usuario solicitante.
     Bloquea la fila del ticket para serializar envíos concurrentes y registra auditoría atómicamente.
     """
     if (

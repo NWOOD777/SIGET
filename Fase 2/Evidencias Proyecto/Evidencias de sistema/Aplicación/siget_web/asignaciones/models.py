@@ -117,6 +117,8 @@ class Asignacion(models.Model):
 
 
 class DevolucionActivo(models.Model):
+    id_asignacion_id: int
+
     id_devolucion = models.AutoField(primary_key=True)
     id_asignacion = models.OneToOneField(
         Asignacion,

@@ -296,7 +296,7 @@ def iniciar_sesion_siget(request, usuario: Usuario, sub: str) -> None:
 def solicitar_recuperacion_acceso(correo: str) -> bool:
     """
     Solicita a Auth0 el envío del correo de recuperación de contraseña para la conexión
-    de base de datos institucional configurada (E1-H2).
+    de base de datos institucional configurada.
 
     Endpoint Auth0:
         POST https://<AUTH0_DOMAIN>/dbconnections/change_password
@@ -368,7 +368,7 @@ def solicitar_recuperacion_acceso(correo: str) -> bool:
 
 
 # ============================================================================
-# Constantes Oficiales y Lógica de Autorización RBAC (E1-H3)
+# Constantes Oficiales y Lógica de Autorización RBAC
 # ============================================================================
 
 ROL_USUARIO_SOLICITANTE = "Usuario solicitante"
@@ -519,7 +519,7 @@ def consultar_acceso_usuario_actual(usuario: Usuario) -> dict[str, Any]:
 
 
 # ============================================================================
-# Bitácora de Auditoría (Trazabilidad E1-H3)
+# Bitácora de Auditoría (Trazabilidad)
 # ============================================================================
 
 
@@ -772,7 +772,7 @@ def retirar_permiso_de_rol(
 
 
 # ============================================================================
-# Consultas de Directorio y Acceso RBAC (E1-H3 para PySide6 y Backend)
+# Consultas de Directorio y Acceso RBAC (PySide6 y backend)
 # ============================================================================
 
 
@@ -1005,7 +1005,7 @@ def validar_rut_chileno(rut: str) -> str:
 
 
 # ============================================================================
-# Integración Auth0 Management API (E1-H3 Backend)
+# Integración Auth0 Management API (backend)
 # ============================================================================
 
 _mgmt_token_cache: dict[str, Any] = {}
@@ -1213,7 +1213,7 @@ def eliminar_usuario_auth0(auth0_user_id: str) -> bool:
 
 
 # ============================================================================
-# Aprovisionamiento Administrativo de Usuarios (E1-H3)
+# Aprovisionamiento Administrativo de Usuarios
 # ============================================================================
 
 
@@ -1347,7 +1347,7 @@ def aprovisionar_usuario(
             + ("Se revirtió la cuenta en Auth0." if compensada else "No se pudo revertir la cuenta externa; se requiere revisión administrativa en Auth0.")
         ) from exc
 
-    # 3. Disparar invitación inicial 'Configure su contraseña' (E1-H3)
+    # 3. Disparar invitación inicial 'Configure su contraseña'
     try:
         solicitar_recuperacion_acceso(correo)
         logger.info(
@@ -1496,7 +1496,7 @@ def bootstrap_primer_admin(
             + ("Se revirtió la cuenta en Auth0." if compensada else "No se pudo revertir la cuenta externa; se requiere revisión administrativa en Auth0.")
         ) from exc
 
-    # 6. Disparar invitación inicial 'Configure su contraseña' (E1-H3)
+    # 6. Disparar invitación inicial 'Configure su contraseña'
     correo_enviado = False
     try:
         solicitar_recuperacion_acceso(correo)

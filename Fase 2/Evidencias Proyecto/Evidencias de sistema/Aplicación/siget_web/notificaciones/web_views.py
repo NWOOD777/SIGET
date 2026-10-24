@@ -1,4 +1,4 @@
-"""Vistas web del centro de avisos en plataforma (E10-H29)."""
+"""Vistas web del centro de avisos en plataforma."""
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render

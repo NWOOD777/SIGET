@@ -1,8 +1,8 @@
 # API 2 — Service Desk y Taller/Reparaciones
 
-Corresponde a la segunda API propia de la sección 4.3 y del Anexo B de la arquitectura preliminar. Expone creación, consulta y gestión de tickets, prioridades, estados y políticas SLA.
+Expone creación, consulta y gestión de tickets, prioridades, estados y políticas SLA.
 
-Consultar la [organización de las APIs](../alcance_y_pendientes.md) para conocer la relación de estos servicios con el resto del backend.
+Consultar la [organización de las APIs](../organizacion.md) para conocer la relación de estos servicios con el resto del backend.
 
 | Métodos | Ruta | Documento |
 |---|---|---|
@@ -16,10 +16,10 @@ Consultar la [organización de las APIs](../alcance_y_pendientes.md) para conoce
 | PATCH | `/api/tickets/{id}/estado/` | [Cambiar estado](#cambiar-el-estado-de-un-ticket) |
 | POST | `/api/tickets/{id}/tomar/` | [Tomar un ticket disponible](#tomar-un-ticket-disponible) |
 | GET, POST | `/api/tickets/{id}/csat/` | [Calificación de servicio (CSAT)](tickets/csat.md) |
-| GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico-definición-técnica-de-implementación) |
-| GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico-definición-técnica-de-implementación) |
+| GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
+| GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 
-## Gestión de tickets — E5-H14
+## Gestión de tickets
 
 Se reutiliza la autenticación Bearer para Escritorio y la sesión Web existente. Las peticiones con sesión requieren CSRF. La identidad, los roles y los permisos se obtienen del servidor y de PostgreSQL; no se aceptan actores, fechas ni estados implícitos enviados por el cliente.
 
@@ -184,7 +184,7 @@ Al pasar a Resuelto se establece `fecha_resolucion` con la hora del servidor; al
 
 Las OT en **En Diagnóstico**, **En Reparación** o **Pausada** son vigentes e impiden resolver o cerrar el ticket. Una OT **Completada** no lo impide. No se crean nuevas OT sobre tickets Resueltos o Cerrados. La gestión de estado del ticket no modifica automáticamente órdenes, diagnósticos ni activos.
 
-La creación de OT y la gestión del ticket comparten su bloqueo de fila. Cada operación E5-H14 conserva sus escrituras, auditoría y notificación en una misma transacción; si falla la auditoría o el registro del aviso, se revierten sus efectos. Las notificaciones usan el ID real de auditoría para identificar el evento y no se envía correo directamente desde estos endpoints. El envío posterior y los reintentos utilizan la infraestructura persistente existente; no convierten el POST de atenciones en una operación idempotente ante reenvíos del cliente.
+La creación de OT y la gestión del ticket comparten su bloqueo de fila. Cada operación conserva sus escrituras, auditoría y notificación en una misma transacción; si falla la auditoría o el registro del aviso, se revierten sus efectos. Las notificaciones usan el ID real de auditoría para identificar el evento y no se envía correo directamente desde estos endpoints. El envío posterior y los reintentos utilizan la infraestructura persistente existente; no convierten el POST de atenciones en una operación idempotente ante reenvíos del cliente.
 
 ### Errores comunes de autenticación y autorización
 
@@ -194,7 +194,7 @@ La creación de OT y la gestión del ticket comparten su bloqueo de fila. Cada o
 
 Los mecanismos de autenticación se detallan en [uso general](../uso_general.md).
 
-## Calificación de servicio (CSAT) — E5-H30
+## Calificación de servicio (CSAT)
 
 Permite al **Usuario solicitante** activo y titular de un ticket evaluar por única vez la atención recibida cuando el ticket ha finalizado su ciclo de vida y se encuentra en estado **Cerrado** (tanto si requirió una orden de trabajo como si se resolvió directamente en Service Desk).
 

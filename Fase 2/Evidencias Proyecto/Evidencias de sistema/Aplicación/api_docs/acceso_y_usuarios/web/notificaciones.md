@@ -7,7 +7,7 @@
 | POST | `/notificaciones/{id_notificacion}/leer/` | Dueño del aviso (`PLATAFORMA` o `AMBOS`), protegido con CSRF. |
 | POST | `/notificaciones/{id_notificacion}/abrir/` | Dueño del aviso (`PLATAFORMA` o `AMBOS`), protegido con CSRF. |
 
-El centro de avisos en plataforma (E10-H29) permite al Usuario solicitante consultar los avisos generados por cambios en sus solicitudes de asignación, entregas y devoluciones de equipos, y actualizaciones de tickets de soporte:
+El centro de avisos en plataforma permite al Usuario solicitante consultar los avisos generados por cambios en sus solicitudes de asignación, entregas y devoluciones de equipos, y actualizaciones de tickets de soporte:
 
 - **Indicador en barra superior**: todas las páginas del portal calculan `notificaciones_pendientes` a partir de las filas propias con `leida = FALSE` y canal `PLATAFORMA` o `AMBOS`, mostrando el contador numérico en el icono de notificaciones de la barra superior.
 - **Listado (`GET /notificaciones/`)**: muestra los avisos propios de canal `PLATAFORMA` o `AMBOS` ordenados desde el más reciente. Permite filtrar pendientes mediante `?filtro=pendientes`. Cuando no existen avisos pendientes de lectura, informa `No tienes notificaciones pendientes en este momento`.

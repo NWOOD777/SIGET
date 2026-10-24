@@ -727,7 +727,7 @@ a.btn-secondary:hover {
 }
 
 /* --------------------------------------------------------------------------
-   6. Vista de Recuperación de Acceso (E1-H2)
+   6. Vista de Recuperación de Acceso
    -------------------------------------------------------------------------- */
 .recover-link-container {
     text-align: center;
@@ -843,7 +843,7 @@ a.btn-secondary:hover {
 }
 
 /* --------------------------------------------------------------------------
-   7. Módulo Administrativo RBAC (E1-H3)
+   7. Módulo Administrativo RBAC
    -------------------------------------------------------------------------- */
 .admin-section {
     background: #ffffff;

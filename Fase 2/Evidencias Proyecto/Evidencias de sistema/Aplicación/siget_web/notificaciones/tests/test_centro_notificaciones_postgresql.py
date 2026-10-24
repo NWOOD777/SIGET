@@ -1,4 +1,4 @@
-"""Pruebas de integración en PostgreSQL para E10-H29 — Centro de avisos en plataforma."""
+"""Pruebas de integración en PostgreSQL del centro de avisos en plataforma."""
 
 from datetime import timedelta
 from unittest.mock import Mock, patch
@@ -69,8 +69,8 @@ class CentroNotificacionesPostgreSQLTests(PostgreSQLTestBase):
             "Equipo portátil para labores académicas",
         )
 
-    def test_criterio_1_indicador_numerico_en_barra_superior_al_cambiar_ticket_o_asignacion(self):
-        """CA1: Al cambiar el estado de un ticket o asignación, el portal muestra el contador en barra superior."""
+    def test_indicador_numerico_en_barra_superior_al_cambiar_ticket_o_asignacion(self):
+        """Al cambiar el estado de un ticket o asignación, el portal muestra el contador en barra superior."""
         web = self.cliente(self.solicitante)
         r_inicial = web.get(reverse("inicio"))
         self.assertEqual(r_inicial.status_code, 200)
@@ -121,8 +121,8 @@ class CentroNotificacionesPostgreSQLTests(PostgreSQLTestBase):
             self.assertIn('data-pendientes="4"', html)
             self.assertNotIn("Notificaciones (próximamente)", html)
 
-    def test_criterio_2_lectura_detalle_marca_leido_persiste_y_reduce_contador_idempotente(self):
-        """CA2: Al abrir un aviso pendiente desde la bandeja (título o Ver detalle), se marca leído via POST+CSRF, baja el contador y muestra el mensaje completo."""
+    def test_lectura_detalle_marca_leido_persiste_y_reduce_contador_idempotente(self):
+        """Al abrir un aviso pendiente desde la bandeja (título o Ver detalle), se marca leído via POST+CSRF, baja el contador y muestra el mensaje completo."""
         solicitud = self.crear_solicitud()
         aprobar_solicitud_asignacion(solicitud, self.admin)
         aviso_solicitud = Notificacion.objects.get()
@@ -184,8 +184,8 @@ class CentroNotificacionesPostgreSQLTests(PostgreSQLTestBase):
         web.post(url_leer_solicitud)
         self.assertEqual(contar_notificaciones_pendientes(self.solicitante), 0)
 
-    def test_criterio_3_bandeja_sin_pendientes_muestra_mensaje_exacto(self):
-        """CA3: Si no hay avisos pendientes, debe mostrarse exactamente el texto requerido."""
+    def test_bandeja_sin_pendientes_muestra_mensaje_exacto(self):
+        """Si no hay avisos pendientes, debe mostrarse exactamente el texto requerido."""
         texto_exacto = "No tienes notificaciones pendientes en este momento"
         web = self.cliente(self.solicitante)
 
@@ -207,8 +207,8 @@ class CentroNotificacionesPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(r_leida.status_code, 200)
         self.assertIn(texto_exacto, r_leida.content.decode("utf-8"))
 
-    def test_criterio_4_abrir_aviso_solicitud_aprobada_redirige_a_detalle_solicitud(self):
-        """CA4: Al abrir un aviso de solicitud aprobada, redirige a la vista de detalle de esa solicitud."""
+    def test_abrir_aviso_solicitud_aprobada_redirige_a_detalle_solicitud(self):
+        """Al abrir un aviso de solicitud aprobada, redirige a la vista de detalle de esa solicitud."""
         solicitud = self.crear_solicitud()
         aprobar_solicitud_asignacion(solicitud, self.admin)
         aviso = Notificacion.objects.get()

@@ -1,4 +1,4 @@
-"""Consultas de autorización y selectores para el módulo de tickets (E5-H13, E5-H30)."""
+"""Consultas de autorización y selectores para el módulo de tickets."""
 
 from typing import Any
 

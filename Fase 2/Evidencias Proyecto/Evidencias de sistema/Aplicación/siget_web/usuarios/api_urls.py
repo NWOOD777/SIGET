@@ -1,5 +1,5 @@
 """
-Rutas URL para la API REST de administración RBAC y aprovisionamiento (E1-H3).
+Rutas URL para la API REST de administración RBAC y aprovisionamiento.
 Consumidas por la aplicación PySide6 y clientes administrativos autorizados.
 """
 from django.urls import path

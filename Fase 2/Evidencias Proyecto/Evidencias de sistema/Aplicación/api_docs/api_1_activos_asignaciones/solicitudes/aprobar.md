@@ -16,6 +16,6 @@ La solicitud debe estar `Pendiente` y existir disponibilidad de la categoría re
 
 Una solicitud inexistente responde `404`. Una solicitud ya resuelta o sin disponibilidad responde `400`.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

@@ -16,6 +16,8 @@ class EstadoOrdenTrabajo(models.Model):
 
 
 class OrdenTrabajo(models.Model):
+    id_ticket_id: int
+
     id_orden = models.AutoField(primary_key=True)
     codigo_ot = models.CharField(max_length=50, unique=True)
     id_ticket = models.OneToOneField(
@@ -88,36 +90,3 @@ class Intervencion(models.Model):
     class Meta:
         managed = False
         db_table = "intervencion"
-
-
-class PausaOrdenTrabajo(models.Model):
-    id_pausa = models.AutoField(primary_key=True)
-
-    id_orden = models.ForeignKey(
-        OrdenTrabajo,
-        on_delete=models.DO_NOTHING,
-        db_column="id_orden",
-        related_name="historial_pausas",
-    )
-
-    # Guardamos los identificadores de los técnicos que ejecutan
-    # cada acción, sin asumir el nombre físico de la tabla de usuarios.
-    id_tecnico_pausa = models.IntegerField()
-    justificacion = models.TextField()
-    fecha_pausa = models.DateTimeField()
-
-    id_tecnico_reanudacion = models.IntegerField(
-        null=True,
-        blank=True,
-    )
-    fecha_reanudacion = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    class Meta:
-        managed = False
-        db_table = "historial_pausa_orden_trabajo"
-
-    def __str__(self):
-        return f"Pausa de OT {self.id_orden_id}"

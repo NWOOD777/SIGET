@@ -10,6 +10,6 @@ No recibe cuerpo. Elimina la asociación entre el rol y el permiso y registra au
 
 Un rol, permiso o asociación inexistente responde `404`. Los permisos efectivos de las cuentas se resuelven según las asociaciones vigentes.
 
-Consulta [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](README.md) · [Índice general](../README.md)

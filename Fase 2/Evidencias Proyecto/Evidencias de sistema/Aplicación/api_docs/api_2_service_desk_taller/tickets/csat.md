@@ -1,4 +1,4 @@
-# Calificación de servicio (CSAT) e indicadores por técnico — E5-H30
+# Calificación de servicio (CSAT) e indicadores por técnico
 
 Rutas:
 
@@ -105,14 +105,14 @@ Permite al **Usuario solicitante** dueño del ticket consultar en modo solo lect
 
 ---
 
-## 5. Indicadores CSAT por técnico (definición técnica de implementación)
+## 5. Indicadores CSAT por técnico
 
-La historia de usuario E5-H30 requiere actualizar los indicadores del técnico a partir de las calificaciones recibidas, sin imponer una fórmula cerrada en la documentación funcional. Como **definición técnica de implementación**:
+Los indicadores resumen las calificaciones recibidas en los tickets asignados a cada técnico:
 
 - Se calculan en tiempo real desde los registros persistidos siguiendo la relación `evaluacion_csat → ticket → id_tecnico_asignado`, sin añadir columnas ni contadores redundantes en la tabla `usuario`.
 - Métricas expuestas por técnico:
   - `cantidad_evaluaciones`: total entero de evaluaciones CSAT asociadas a tickets asignados al técnico (`0` cuando no registra evaluaciones).
-  - `promedio_estrellas`: promedio aritmético de `calificacion_estrellas` redondeado a 2 decimales, o `null` cuando `cantidad_evaluaciones == 0` (no se inventa una puntuación ficticia ni un porcentaje o umbral arbitrario).
+  - `promedio_estrellas`: promedio aritmético de `calificacion_estrellas` redondeado a 2 decimales, o `null` cuando `cantidad_evaluaciones == 0`.
 
 ### Endpoints de consulta de indicadores
 

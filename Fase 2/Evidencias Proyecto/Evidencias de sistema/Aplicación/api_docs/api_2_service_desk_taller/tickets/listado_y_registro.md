@@ -56,6 +56,6 @@ Los registros del listado y la respuesta de creación utilizan la estructura del
 
 Los identificadores opcionales deben ser enteros entre 1 y 2147483647. Datos inválidos o ticket activo duplicado responden `400`.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Service Desk y Taller/Reparaciones](../README.md) · [Índice general](../../README.md)

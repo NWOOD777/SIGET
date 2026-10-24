@@ -20,6 +20,6 @@ La respuesta utiliza la estructura del [detalle de una asignación](../asignacio
 
 Una solicitud inexistente responde `404`. Estados incompatibles, activo no disponible o entrega duplicada responden `400`. Existe una alternativa en [registro de asignaciones](../asignaciones/listado_y_entrega.md).
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

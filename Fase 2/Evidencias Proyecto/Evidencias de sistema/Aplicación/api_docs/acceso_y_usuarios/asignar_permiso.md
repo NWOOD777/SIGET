@@ -16,6 +16,6 @@ También admite `{"id_permiso": 1}`. La operación modifica los permisos derivad
 
 Un rol inexistente responde `404`; datos o permiso no válidos responden `400`.
 
-Consulta [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](README.md) · [Índice general](../README.md)

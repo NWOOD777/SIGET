@@ -1,4 +1,4 @@
-"""Formularios de entrada del portal para E5-H13 y E5-H30."""
+"""Formularios del portal para registrar tickets y evaluar la atención recibida."""
 
 from typing import cast
 
@@ -52,7 +52,7 @@ class CalificacionEstrellasField(forms.Field):
 
 
 class EvaluacionCSATForm(forms.Form):
-    """Formulario de calificación CSAT (E5-H30) para un ticket Cerrado propio."""
+    """Formulario de calificación CSAT para un ticket Cerrado propio."""
 
     calificacion_estrellas = CalificacionEstrellasField(
         label="Calificación del servicio (1 a 5 estrellas)",

@@ -10,6 +10,6 @@ No recibe cuerpo ni filtros de búsqueda específicos. Entrega `id_usuario`, `id
 
 El detalle de permisos se obtiene en la [consulta de acceso](acceso_usuario.md).
 
-Consulta [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../uso_general.md) y [respuestas y errores](../respuestas_y_errores.md).
 
 [Volver a acceso y usuarios](README.md) · [Índice general](../README.md)

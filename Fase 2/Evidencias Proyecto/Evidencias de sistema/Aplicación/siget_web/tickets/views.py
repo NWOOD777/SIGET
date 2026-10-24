@@ -1,5 +1,5 @@
 """
-Vistas API REST para Service Desk y Tickets de Soporte (E5-H13).
+Vistas API REST para Service Desk y Tickets de Soporte.
 """
 from contextlib import nullcontext
 
@@ -56,7 +56,7 @@ from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 class TicketListCreateView(APIView):
     """
-    Lista tickets (GET) y registra un nuevo ticket (POST - E5-H13).
+    Lista tickets (GET) y registra un nuevo ticket (POST).
     - POST: Disponible para Usuario solicitante con sesión Web.
     - GET: Solicitante consulta únicamente sus propios tickets;
            Técnico y Administrador pueden consultar todo el inventario de tickets con filtros.
@@ -304,7 +304,7 @@ class TicketTomarView(APIView):
 class TicketCSATView(APIView):
     """
     Consulta (GET) y registro único (POST) de la evaluación de satisfacción
-    CSAT sobre un ticket propio en estado Cerrado (E5-H30).
+    CSAT sobre un ticket propio en estado Cerrado.
     No expone edición ni eliminación.
     """
 
@@ -348,7 +348,7 @@ class TicketCSATView(APIView):
 
 class IndicadoresCSATListView(APIView):
     """
-    Consulta de indicadores CSAT por técnico (E5-H30):
+    Consulta de indicadores CSAT por técnico:
     - Administrador: lista todos los técnicos o filtra por ?tecnico=<id>.
     - Técnico: retorna exclusivamente sus propios indicadores.
     """
@@ -398,7 +398,7 @@ class IndicadoresCSATListView(APIView):
 
 class IndicadoresCSATDetailView(APIView):
     """
-    Consulta de indicadores CSAT de un técnico específico (E5-H30).
+    Consulta de indicadores CSAT de un técnico específico.
     Administrador puede consultar cualquier técnico; Técnico solo el propio.
     """
 

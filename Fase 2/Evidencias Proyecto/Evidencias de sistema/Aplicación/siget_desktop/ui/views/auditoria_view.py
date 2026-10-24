@@ -1,5 +1,5 @@
 """
-Vista de Consulta de Bitácora de Auditoría Interna en PySide6 (E9-H22).
+Vista de Consulta de Bitácora de Auditoría Interna en PySide6.
 Exclusiva para Administradores del sistema autorizados (permiso AUDITORIA_CONSULTAR).
 Muestra eventos críticos en orden cronológico, detalle de operaciones,
 filtros combinados por actor y activo, estados de búsqueda y paginación.
@@ -385,7 +385,7 @@ class AuditoriaView(QWidget):
 
         self.tabla.setRowCount(0)
 
-        # Criterio 4: Manejar búsqueda sin coincidencias con mensaje exacto
+        # Manejar búsqueda sin coincidencias con mensaje exacto
         if total_count == 0 or not eventos:
             mostrar_mensaje(self.lbl_mensaje, MENSAJE_SIN_COINCIDENCIAS, "empty")
             self.lbl_pagina.setText("Página 1 de 1 (0 eventos)")

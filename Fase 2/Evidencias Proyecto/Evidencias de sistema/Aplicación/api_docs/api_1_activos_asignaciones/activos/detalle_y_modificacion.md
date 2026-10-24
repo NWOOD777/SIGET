@@ -22,6 +22,6 @@ Con una asignación abierta no puede cambiarse el modelo ni el estado del activo
 
 Un activo inexistente responde `404`; datos inválidos o cambios no permitidos, `400`.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

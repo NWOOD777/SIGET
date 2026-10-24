@@ -1,4 +1,4 @@
-"""Flujo web de E5-H13 y E5-H30 que reutiliza el servicio de tickets existente."""
+"""Vistas del portal para crear, consultar y evaluar tickets de soporte."""
 
 from contextlib import nullcontext
 

@@ -203,7 +203,7 @@ class SolicitudesView(QWidget):
         self.btn_reintentar.hide()
         layout.addWidget(self.btn_reintentar)
 
-        # Tabla solicitudes principal (referenciada como self.tabla por retrocompatibilidad)
+        # Tabla principal de solicitudes
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(len(self.COLUMNAS_SOLICITUDES))
         self.tabla.setHorizontalHeaderLabels(self.COLUMNAS_SOLICITUDES)

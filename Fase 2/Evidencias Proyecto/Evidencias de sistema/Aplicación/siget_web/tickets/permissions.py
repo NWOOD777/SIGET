@@ -38,7 +38,7 @@ def _obtener_usuario_siget(request: Request) -> Usuario | None:
 
 class PuedeCrearTicket(permissions.BasePermission):
     """
-    Permite crear tickets de soporte (E5-H13) a usuarios autenticados con rol
+    Permite crear tickets de soporte a usuarios autenticados con rol
     'Usuario solicitante' mediante una sesión del portal Web.
     """
 
@@ -100,7 +100,7 @@ class PuedeAtenderTickets(permissions.BasePermission):
 
 class PuedeGestionarCSAT(permissions.BasePermission):
     """
-    Permite consultar y registrar calificaciones CSAT (E5-H30) exclusivamente
+    Permite consultar y registrar calificaciones CSAT exclusivamente
     a cuentas activas con rol 'Usuario solicitante'.
     """
 

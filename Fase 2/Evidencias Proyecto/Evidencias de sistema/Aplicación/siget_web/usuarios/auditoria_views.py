@@ -1,5 +1,5 @@
 """
-Vistas API REST para la consulta de la bitácora de auditoría protegida (E9-H22).
+Vistas API REST para la consulta de la bitácora de auditoría protegida.
 Exclusivas para Administradores del sistema autorizados (permiso AUDITORIA_CONSULTAR).
 Garantiza trazabilidad de operaciones críticas, orden cronológico e inmutabilidad estricta.
 """
@@ -146,7 +146,7 @@ def _validar_id_usuario(valor: str, parametro: str) -> int:
 class AuditoriaListAPIView(APIView):
     """
     GET /api/auditoria/
-    Consulta histórica de operaciones y eventos críticos (E9-H22).
+    Consulta histórica de operaciones y eventos críticos.
     Permite filtrar por identificador de usuario y por activo (código de inventario).
     Solo lectura: los métodos de escritura son rechazados con 405 Method Not Allowed.
     """

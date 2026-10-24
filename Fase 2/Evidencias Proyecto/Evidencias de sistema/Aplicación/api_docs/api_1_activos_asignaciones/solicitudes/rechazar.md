@@ -16,6 +16,6 @@ La solicitud debe estar `Pendiente`. Se registra el estado `Rechazada`, motivo, 
 
 Una solicitud inexistente responde `404`. Un motivo vacío o una solicitud ya resuelta responde `400`.
 
-Consulta [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
+Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 
 [Volver a Gestión de Activos y Asignaciones](../README.md) · [Índice general](../../README.md)

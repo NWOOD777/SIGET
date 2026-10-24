@@ -29,7 +29,7 @@ Proyecto desarrollado para la asignatura **Capstone de Ingeniería en Informáti
 | Backend Django / Django REST Framework | Reglas de negocio, permisos y servicios REST compartidos. |
 | PostgreSQL | Persistencia de usuarios, activos, asignaciones, soporte y trazabilidad. |
 
-Los endpoints disponibles y las integraciones pendientes se distinguen en el [alcance de las APIs](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/api_docs/alcance_y_pendientes.md).
+Los servicios del backend y sus integraciones se describen en la [organización de las APIs](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/api_docs/organizacion.md).
 
 ---
 
@@ -128,8 +128,8 @@ SIGET/
 | Contratos y endpoints | [Índice de las APIs](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/api_docs/README.md) |
 | Modelo e inicialización de PostgreSQL | [init_siget_bd.sql](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Base%20de%20datos/init_siget_bd.sql) |
 | Arquitectura y diagramas | [Arquitectura](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Arquitectura/) |
-| Requisitos, historias, backlog y documentación académica | [Evidencias de documentación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/) |
-| Registros de trabajo por Sprint | [Scrum](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Scrum/) |
+| Requisitos y documentación académica | [Evidencias de documentación](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/) |
+| Evidencias de metodología | [Scrum](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20documentación/Scrum/) |
 
 ### Revisión estática de la aplicación
 
@@ -154,7 +154,7 @@ Para corregir automáticamente el orden de imports y otros casos seguros se util
 
 ## Metodología de trabajo
 
-El equipo utiliza Scrum, con historias de usuario, criterios de aceptación, Product Backlog y Sprint Backlog. Las reuniones diarias, retrospectivas y registros de actividades se conservan en la carpeta Scrum enlazada arriba; Git y GitHub mantienen el historial del desarrollo.
+El desarrollo se organiza mediante Scrum. Las evidencias de planificación, seguimiento y retrospectivas se conservan en la carpeta de metodología. Git y GitHub mantienen el historial de versiones del sistema.
 
 ## Evidencias académicas
 

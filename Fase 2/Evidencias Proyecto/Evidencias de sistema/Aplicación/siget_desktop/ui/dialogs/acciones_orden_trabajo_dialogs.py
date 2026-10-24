@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPlainTextEdit,
     QVBoxLayout,
