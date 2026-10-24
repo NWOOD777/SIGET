@@ -127,6 +127,20 @@ El [flujo de autenticación](api_docs/uso_general.md#mecanismos-de-autenticació
 Al cerrar la ventana se conserva el token de acceso vigente en el directorio local de datos del usuario que determina el sistema operativo mediante Qt. La caché es privada al usuario y contiene únicamente el token, su vencimiento y la identificación del entorno. No guarda contraseñas, roles ni permisos. Al abrir la aplicación se consulta nuevamente la identidad y el acceso en Django. «Cerrar sesión», la expiración o el rechazo de la cuenta eliminan la caché. Una sesión vencida requiere iniciar sesión nuevamente.
 
 
+## Registro y confirmación de cambios
+
+Los formularios del escritorio solicitan confirmación antes de crear, modificar o
+eliminar registros y ejecutar operaciones sobre equipos y órdenes de trabajo.
+La ventana permite revisar los datos; **Cancelar** conserva el formulario sin guardar.
+Los formularios de solicitudes, tickets y calificaciones del portal muestran la misma
+revisión mediante una ventana integrada al diseño de la web.
+
+El valor de adquisición admite números enteros y se presenta con puntos de miles
+mientras se escribe (por ejemplo, `1.250.000`). Las letras, los signos y el pegado de
+importes decimales se rechazan. El formato visual conserva el valor numérico enviado
+al backend. Los montos fraccionarios ya almacenados se muestran sin redondear y se
+conservan al modificar otros datos del activo.
+
 ## Pruebas
 
 ### Backend

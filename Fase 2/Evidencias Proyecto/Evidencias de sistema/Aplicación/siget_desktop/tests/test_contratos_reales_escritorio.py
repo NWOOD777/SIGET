@@ -34,6 +34,9 @@ def texto_celda(table: QTableWidget, row: int, column: int) -> str:
 
 class ContratosEscritorioTests(unittest.TestCase):
     def setUp(self):
+        confirmacion = patch("siget_desktop.ui.dialogs.common.QMessageBox.exec", return_value=QMessageBox.StandardButton.Yes)
+        confirmacion.start()
+        self.addCleanup(confirmacion.stop)
         current_session.clear()
         current_session.set_tokens("qa", 3600)
         current_session.update_user_info({"id_usuario": 1, "roles": ["Administrador del sistema"], "acceso_escritorio": True})
@@ -111,7 +114,7 @@ class ContratosEscritorioTests(unittest.TestCase):
         data = {"id_activo": 4, "numero_serie": "QA", "id_modelo": 1, "id_ubicacion": 1, "id_estado_activo": 1,
                 "valor_adquisicion": "650000.50", "fecha_compra": None, "fecha_garantia": None, "estado": "Disponible"}
         dialog._on_datos_cargados({"activo": data, "modelos": [{"id_modelo": 1, "nombre": "QA"}], "ubicaciones": [{"id_ubicacion": 1}, {"id_ubicacion": 2}], "estados": [{"id_estado_activo": 1, "nombre": "Disponible"}]})
-        self.assertEqual(dialog.input_valor.text(), "650000.50")
+        self.assertEqual(dialog.input_valor.text(), "650.000,50")
         self.assertFalse(dialog.chk_garantia.isChecked())
         dialog.combo_ubicacion.setCurrentIndex(1)
         with patch("siget_desktop.ui.dialogs.activos_dialogs.ApiWorker") as worker:

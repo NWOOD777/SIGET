@@ -32,7 +32,7 @@
 
     <div class="notificacion-acciones">
         {% if not notificacion.leida %}
-            <form method="post" action="{% url 'usuarios:marcar_notificacion_leida' notificacion.pk %}" class="notificacion-form-inline">
+            <form data-confirm="¿Confirma marcar esta notificación como leída?" method="post" action="{% url 'usuarios:marcar_notificacion_leida' notificacion.pk %}" class="notificacion-form-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn-action btn-primary">Marcar como leída</button>
             </form>

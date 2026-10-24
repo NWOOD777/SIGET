@@ -34,7 +34,7 @@ from siget_desktop.api.services import (
     retirar_permiso_rol,
 )
 from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje
-from siget_desktop.ui.dialogs.common import SessionDialog
+from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -127,6 +127,13 @@ class AprovisionarUsuarioDialog(SessionDialog):
 
         if "@" not in correo or "." not in correo.split("@")[-1]:
             mostrar_mensaje(self.lbl_mensaje, "Ingrese una dirección de correo válida.", "error")
+            return
+
+        if not confirmar_operacion(
+            self, "Crear usuario",
+            f"Nombre: {nombres} {apellidos}\nCorreo: {correo}\nRUT: {rut}\nRol: {rol}\n"
+            "Se creará la cuenta y se solicitará el envío de la invitación de acceso.",
+        ):
             return
 
         self.btn_guardar.setEnabled(False)
@@ -342,6 +349,11 @@ class GestionarRolesUsuarioDialog(SessionDialog):
             mostrar_mensaje(self.lbl_mensaje, "El usuario debe conservar al menos un rol asignado.", "error")
             return
 
+        if not confirmar_operacion(
+            self, "Actualizar roles", f"Usuario #{self.id_usuario}\nRoles: {', '.join(roles_seleccionados)}",
+        ):
+            return
+
         self.btn_guardar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.progreso.show()
@@ -482,6 +494,11 @@ class CatalogoRolesPermisosDialog(SessionDialog):
             mostrar_mensaje(self.lbl_mensaje, "Ingrese el código del permiso a asociar.", "error")
             return
 
+        if not confirmar_operacion(
+            self, "Asignar permiso", f"Rol: {self.combo_roles.currentText()}\nPermiso: {codigo}",
+        ):
+            return
+
         self._set_busy(True)
         self.progreso.show()
         self.lbl_mensaje.hide()
@@ -512,6 +529,7 @@ class CatalogoRolesPermisosDialog(SessionDialog):
             "Confirmar retiro de permiso",
             f"¿Está seguro de retirar el permiso '{codigo}' del rol?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
         if confirma != QMessageBox.StandardButton.Yes:
             return

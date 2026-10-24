@@ -29,7 +29,7 @@ from siget_desktop.api.services import (
     registrar_entrega_solicitud,
 )
 from siget_desktop.ui.components import mostrar_mensaje, texto_relacion
-from siget_desktop.ui.dialogs.common import SessionDialog
+from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -205,6 +205,9 @@ class RechazarSolicitudDialog(SessionDialog):
             mostrar_mensaje(self.lbl_mensaje, "Debe ingresar el motivo de rechazo.", "error")
             return
 
+        if not confirmar_operacion(self, "Rechazar solicitud", f"Solicitud #{self.id_solicitud}\nMotivo: {motivo}"):
+            return
+
         self.btn_confirmar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.progreso.show()
@@ -326,6 +329,13 @@ class RegistrarEntregaDialog(SessionDialog):
             return
 
         fecha_prevista = self.date_prevista.date().toString(Qt.DateFormat.ISODate) + "T23:59:59"
+
+        if not confirmar_operacion(
+            self, "Registrar entrega",
+            f"Solicitud #{self.id_solicitud}\nEquipo: {self.combo_activos.currentText()}\n"
+            f"Devolución prevista: {self.date_prevista.date().toString('dd/MM/yyyy')}",
+        ):
+            return
 
         self.btn_entregar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)

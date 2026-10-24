@@ -470,6 +470,7 @@ class SolicitudesView(QWidget):
             f"¿Confirma la aprobación de la solicitud #{id_sol}?\n"
             "La aprobación autoriza la entrega posterior por parte del equipo técnico.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
         if confirma != QMessageBox.StandardButton.Yes:
             return

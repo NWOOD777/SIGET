@@ -31,6 +31,9 @@ class CatalogosActivosDesktopTests(unittest.TestCase):
     """Pruebas unitarias e integradas de UI para catálogos maestros de Activos TI."""
 
     def setUp(self):
+        confirmacion = patch("siget_desktop.ui.dialogs.common.QMessageBox.exec", return_value=QMessageBox.StandardButton.Yes)
+        confirmacion.start()
+        self.addCleanup(confirmacion.stop)
         current_session.clear()
         current_session.set_tokens("token_admin_test", 3600)
         current_session.update_user_info(
@@ -272,7 +275,7 @@ class CatalogosActivosDesktopTests(unittest.TestCase):
         self.assertTrue(dialog.btn_guardar.isEnabled())
         self.assertTrue(dialog.lbl_mensaje.isHidden())
         self.assertEqual(dialog.input_serie.text(), "SN-PRIMER-ACTIVO-001")
-        self.assertEqual(dialog.input_valor.text(), "950000")
+        self.assertEqual(dialog.input_valor.text(), "950.000")
         self.assertEqual(dialog.combo_modelo.currentData(), 5)
         self.assertEqual(dialog.combo_ubicacion.currentData(), 7)
         self.assertIn("Edif. Edificio Central, Piso Piso 2", dialog.combo_ubicacion.currentText())
@@ -316,7 +319,7 @@ class CatalogosActivosDesktopTests(unittest.TestCase):
         self.assertEqual(reg.combo_ubicacion.currentData(), 20)
         self.assertIn("Bodega Principal", reg.combo_ubicacion.currentText())
         self.assertEqual(reg.input_serie.text(), "SN-KEEP-99")
-        self.assertEqual(reg.input_valor.text(), "500000")
+        self.assertEqual(reg.input_valor.text(), "500.000")
 
         # Respuesta tardía con req_id obsoleto es descartada
         reg._on_catalogos(

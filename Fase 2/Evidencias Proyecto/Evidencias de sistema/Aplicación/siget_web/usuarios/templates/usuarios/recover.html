@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIGET - Recuperar acceso</title>
     <link rel="stylesheet" href="{% static 'css/siget.css' %}">
+    <script src="{% static 'js/confirmaciones.js' %}" defer></script>
 </head>
 <body class="page-auth">
     <div class="auth-container">
@@ -64,7 +65,7 @@
                 </div>
                 {% endif %}
 
-                <form method="post" action="{% url 'usuarios:auth_recover' %}" class="recover-form" novalidate>
+                <form data-confirm="¿Confirma el envío de las instrucciones de recuperación al correo indicado?" method="post" action="{% url 'usuarios:auth_recover' %}" class="recover-form" novalidate>
                     {% csrf_token %}
 
                     <div class="form-group">
@@ -101,5 +102,6 @@
             </div>
         </main>
     </div>
+    {% include "usuarios/includes/confirmar_operacion.html" %}
 </body>
 </html>

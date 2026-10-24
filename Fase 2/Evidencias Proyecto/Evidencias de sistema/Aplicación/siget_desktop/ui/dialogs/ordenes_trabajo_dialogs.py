@@ -27,7 +27,7 @@ from siget_desktop.api.services import (
     listar_ordenes_trabajo,
     listar_tickets,
 )
-from siget_desktop.ui.dialogs.common import SessionDialog
+from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -395,6 +395,14 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         if not procedimiento:
             QMessageBox.warning(self, "Campo obligatorio", "Ingrese el procedimiento inicial.")
             self.input_procedimiento.setFocus()
+            return
+
+        if not confirmar_operacion(
+            self, "Crear orden de trabajo",
+            f"Ticket: {ticket.get('codigo_ticket', id_ticket)}\nFalla: {falla}\n"
+            f"Procedimiento inicial: {procedimiento}\n"
+            f"Equipo reparable: {'Sí' if self.check_reparable.isChecked() else 'No'}",
+        ):
             return
 
         self._creando_orden = True

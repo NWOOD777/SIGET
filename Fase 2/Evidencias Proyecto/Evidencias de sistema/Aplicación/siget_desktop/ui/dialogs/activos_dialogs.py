@@ -50,7 +50,8 @@ from siget_desktop.api.services import (
 )
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje
-from siget_desktop.ui.dialogs.common import SessionDialog, fecha_opcional, monto_decimal
+from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion, fecha_opcional, monto_decimal
+from siget_desktop.ui.inputs import MontoLineEdit
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -747,6 +748,10 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
             return
 
         payload = {"nombre": nombre, "descripcion": descripcion}
+        accion = "Crear" if self._id_categoria_editando is None else "Actualizar"
+        if not confirmar_operacion(self, f"{accion} categoría", f"{accion} categoría: {nombre}.\nDescripción: {descripcion or 'Sin descripción'}"):
+            return
+
         self._iniciar_operacion()
         if self._id_categoria_editando is None:
             self._worker = ApiWorker(crear_categoria_activo, datos=payload)
@@ -819,6 +824,10 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
             return
 
         payload = {"nombre": nombre}
+        accion = "Crear" if self._id_marca_editando is None else "Actualizar"
+        if not confirmar_operacion(self, f"{accion} marca", f"{accion} marca: {nombre}."):
+            return
+
         self._iniciar_operacion()
         if self._id_marca_editando is None:
             self._worker = ApiWorker(crear_marca_activo, datos=payload)
@@ -901,6 +910,10 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
             "edificio": edificio,
             "piso": piso,
         }
+        accion = "Crear" if self._id_ubicacion_editando is None else "Actualizar"
+        if not confirmar_operacion(self, f"{accion} ubicación", f"{accion} ubicación: {area}.\nEdificio: {edificio or 'Sin edificio'}\nPiso: {piso or 'Sin piso'}"):
+            return
+
         self._iniciar_operacion()
         if self._id_ubicacion_editando is None:
             self._worker = ApiWorker(crear_ubicacion_activo, datos=payload)
@@ -997,6 +1010,10 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
             "id_marca": id_marca,
             "id_categoria": id_categoria,
         }
+        accion = "Crear" if self._id_modelo_editando is None else "Actualizar"
+        if not confirmar_operacion(self, f"{accion} modelo", f"{accion} modelo: {nombre}.\nMarca: {self.combo_modelo_marca.currentText()}\nCategoría: {self.combo_modelo_categoria.currentText()}"):
+            return
+
         self._iniciar_operacion()
         if self._id_modelo_editando is None:
             self._worker = ApiWorker(crear_modelo_activo, datos=payload)
@@ -1104,8 +1121,7 @@ class RegistrarActivoDialog(SessionDialog):
         self.combo_ubicacion = QComboBox()
         form.addRow("Ubicación física *:", self.combo_ubicacion)
 
-        self.input_valor = QLineEdit()
-        self.input_valor.setPlaceholderText("Ej. 750000")
+        self.input_valor = MontoLineEdit()
         form.addRow("Valor adquisición ($):", self.input_valor)
 
         compra_widget, self.chk_compra, self.date_compra = fecha_opcional()
@@ -1268,6 +1284,13 @@ class RegistrarActivoDialog(SessionDialog):
             "fecha_garantia": f_garantia,
         }
 
+        if not confirmar_operacion(
+            self, "Registrar activo",
+            f"Serie: {serie}\nModelo: {self.combo_modelo.currentText()}\n"
+            f"Ubicación: {self.combo_ubicacion.currentText()}\nValor de adquisición: $ {self.input_valor.text() or '0'}",
+        ):
+            return
+
         self.btn_guardar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.progreso.show()
@@ -1375,7 +1398,7 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.combo_estado_edit = QComboBox()
         form_edit.addRow("Actualizar estado:", self.combo_estado_edit)
 
-        self.input_valor = QLineEdit()
+        self.input_valor = MontoLineEdit()
         form_edit.addRow("Valor adquisición ($):", self.input_valor)
 
         compra_widget, self.chk_compra, self.date_compra = fecha_opcional()
@@ -1612,6 +1635,14 @@ class DetalleModificarActivoDialog(SessionDialog):
         payload = {key: value for key, value in proposed.items() if value != self._activo_datos.get(key)}
         if not payload:
             mostrar_mensaje(self.lbl_mensaje, "No hay cambios para guardar.")
+            return
+
+        if not confirmar_operacion(
+            self, "Actualizar activo",
+            f"Activo: {self.lbl_codigo.text()}\nSerie: {self.input_serie.text()}\n"
+            f"Modelo: {self.combo_modelo.currentText()}\nUbicación: {self.combo_ubicacion.currentText()}\n"
+            f"Valor de adquisición: $ {self.input_valor.text() or '0'}",
+        ):
             return
 
         self.btn_guardar.setEnabled(False)

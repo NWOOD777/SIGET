@@ -49,7 +49,7 @@
     </dl>
     {% elif ticket_cerrado %}
     <p>Tu ticket ha sido cerrado. Por favor, califica la atención recibida con una puntuación de 1 a 5 estrellas.</p>
-    <form method="post" action="{% url 'tickets_web:detalle' ticket.pk %}" novalidate>
+    <form data-confirm="¿Confirma el envío de esta calificación? Una vez registrada no puede modificarse." method="post" action="{% url 'tickets_web:detalle' ticket.pk %}" novalidate>
         {% csrf_token %}
         <fieldset class="form-group">
             <legend class="form-label">{{ form_csat.calificacion_estrellas.label }}</legend>

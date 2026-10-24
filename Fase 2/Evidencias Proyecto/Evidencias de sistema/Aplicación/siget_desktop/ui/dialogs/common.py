@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Callable
 
 from PySide6.QtCore import QDate, Qt, QTimer
-from PySide6.QtWidgets import QCheckBox, QDateEdit, QDialog, QHBoxLayout, QPushButton, QWidget
+from PySide6.QtWidgets import QCheckBox, QDateEdit, QDialog, QHBoxLayout, QMessageBox, QPushButton, QWidget
 from shiboken6 import isValid
 
 from siget_desktop.auth.session import current_session
@@ -88,3 +88,27 @@ def fecha_opcional() -> tuple[QWidget, QCheckBox, QDateEdit]:
     layout.addWidget(enabled)
     layout.addWidget(date, 1)
     return widget, enabled, date
+
+
+def confirmar_operacion(parent: QWidget, titulo: str, resumen: str) -> bool:
+    """Solicita confirmación explícita y descarta respuestas de una sesión cerrada."""
+    generation = current_session.generation
+    mensaje = QMessageBox(parent)
+    mensaje.setWindowTitle(titulo)
+    mensaje.setIcon(QMessageBox.Icon.Question)
+    mensaje.setTextFormat(Qt.TextFormat.PlainText)
+    mensaje.setText(resumen)
+    mensaje.setInformativeText("Revise los datos antes de confirmar. Cancelar conserva el formulario sin guardar cambios.")
+    mensaje.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+    mensaje.button(QMessageBox.StandardButton.Yes).setText("Confirmar")
+    mensaje.button(QMessageBox.StandardButton.No).setText("Cancelar")
+    mensaje.setDefaultButton(QMessageBox.StandardButton.No)
+    mensaje.setEscapeButton(QMessageBox.StandardButton.No)
+    respuesta = mensaje.exec()
+    return (
+        respuesta == QMessageBox.StandardButton.Yes
+        and isValid(parent)
+        and not getattr(parent, "_closed", False)
+        and current_session.is_authenticated()
+        and generation == current_session.generation
+    )

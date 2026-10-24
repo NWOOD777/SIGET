@@ -160,6 +160,9 @@ class DialogsTests(unittest.TestCase):
     """Verifica las validaciones de campos y el comportamiento de los diálogos."""
 
     def setUp(self):
+        confirmacion = patch("siget_desktop.ui.dialogs.common.QMessageBox.exec", return_value=QMessageBox.StandardButton.Yes)
+        confirmacion.start()
+        self.addCleanup(confirmacion.stop)
         current_session.clear()
         current_session.set_tokens("token_test", expires_in=3600)
         for module in ("activos", "asignaciones", "solicitudes", "tickets", "usuarios"):
@@ -321,6 +324,9 @@ class ViewsIntegrationTests(unittest.TestCase):
     """Verifica el control de acciones y pestañas en las vistas operativas."""
 
     def setUp(self):
+        confirmacion = patch("siget_desktop.ui.dialogs.common.QMessageBox.exec", return_value=QMessageBox.StandardButton.Yes)
+        confirmacion.start()
+        self.addCleanup(confirmacion.stop)
         current_session.clear()
         current_session.set_tokens("token_test", expires_in=3600)
 

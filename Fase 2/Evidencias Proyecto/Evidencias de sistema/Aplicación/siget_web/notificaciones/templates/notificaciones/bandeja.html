@@ -55,7 +55,7 @@
                         {% endif %}
 
                         {% if not item.notificacion.leida %}
-                            <form method="post" action="{% url 'usuarios:marcar_notificacion_leida' item.notificacion.pk %}" class="notificacion-form-inline">
+                            <form data-confirm="¿Confirma marcar esta notificación como leída?" method="post" action="{% url 'usuarios:marcar_notificacion_leida' item.notificacion.pk %}" class="notificacion-form-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-action btn-outline btn-sm">Marcar como leída</button>
                             </form>

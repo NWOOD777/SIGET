@@ -7,6 +7,7 @@
     <title>SIGET - {% block titulo %}Portal{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/siget.css' %}">
     <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+    <script src="{% static 'js/confirmaciones.js' %}" defer></script>
 </head>
 <body class="page-dashboard portal-personal">
     <!-- Barra Lateral Izquierda (Usuario Solicitante) -->
@@ -106,5 +107,6 @@
 
         <main class="content-area">{% block contenido %}{% endblock %}</main>
     </div>
+    {% include "usuarios/includes/confirmar_operacion.html" %}
 </body>
 </html>

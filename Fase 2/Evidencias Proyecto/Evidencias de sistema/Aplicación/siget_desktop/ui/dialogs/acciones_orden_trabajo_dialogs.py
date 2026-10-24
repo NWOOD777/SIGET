@@ -10,10 +10,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from siget_desktop.ui.dialogs.common import confirmar_operacion
+
 
 class PausarOTDialog(QDialog):
     def __init__(self, codigo_ot: str, parent=None):
         super().__init__(parent)
+        self.codigo_ot = codigo_ot
         self.setWindowTitle("Pausar orden de trabajo")
         self.setMinimumWidth(420)
 
@@ -50,6 +53,11 @@ class PausarOTDialog(QDialog):
                 "Debes indicar la justificación de la pausa.",
             )
             return
+        if not confirmar_operacion(
+            self, "Pausar orden de trabajo",
+            f"Orden: {self.codigo_ot}\nMotivo: {self.justificacion.toPlainText().strip()}",
+        ):
+            return
         self.accept()
 
     def obtener_datos(self) -> dict:
@@ -67,6 +75,7 @@ class ReasignarOTDialog(QDialog):
         parent=None,
     ):
         super().__init__(parent)
+        self.codigo_ot = codigo_ot
         self.setWindowTitle("Reasignar orden de trabajo")
         self.setMinimumWidth(440)
 
@@ -139,6 +148,12 @@ class ReasignarOTDialog(QDialog):
             )
             return
 
+        if not confirmar_operacion(
+            self, "Reasignar orden de trabajo",
+            f"Orden: {self.codigo_ot}\nNuevo técnico: {self.id_tecnico.currentText()}\n"
+            f"Motivo: {self.observaciones.toPlainText().strip()}",
+        ):
+            return
         self.accept()
 
     def obtener_datos(self) -> dict:
