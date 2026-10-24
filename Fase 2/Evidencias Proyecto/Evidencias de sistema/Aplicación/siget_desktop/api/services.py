@@ -449,3 +449,38 @@ def obtener_historial_orden_trabajo(
         f"/api/ordenes-trabajo/{id_orden}/historial/"
     )
     return _lista(resultado)
+
+
+# ============================================================================
+# AUDITORÍA INTERNA (E9-H22)
+# ============================================================================
+
+def consultar_bitacora_auditoria(
+    usuario: str | None = None,
+    activo: str | None = None,
+    page: int = 1,
+    page_size: int = 25,
+    id_usuario: int | None = None,
+) -> dict[str, Any]:
+    """
+    Consulta la bitácora de auditoría interna de SIGET (exclusivo Administrador).
+    Permite filtrar por actor (usuario) y activo (código de inventario).
+    """
+    params: dict[str, Any] = {
+        "page": page,
+        "page_size": page_size,
+    }
+    if id_usuario is not None:
+        params["id_usuario"] = id_usuario
+    elif usuario and usuario.strip():
+        params["usuario"] = usuario.strip()
+    if activo and activo.strip():
+        params["activo"] = activo.strip()
+
+    resultado = api_client.get("/api/auditoria/", params=params)
+    return _objeto(resultado)
+
+
+def buscar_opciones_auditoria(tipo: str, search: str = "") -> dict[str, Any]:
+    """Busca etiquetas legibles de actores o equipos para los filtros de auditoría."""
+    return _objeto(api_client.get("/api/auditoria/opciones/", params={"tipo": tipo, "search": search}))

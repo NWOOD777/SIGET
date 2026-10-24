@@ -25,6 +25,7 @@ from siget_desktop.api.services import obtener_perfil_actual
 from siget_desktop.auth.manager import auth_manager
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.views.activos_view import ActivosView
+from siget_desktop.ui.views.auditoria_view import AuditoriaView
 from siget_desktop.ui.views.dashboard_view import DashboardView
 from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
 from siget_desktop.ui.views.solicitudes_view import SolicitudesView
@@ -70,6 +71,7 @@ class MainWindow(QMainWindow):
         self.view_tickets = TicketsView()
         self.view_ordenes_trabajo = OrdenesTrabajoView()
         self.view_usuarios = UsuariosView()
+        self.view_auditoria = AuditoriaView()
 
         for view in (
             self.view_dashboard,
@@ -78,6 +80,7 @@ class MainWindow(QMainWindow):
             self.view_tickets,
             self.view_ordenes_trabajo,
             self.view_usuarios,
+            self.view_auditoria,
         ):
             self.stacked_views.addWidget(view)
         self.view_dashboard.modulo_seleccionado.connect(self.sidebar.setCurrentRow)
@@ -162,6 +165,7 @@ class MainWindow(QMainWindow):
             ("Mesa de ayuda", True),
             ("Órdenes de Trabajo", current_session.is_tecnico()),
             ("Usuarios y roles", current_session.is_admin()),
+            ("Auditoría interna", current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")),
         ]
 
        
@@ -180,6 +184,10 @@ class MainWindow(QMainWindow):
 
             if texto == "Órdenes de Trabajo":
                 item.setHidden(not current_session.is_tecnico())
+            elif texto == "Usuarios y roles":
+                item.setHidden(not current_session.is_admin())
+            elif texto == "Auditoría interna":
+                item.setHidden(not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")))
 
         sidebar.setCurrentRow(0)
         return sidebar
@@ -214,6 +222,7 @@ class MainWindow(QMainWindow):
         item_usuarios = self.sidebar.item(5)
         if item_usuarios:
             es_admin = current_session.is_admin()
+            item_usuarios.setHidden(not es_admin)
             if es_admin:
                 item_usuarios.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
                 item_usuarios.setToolTip("Administración de usuarios y catálogo RBAC")
@@ -221,12 +230,25 @@ class MainWindow(QMainWindow):
                 item_usuarios.setFlags(Qt.ItemFlag.NoItemFlags)
                 item_usuarios.setToolTip("Módulo restringido a Administrador del sistema")
 
+        # La consulta exige rol y permiso también en la navegación.
+        item_auditoria = self.sidebar.item(6)
+        if item_auditoria:
+            es_admin = current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")
+            item_auditoria.setHidden(not es_admin)
+            if es_admin:
+                item_auditoria.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                item_auditoria.setToolTip("Bitácora de auditoría y trazabilidad del sistema")
+            else:
+                item_auditoria.setFlags(Qt.ItemFlag.NoItemFlags)
+                item_auditoria.setToolTip("Módulo restringido a Administrador del sistema")
+
         self.view_dashboard.actualizar_datos()
         self.view_activos.actualizar_permisos_ui()
         self.view_solicitudes.actualizar_permisos_ui()
         self.view_tickets.actualizar_permisos_ui()
         self.view_usuarios.actualizar_visibilidad_rbac()
         self.view_ordenes_trabajo.actualizar_permisos_ui()
+        self.view_auditoria.actualizar_permisos_ui()
 
         # Mostrar Órdenes de Trabajo solo al Técnico de soporte.
         item_ordenes = self.sidebar.item(4)
@@ -257,6 +279,10 @@ class MainWindow(QMainWindow):
             self.sidebar.setCurrentRow(0)
             return
 
+        if index == 6 and not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")):
+            self.sidebar.setCurrentRow(0)
+            return
+
         self.stacked_views.setCurrentIndex(index)
 
         # Carga automática bajo demanda.
@@ -274,6 +300,13 @@ class MainWindow(QMainWindow):
             and self.view_usuarios.tabla.rowCount() == 0
         ):
             self.view_usuarios.cargar_usuarios()
+        elif (
+            index == 6
+            and current_session.is_admin()
+            and current_session.has_permission("AUDITORIA_CONSULTAR")
+            and self.view_auditoria.tabla.rowCount() == 0
+        ):
+            self.view_auditoria.cargar_auditoria()
 
 
     def invalidar_consultas(self, origen: QWidget):
@@ -287,6 +320,8 @@ class MainWindow(QMainWindow):
                     self.view_usuarios._usuarios_cargados = []
         if self.view_solicitudes is not origen:
             self.view_solicitudes.limpiar_sesion()
+        if self.view_auditoria is not origen:
+            self.view_auditoria.limpiar_sesion()
         generation = current_session.generation
         worker = ApiWorker(obtener_perfil_actual)
         self._worker_perfil = worker
@@ -306,6 +341,10 @@ class MainWindow(QMainWindow):
             self.view_usuarios._usuarios_cargados = []
             if self.sidebar.currentRow() == 5:
                 self.sidebar.setCurrentRow(0)
+        if not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")):
+            self.view_auditoria.limpiar_sesion()
+            if self.sidebar.currentRow() == 6:
+                self.sidebar.setCurrentRow(0)
         self.actualizar_sesion()
 
  
@@ -320,6 +359,7 @@ class MainWindow(QMainWindow):
         self.view_tickets._worker = None
         self.view_usuarios._worker = None
         self.view_ordenes_trabajo._worker = None
+        self.view_auditoria._worker = None
         self._worker_perfil = None
 
         # Limpiar datos de las vistas.
@@ -332,6 +372,7 @@ class MainWindow(QMainWindow):
         self.view_usuarios._usuarios_cargados = []
         self.view_ordenes_trabajo.tabla.setRowCount(0)
         self.view_ordenes_trabajo._ordenes_cargadas = []
+        self.view_auditoria.limpiar_sesion()
 
         # Actualizar la interfaz y volver al panel principal.
 

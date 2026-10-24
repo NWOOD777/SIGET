@@ -70,7 +70,31 @@ Para configurar y utilizar el servicio de correo, consultar [configuración y us
 
 ## Ejecutar el escritorio
 
-Con el backend en ejecución y el entorno virtual activo:
+Con el backend en ejecución y las dependencias instaladas, utilizar el launcher correspondiente:
+
+**Linux**, desde una terminal:
+
+```bash
+./iniciar_escritorio.sh
+```
+
+**Windows**, mediante doble clic en `iniciar_escritorio.bat` o desde una terminal:
+
+```bat
+iniciar_escritorio.bat
+```
+
+Ambos launchers buscan primero `.venv` en la raíz del repositorio, luego en `Aplicación` y finalmente Python en el sistema. No es necesario activar el entorno encontrado.
+
+Pueden ejecutarse desde otra carpeta usando su ruta completa. Comprueban Python 3.12 o superior y las dependencias principales, y transmiten los argumentos al cliente. Para consultar la versión sin abrir la interfaz:
+
+```bash
+./iniciar_escritorio.sh --version
+```
+
+En Windows, usar `iniciar_escritorio.bat --version`.
+
+El backend se inicia por separado con Docker Compose. Los launchers no instalan paquetes ni modifican la configuración. También se conserva el inicio manual, desde `Aplicación` y con el entorno virtual activo:
 
 ```bash
 python -m siget_desktop.main

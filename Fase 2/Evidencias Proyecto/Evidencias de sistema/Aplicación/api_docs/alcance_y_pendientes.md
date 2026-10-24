@@ -7,6 +7,7 @@ La documentación agrupa los servicios del backend y las integraciones externas 
 | Gestión de Activos y Asignaciones | Inventario, catálogos, solicitudes, aprobación o rechazo, entregas y devoluciones. | [API 1](api_1_activos_asignaciones/README.md) |
 | Service Desk y Taller/Reparaciones | Tickets de soporte, prioridades, estados y políticas de servicio. | [API 2](api_2_service_desk_taller/README.md) |
 | Acceso y usuarios | Identidad, sesión, aprovisionamiento, roles y permisos. | [Acceso y usuarios](acceso_y_usuarios/README.md) |
+| Bitácora de auditoría | Registro histórico protegido de operaciones y eventos críticos. | [Auditoría interna](auditoria/README.md) |
 | Integraciones externas | Autenticación con Auth0 y correo transaccional con Resend. | [APIs externas](externas/README.md) |
 
 Cada documento de endpoint describe los métodos, permisos, entradas y respuestas de su operación. Los mecanismos de autenticación se explican en [uso general](uso_general.md).

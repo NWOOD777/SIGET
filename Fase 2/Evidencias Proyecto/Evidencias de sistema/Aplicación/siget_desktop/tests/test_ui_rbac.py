@@ -117,7 +117,7 @@ class UiRbacTests(unittest.TestCase):
         self.assertTrue(view.btn_actualizar.isEnabled())
 
     def test_main_window_sidebar_rbac(self):
-        # Técnico: ítem Usuarios inhabilitado
+        # Técnico: ítem OT habilitado, ítems Usuarios y Auditoría inhabilitados
         current_session.update_user_info({
             "id_usuario": 2,
             "nombre_completo": "Técnico Juan",
@@ -126,24 +126,32 @@ class UiRbacTests(unittest.TestCase):
         })
         win = MainWindow()
         win.actualizar_sesion()
-        item_usuarios = win.sidebar.item(4)
-        self.assertEqual(item_usuarios.flags(), Qt.ItemFlag.NoItemFlags)
+        item_ot = win.sidebar.item(4)
+        item_usuarios = win.sidebar.item(5)
+        item_auditoria = win.sidebar.item(6)
 
-        # Administrador: ítem Usuarios habilitado
+        self.assertTrue(bool(item_ot.flags() & Qt.ItemFlag.ItemIsEnabled))
+        self.assertEqual(item_usuarios.flags(), Qt.ItemFlag.NoItemFlags)
+        self.assertEqual(item_auditoria.flags(), Qt.ItemFlag.NoItemFlags)
+
+        # Administrador: ítem Usuarios y Auditoría habilitados
         current_session.update_user_info({
             "id_usuario": 3,
             "nombre_completo": "Admin Carlos",
             "roles": ["Administrador del sistema"],
+            "permisos": ["AUDITORIA_CONSULTAR"],
             "acceso_escritorio": True,
         })
         win.actualizar_sesion()
         self.assertTrue(bool(item_usuarios.flags() & Qt.ItemFlag.ItemIsEnabled))
+        self.assertTrue(bool(item_auditoria.flags() & Qt.ItemFlag.ItemIsEnabled))
 
     def test_cierre_sesion_limpia_tablas_y_credenciales(self):
         current_session.set_tokens("token_test", expires_in=3600)
         current_session.update_user_info({
             "id_usuario": 3,
             "roles": ["Administrador del sistema"],
+            "permisos": ["AUDITORIA_CONSULTAR"],
             "acceso_escritorio": True,
         })
         win = MainWindow()
@@ -152,6 +160,7 @@ class UiRbacTests(unittest.TestCase):
         # Simular filas en las tablas
         win.view_activos.tabla.setRowCount(5)
         win.view_solicitudes.tabla.setRowCount(3)
+        win.view_auditoria.tabla.setRowCount(4)
         self.assertTrue(current_session.is_authenticated())
 
         # Ejecutar cierre de sesión
@@ -160,6 +169,7 @@ class UiRbacTests(unittest.TestCase):
         self.assertFalse(current_session.is_authenticated())
         self.assertEqual(win.view_activos.tabla.rowCount(), 0)
         self.assertEqual(win.view_solicitudes.tabla.rowCount(), 0)
+        self.assertEqual(win.view_auditoria.tabla.rowCount(), 0)
 
 
 if __name__ == "__main__":
