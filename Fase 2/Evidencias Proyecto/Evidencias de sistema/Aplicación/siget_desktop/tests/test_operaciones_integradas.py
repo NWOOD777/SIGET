@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from siget_desktop.api import services
 from siget_desktop.auth.session import current_session
@@ -275,13 +275,35 @@ class DialogsTests(unittest.TestCase):
         })
         self.assertIn("ACT-001", diag.lbl_titulo.text())
 
+    @patch("siget_desktop.ui.dialogs.asignaciones_dialogs.QMessageBox.question")
     @patch("siget_desktop.ui.dialogs.asignaciones_dialogs.ApiWorker")
-    def test_registrar_devolucion_dialog(self, mock_worker: MagicMock):
+    def test_registrar_devolucion_dialog(self, mock_worker: MagicMock, confirmar: MagicMock):
         diag = RegistrarDevolucionDialog(asignacion={"id_asignacion": 4, "id_activo": 1, "activo": {"codigo_inventario": "ACT-004"}})
         diag.combo_condicion.setCurrentIndex(0)
-        diag.input_motivo.setText("Fin de proyecto")
+        diag.combo_motivo.setCurrentText("Otro")
+
+        # Un motivo personalizado vacío no debe abrir la confirmación ni enviar datos.
         diag._registrar()
-        mock_worker.assert_called()
+        self.assertIn("Especifica el motivo", diag.lbl_mensaje.text())
+        confirmar.assert_not_called()
+        mock_worker.assert_not_called()
+
+        diag.input_otro.setText("Fin de proyecto")
+        confirmar.return_value = QMessageBox.StandardButton.No
+        diag._registrar()
+        mock_worker.assert_not_called()
+
+        confirmar.return_value = QMessageBox.StandardButton.Yes
+        diag._registrar()
+        mock_worker.assert_called_once_with(
+            services.registrar_devolucion_asignacion,
+            id_asignacion=4,
+            condicion_fisica="Buen estado",
+            motivo_devolucion="Fin de proyecto",
+            observaciones=None,
+            id_ticket_asociado=None,
+        )
+        mock_worker.return_value.start.assert_called_once()
 
     def test_detalle_ticket_dialog(self):
         diag = DetalleTicketDialog(id_ticket=12)
@@ -308,9 +330,11 @@ class ViewsIntegrationTests(unittest.TestCase):
 
     def test_solicitudes_view_pestanas_y_seleccion(self):
         view = SolicitudesView()
-        self.assertEqual(view.tabs.count(), 2)
+        self.assertEqual(view.tabs.count(), 3)
         self.assertEqual(view.tabs.tabText(0), "Solicitudes de asignación")
         self.assertEqual(view.tabs.tabText(1), "Asignaciones y devoluciones")
+        self.assertEqual(view.tabs.tabText(2), "Historial y Trazabilidad")
+        self.assertIs(view.tabs.widget(2), view.tab_historial)
 
         # Sin selección, botones deshabilitados
         self.assertFalse(view.btn_ver_detalle_sol.isEnabled())
@@ -385,7 +409,14 @@ class ViewsIntegrationTests(unittest.TestCase):
         view.actualizar_permisos_ui()
         self.assertFalse(hasattr(view, "btn_nuevo_ticket"))
         self.assertFalse(view.btn_atender.isEnabled())
-        self.assertIn("órdenes de trabajo", view.btn_atender.toolTip())
+        self.assertIn("no está disponible", view.btn_atender.toolTip())
+
+        # Seleccionar un ticket permite consultar su detalle, sin habilitar atención.
+        view._tickets_cargados = [{"id_ticket": 1}]
+        view.tabla.setRowCount(1)
+        view.tabla.selectRow(0)
+        self.assertTrue(view.btn_ver_detalle.isEnabled())
+        self.assertFalse(view.btn_atender.isEnabled())
 
 
 if __name__ == "__main__":
