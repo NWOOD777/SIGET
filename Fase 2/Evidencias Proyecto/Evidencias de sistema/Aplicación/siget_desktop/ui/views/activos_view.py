@@ -57,6 +57,7 @@ class ActivosView(QWidget):
         self._worker_mutacion: ApiWorker | None = None
         self._mutacion_en_curso = False
         self._init_ui()
+        self.actualizar_permisos_ui()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -169,6 +170,8 @@ class ActivosView(QWidget):
         """Ajusta las acciones según los permisos efectivos del usuario."""
         es_admin = current_session.is_admin() and not self._mutacion_en_curso
         self.btn_eliminar.setVisible(current_session.is_admin())
+        self.btn_nuevo_activo.setVisible(current_session.is_admin())
+        self.btn_catalogos.setVisible(current_session.is_admin())
         self._on_seleccion_cambiada()
         self.btn_nuevo_activo.setEnabled(es_admin)
         self.btn_catalogos.setEnabled(es_admin)

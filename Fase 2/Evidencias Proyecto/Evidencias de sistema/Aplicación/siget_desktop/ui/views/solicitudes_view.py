@@ -94,6 +94,7 @@ class SolicitudesView(QWidget):
         self._asignaciones_cargadas: list[dict[str, Any]] = []
         self._decision_en_curso = False
         self._init_ui()
+        self.actualizar_permisos_ui()
 
     def _init_ui(self):
         layout_principal = QVBoxLayout(self)
@@ -127,7 +128,8 @@ class SolicitudesView(QWidget):
         lbl_titulo = QLabel("Solicitudes de asignación")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
-        lbl_desc = QLabel("Aprobación administrativa y formalización de entregas de equipamiento")
+        self.lbl_descripcion_solicitudes = QLabel()
+        lbl_desc = self.lbl_descripcion_solicitudes
         lbl_desc.setObjectName("subtitulo")
         lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
@@ -230,7 +232,8 @@ class SolicitudesView(QWidget):
         lbl_titulo = QLabel("Asignaciones de equipamiento")
         lbl_titulo.setObjectName("tituloPrincipal")
         vbox_titulo.addWidget(lbl_titulo)
-        lbl_desc = QLabel("Consulta de equipos en custodia y registro de devolución física con evaluación inicial")
+        self.lbl_descripcion_asignaciones = QLabel()
+        lbl_desc = self.lbl_descripcion_asignaciones
         lbl_desc.setObjectName("subtitulo")
         lbl_desc.setWordWrap(True)
         vbox_titulo.addWidget(lbl_desc)
@@ -443,6 +446,23 @@ class SolicitudesView(QWidget):
 
     def actualizar_permisos_ui(self):
         """Actualiza el estado de los controles según el rol RBAC y la selección actual."""
+        es_admin = current_session.is_admin()
+        es_tecnico = current_session.is_tecnico()
+        self.btn_aprobar.setVisible(es_admin)
+        self.btn_rechazar.setVisible(es_admin)
+        self.btn_entregar.setVisible(es_tecnico)
+        self.btn_devolver.setVisible(es_tecnico)
+        if es_admin and es_tecnico:
+            descripcion = "Aprueba o rechaza solicitudes pendientes y registra la entrega de las aprobadas."
+        elif es_tecnico:
+            descripcion = "Registra la entrega de equipos para solicitudes aprobadas. Las pendientes requieren aprobación administrativa."
+        else:
+            descripcion = "Revisa las solicitudes pendientes para aprobarlas o rechazarlas. El Técnico registra la entrega de las aprobadas."
+        self.lbl_descripcion_solicitudes.setText(descripcion)
+        self.lbl_descripcion_asignaciones.setText(
+            "Consulta los equipos en custodia y registra su devolución con evaluación física."
+            if es_tecnico else "Consulta los equipos en custodia y las devoluciones registradas por el Técnico."
+        )
         self._on_seleccion_solicitud_cambiada()
         self._on_seleccion_asignacion_cambiada()
 

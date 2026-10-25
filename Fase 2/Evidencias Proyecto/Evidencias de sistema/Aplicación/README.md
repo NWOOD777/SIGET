@@ -180,6 +180,15 @@ Las pruebas gráficas utilizan `QT_QPA_PLATFORM=offscreen` y pueden ejecutarse s
 
 La función, configuración y comandos de Ruff y Pyright se explican en [Revisión estática de la aplicación](../../../../README.md#revisión-estática-de-la-aplicación).
 
+## Operaciones por perfil en el escritorio
+
+- **Administrador:** registra y modifica activos, administra catálogos y usuarios,
+  aprueba o rechaza solicitudes.
+- **Técnico:** consulta los activos en una ficha de solo lectura, registra entregas
+  de solicitudes aprobadas y devoluciones, y gestiona las OT.
+
+Las vistas compartidas muestran únicamente las acciones permitidas para cada perfil.
+
 ## Documentación de las APIs
 
 El [índice de APIs](api_docs/README.md) reúne los contratos del backend y de las integraciones externas. Cada endpoint documenta sus métodos, permisos, entradas y respuestas.

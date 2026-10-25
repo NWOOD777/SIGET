@@ -55,6 +55,7 @@ from siget_desktop.ui.inputs import (
     ERROR_NUMERO_SERIE,
     MontoLineEdit,
     NumeroSerieLineEdit,
+    monto_local,
     numero_serie_valido,
 )
 from siget_desktop.ui.workers import ApiWorker
@@ -1335,7 +1336,7 @@ class DetalleModificarActivoDialog(SessionDialog):
         super().__init__(parent)
         self.id_activo = id_activo
         self.setWindowTitle(f"Detalle de activo TI #{id_activo}")
-        self.resize(580, 580)
+        self.resize(580, 580 if current_session.is_admin() else 420)
         self._activo_datos: dict[str, Any] = {}
         self._worker: ApiWorker | None = None
         self._catalogos_req_id: int = 0
@@ -1387,14 +1388,28 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.lbl_estado = QLabel("—")
         layout_card.addRow("Estado actual:", self.lbl_estado)
 
+        self.lbl_ubicacion = QLabel("—")
+        layout_card.addRow("Ubicación física:", self.lbl_ubicacion)
+        self.lbl_valor = QLabel("—")
+        layout_card.addRow("Valor de adquisición:", self.lbl_valor)
+        self.lbl_fecha_compra = QLabel("—")
+        layout_card.addRow("Fecha de compra:", self.lbl_fecha_compra)
+        self.lbl_garantia = QLabel("—")
+        layout_card.addRow("Vencimiento de garantía:", self.lbl_garantia)
         self.lbl_fecha_registro = QLabel("—")
         layout_card.addRow("Fecha de registro:", self.lbl_fecha_registro)
+        for campo in (self.lbl_ubicacion, self.lbl_valor, self.lbl_fecha_compra, self.lbl_garantia):
+            layout_card.setRowVisible(campo, not es_admin)
 
         layout.addWidget(self.card_info)
 
-        lbl_edit_titulo = QLabel("Parámetros editables (exclusivo Administrador):")
+        self.panel_edicion = QWidget()
+        self.panel_edicion.setVisible(es_admin)
+        layout_edicion = QVBoxLayout(self.panel_edicion)
+        layout_edicion.setContentsMargins(0, 0, 0, 0)
+        lbl_edit_titulo = QLabel("Editar información del activo")
         lbl_edit_titulo.setObjectName("sectionTitle")
-        layout.addWidget(lbl_edit_titulo)
+        layout_edicion.addWidget(lbl_edit_titulo)
 
         form_edit = QFormLayout()
         form_edit.setSpacing(10)
@@ -1420,7 +1435,8 @@ class DetalleModificarActivoDialog(SessionDialog):
         garantia_widget, self.chk_garantia, self.date_garantia = fecha_opcional()
         form_edit.addRow("Vencimiento garantía:", garantia_widget)
 
-        layout.addLayout(form_edit)
+        layout_edicion.addLayout(form_edit)
+        layout.addWidget(self.panel_edicion)
 
         self.progreso = QProgressBar()
         self.progreso.setRange(0, 0)
@@ -1433,6 +1449,8 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
 
+        if not es_admin:
+            layout.addStretch()
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
 
@@ -1467,6 +1485,8 @@ class DetalleModificarActivoDialog(SessionDialog):
             self.recargar_catalogos()
 
     def recargar_catalogos(self):
+        if not current_session.is_admin():
+            return
         self._catalogos_req_id += 1
         req_id = self._catalogos_req_id
         self.progreso.show()
@@ -1559,12 +1579,14 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.progreso.show()
 
         def _cargar():
-            return {
-                "activo": obtener_activo(self.id_activo),
-                "modelos": listar_modelos_activos(),
-                "ubicaciones": listar_ubicaciones_activos(),
-                "estados": listar_estados_activos(),
-            }
+            resultado: dict[str, Any] = {"activo": obtener_activo(self.id_activo)}
+            if current_session.is_admin():
+                resultado.update(
+                    modelos=listar_modelos_activos(),
+                    ubicaciones=listar_ubicaciones_activos(),
+                    estados=listar_estados_activos(),
+                )
+            return resultado
 
         self._worker = ApiWorker(_cargar)
         self.conectar_worker(
@@ -1589,6 +1611,10 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.lbl_categoria.setText(activo.get("categoria", "—"))
         self.lbl_estado.setText(activo.get("estado", "—"))
         self.lbl_fecha_registro.setText(str(activo.get("fecha_registro", "—"))[:19])
+        self.lbl_ubicacion.setText(str(activo.get("ubicacion") or "Sin ubicación registrada"))
+        self.lbl_valor.setText(f"$ {monto_local(str(activo.get('valor_adquisicion') or '0'))}")
+        self.lbl_fecha_compra.setText(str(activo.get("fecha_compra") or "No informada")[:10])
+        self.lbl_garantia.setText(str(activo.get("fecha_garantia") or "No informada")[:10])
 
         # Poblar estados
         self.combo_estado_edit.clear()
