@@ -19,6 +19,23 @@ Consultar la [organización de las APIs](../organizacion.md) para conocer la rel
 | GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 | GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 
+## Operación desde el escritorio
+
+En **Mesa de ayuda**, «Ver detalle» consulta el ticket sin modificarlo.
+El Técnico con permiso `TICKET_ATENDER` dispone de «Atender Ticket» para tickets
+Abiertos sin responsable o asignados a su cuenta. Si está sin responsable, primero
+debe seleccionar «Tomar ticket» y confirmar. La toma conserva el estado Abierto.
+Después puede registrar una atención o cambiar al siguiente estado permitido,
+indicando el motivo y confirmando la operación. Registrar una atención conserva
+el estado; la resolución y el cierre se solicitan mediante «Cambiar estado».
+Los tickets Cerrados solo admiten consulta.
+
+El Administrador con permiso `TICKET_ASIGNAR` dispone de «Asignar técnico» para
+seleccionar un Técnico activo y justificar la asignación o reasignación de un
+ticket activo. Las operaciones de atención corresponden al Técnico responsable.
+Los controles exclusivos de otro perfil permanecen ocultos. Después de guardar,
+la ficha y los listados relacionados se actualizan con la respuesta del servidor.
+
 ## Gestión de tickets
 
 Se reutiliza la autenticación Bearer para Escritorio y la sesión Web existente. Las peticiones con sesión requieren CSRF. La identidad, los roles y los permisos se obtienen del servidor y de PostgreSQL; no se aceptan actores, fechas ni estados implícitos enviados por el cliente.

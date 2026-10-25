@@ -1,10 +1,4 @@
-"""
-Vista de Mesa de Ayuda / Tickets de Soporte en PySide6.
-Permite consultar incidentes y solicitudes de soporte técnico (GET),
-consultar el detalle de incidentes. El registro corresponde al portal Web.
-La atención técnica avanzada (diagnósticos y órdenes de trabajo) permanece documentada
-a la espera de los correspondientes endpoints en el backend.
-"""
+"""Consulta, asignación administrativa y atención técnica de tickets de soporte."""
 
 from __future__ import annotations
 
@@ -31,8 +25,10 @@ from siget_desktop.ui.components import (
     configurar_tabla,
     crear_filtros,
     mostrar_mensaje,
+    notificar_cambio,
     texto_relacion,
 )
+from siget_desktop.ui.dialogs.gestion_ticket_dialog import GestionarTicketDialog
 from siget_desktop.ui.dialogs.tickets_dialogs import (
     DetalleTicketDialog,
 )
@@ -56,7 +52,9 @@ class TicketsView(QWidget):
         super().__init__(parent)
         self._worker: ApiWorker | None = None
         self._tickets_cargados: list[dict[str, Any]] = []
+        self._cargando = False
         self._init_ui()
+        self.actualizar_permisos_ui()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -84,8 +82,12 @@ class TicketsView(QWidget):
 
         self.btn_atender = QPushButton("Atender Ticket")
         self.btn_atender.setEnabled(False)
-        self.btn_atender.setToolTip("La atención técnica no está disponible desde esta vista.")
+        self.btn_atender.clicked.connect(self._gestionar_ticket)
         layout_encabezado.addWidget(self.btn_atender)
+        self.btn_asignar = QPushButton("Asignar técnico")
+        self.btn_asignar.setObjectName("btnSecundario")
+        self.btn_asignar.clicked.connect(self._gestionar_ticket)
+        layout_encabezado.addWidget(self.btn_asignar)
 
         layout.addLayout(layout_encabezado)
 
@@ -158,8 +160,24 @@ class TicketsView(QWidget):
         self._on_seleccion_cambiada()
 
     def _on_seleccion_cambiada(self):
-        hay_sel = self.tabla.currentRow() >= 0
-        self.btn_ver_detalle.setEnabled(hay_sel)
+        ticket = self._obtener_ticket_seleccionado()
+        habilitado = ticket is not None and not self._cargando
+        self.btn_ver_detalle.setEnabled(habilitado)
+        tecnico = current_session.is_tecnico() and current_session.has_permission("TICKET_ATENDER")
+        admin = current_session.is_admin() and current_session.has_permission("TICKET_ASIGNAR")
+        self.btn_atender.setVisible(tecnico)
+        self.btn_asignar.setVisible(admin)
+        estado = texto_relacion(ticket.get("estado"), "") if ticket else ""
+        responsable = ticket.get("id_tecnico_asignado") if ticket else None
+        puede_tomar = estado == "Abierto" and responsable is None
+        puede_atender = responsable == current_session.id_usuario and estado in ("Abierto", "En Proceso", "En Espera", "Resuelto")
+        self.btn_atender.setEnabled(habilitado and tecnico and (puede_tomar or puede_atender))
+        self.btn_asignar.setEnabled(habilitado and admin and estado in ("Abierto", "En Proceso", "En Espera"))
+        self.btn_atender.setToolTip(
+            "Toma el ticket para atenderlo" if puede_tomar else
+            "Registra atenciones o cambia el estado del ticket" if puede_atender else
+            "Selecciona un ticket disponible o asignado a tu cuenta; los cerrados solo admiten consulta."
+        )
 
     def _obtener_ticket_seleccionado(self) -> dict[str, Any] | None:
         fila = self.tabla.currentRow()
@@ -175,9 +193,22 @@ class TicketsView(QWidget):
         dialogo = DetalleTicketDialog(id_ticket, self)
         dialogo.exec()
 
+    def _gestionar_ticket(self):
+        ticket = self._obtener_ticket_seleccionado()
+        self._on_seleccion_cambiada()
+        if not ticket or not (self.btn_atender.isEnabled() or self.btn_asignar.isEnabled()):
+            return
+        dialogo = GestionarTicketDialog(int(ticket["id_ticket"]), self)
+        dialogo.exec()
+        if dialogo.hubo_cambios and current_session.is_authenticated():
+            notificar_cambio(self)
+            self.cargar_tickets()
+
     def cargar_tickets(self):
         """Inicia la consulta de tickets al backend."""
+        self._cargando = True
         self.actualizar_permisos_ui()
+        self.tabla.setEnabled(False)
         self.progreso.show()
         self.lbl_mensaje.hide()
         self.btn_reintentar.hide()
@@ -196,6 +227,8 @@ class TicketsView(QWidget):
     def _on_datos_cargados(self, tickets: list[dict[str, Any]], request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
             return
+        self._cargando = False
+        self.tabla.setEnabled(True)
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
         self.tabla.setRowCount(0)
@@ -229,6 +262,8 @@ class TicketsView(QWidget):
     def _on_error_carga(self, exc: Exception, request_generation: int | None = None):
         if not current_session.is_authenticated() or (request_generation is not None and request_generation != current_session.generation):
             return
+        self._cargando = False
+        self.tabla.setEnabled(True)
         self.progreso.hide()
         self.btn_actualizar.setEnabled(True)
         self.tabla.setRowCount(0)

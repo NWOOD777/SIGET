@@ -183,9 +183,9 @@ La función, configuración y comandos de Ruff y Pyright se explican en [Revisi�
 ## Operaciones por perfil en el escritorio
 
 - **Administrador:** registra y modifica activos, administra catálogos y usuarios,
-  aprueba o rechaza solicitudes.
+  aprueba o rechaza solicitudes y asigna responsables a los tickets.
 - **Técnico:** consulta los activos en una ficha de solo lectura, registra entregas
-  de solicitudes aprobadas y devoluciones, y gestiona las OT.
+  de solicitudes aprobadas y devoluciones, toma y atiende tickets, y gestiona las OT.
 
 Las vistas compartidas muestran únicamente las acciones permitidas para cada perfil.
 

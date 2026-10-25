@@ -642,3 +642,24 @@ def buscar_opciones_auditoria(tipo: str, search: str = "") -> dict[str, Any]:
 def actualizar_identificacion_usuario(id_usuario: int, rut: str) -> dict[str, Any]:
     """Actualiza el RUT en la ficha administrativa de una cuenta existente."""
     return _objeto(api_client.patch(f"/api/usuarios/{id_usuario}/identificacion/", json={"rut": rut}))
+
+
+
+def tomar_ticket(id_ticket: int) -> dict[str, Any]:
+    """Toma para el Técnico autenticado un ticket Abierto y sin responsable."""
+    return _objeto(api_client.post(f"/api/tickets/{id_ticket}/tomar/", json={}))
+
+
+def registrar_atencion_ticket(id_ticket: int, mensaje: str) -> dict[str, Any]:
+    """Registra una atención del Técnico responsable sin cambiar el estado."""
+    return _objeto(api_client.post(f"/api/tickets/{id_ticket}/atenciones/", json={"mensaje": mensaje}))
+
+
+def cambiar_estado_ticket(id_ticket: int, id_estado_ticket: int, mensaje: str) -> dict[str, Any]:
+    """Solicita una transición de estado al backend con su justificación."""
+    return _objeto(api_client.patch(f"/api/tickets/{id_ticket}/estado/", json={"id_estado_ticket": id_estado_ticket, "mensaje": mensaje}))
+
+
+def asignar_ticket(id_ticket: int, id_tecnico_asignado: int, motivo: str) -> dict[str, Any]:
+    """Asigna o reasigna un responsable mediante la administración de tickets."""
+    return _objeto(api_client.post(f"/api/tickets/{id_ticket}/asignar/", json={"id_tecnico_asignado": id_tecnico_asignado, "motivo": motivo}))

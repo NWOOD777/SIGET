@@ -417,23 +417,29 @@ class ViewsIntegrationTests(unittest.TestCase):
         self.assertEqual(estados, {"En Diagnóstico", "En Reparación", "Pausada", "Completada"})
         self.assertEqual(vista.ESTADOS_TERMINALES, ("Completada",))
 
-    def test_tickets_view_habilitacion_registro_y_bloqueo_atencion(self):
+    def test_tickets_view_habilita_atencion_segun_responsable_y_estado(self):
         current_session.update_user_info({
             "id_usuario": 2,
             "roles": ["Técnico de soporte"],
+            "permisos": ["TICKET_ATENDER"],
             "acceso_escritorio": True,
         })
         view = TicketsView()
-        view.actualizar_permisos_ui()
         self.assertFalse(hasattr(view, "btn_nuevo_ticket"))
         self.assertFalse(view.btn_atender.isEnabled())
-        self.assertIn("no está disponible", view.btn_atender.toolTip())
-
-        # Seleccionar un ticket permite consultar su detalle, sin habilitar atención.
-        view._tickets_cargados = [{"id_ticket": 1}]
+        view._tickets_cargados = [{"id_ticket": 1, "estado": {"nombre": "Abierto"}, "id_tecnico_asignado": None}]
         view.tabla.setRowCount(1)
         view.tabla.selectRow(0)
         self.assertTrue(view.btn_ver_detalle.isEnabled())
+        self.assertTrue(view.btn_atender.isEnabled())
+        view._tickets_cargados[0]["id_tecnico_asignado"] = 3
+        view.actualizar_permisos_ui()
+        self.assertFalse(view.btn_atender.isEnabled())
+        view._tickets_cargados[0]["id_tecnico_asignado"] = 2
+        view.actualizar_permisos_ui()
+        self.assertTrue(view.btn_atender.isEnabled())
+        view._tickets_cargados[0]["estado"] = {"nombre": "Cerrado"}
+        view.actualizar_permisos_ui()
         self.assertFalse(view.btn_atender.isEnabled())
 
 
