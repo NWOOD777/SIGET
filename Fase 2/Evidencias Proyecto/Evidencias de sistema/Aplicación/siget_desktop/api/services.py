@@ -637,3 +637,8 @@ def consultar_bitacora_auditoria(
 def buscar_opciones_auditoria(tipo: str, search: str = "") -> dict[str, Any]:
     """Busca etiquetas legibles de actores o equipos para los filtros de auditoría."""
     return _objeto(api_client.get("/api/auditoria/opciones/", params={"tipo": tipo, "search": search}))
+
+
+def actualizar_identificacion_usuario(id_usuario: int, rut: str) -> dict[str, Any]:
+    """Actualiza el RUT en la ficha administrativa de una cuenta existente."""
+    return _objeto(api_client.patch(f"/api/usuarios/{id_usuario}/identificacion/", json={"rut": rut}))

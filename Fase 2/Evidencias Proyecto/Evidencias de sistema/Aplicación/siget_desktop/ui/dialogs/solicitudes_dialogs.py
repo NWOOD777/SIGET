@@ -63,7 +63,7 @@ class DetalleSolicitudDialog(SessionDialog):
         layout_card.addRow("Solicitante:", self.lbl_solicitante)
 
         self.lbl_correo = QLabel("—")
-        layout_card.addRow("Correo / RUT:", self.lbl_correo)
+        layout_card.addRow("Correo:", self.lbl_correo)
 
         self.lbl_categoria = QLabel("—")
         layout_card.addRow("Categoría de equipo:", self.lbl_categoria)
@@ -118,11 +118,10 @@ class DetalleSolicitudDialog(SessionDialog):
         solicitante = sol.get("solicitante") or {}
         nombre_sol = texto_relacion(solicitante)
         correo = solicitante.get("correo", "") if isinstance(solicitante, dict) else ""
-        rut = solicitante.get("rut", "") if isinstance(solicitante, dict) else ""
 
         self.lbl_titulo.setText(f"Solicitud #{self.id_solicitud} — {texto_relacion(sol.get('categoria'))}")
         self.lbl_solicitante.setText(nombre_sol)
-        self.lbl_correo.setText(f"{correo}  |  {rut}".strip(" |"))
+        self.lbl_correo.setText(correo or "—")
         self.lbl_categoria.setText(texto_relacion(sol.get("categoria")))
         self.lbl_estado.setText(texto_relacion(sol.get("estado")))
         self.lbl_fecha.setText(str(sol.get("fecha_solicitud", "—"))[:19])

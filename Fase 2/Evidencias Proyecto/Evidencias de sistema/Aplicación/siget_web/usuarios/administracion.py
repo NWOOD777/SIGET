@@ -58,3 +58,36 @@ def eliminar_usuario_sin_actividad(id_usuario: int, admin: Usuario, ip: str | No
         if not eliminar_usuario_auth0(identificador):
             from usuarios.services import Auth0ManagementError
             raise Auth0ManagementError("No se confirmó la eliminación en el proveedor de identidad.")
+
+
+def actualizar_identificacion_usuario(id_usuario: int, rut: str, admin: Usuario, ip: str | None):
+    """Corrige el identificador institucional sin alterar la identidad interna ni sus movimientos."""
+    from django.db import IntegrityError
+    from rest_framework.exceptions import ValidationError
+
+    from usuarios.services import validar_rut_chileno
+
+    if not Usuario.objects.filter(pk=admin.pk, activo=True).exists() or not es_administrador(admin):
+        raise PermissionDenied("Se requiere un Administrador del sistema activo.")
+    try:
+        normalizado = validar_rut_chileno(rut)
+    except ValueError as exc:
+        raise ValidationError({"rut": [str(exc)]}) from exc
+    try:
+        with transaction.atomic():
+            bloquear_operacion(70420)
+            usuario = get_object_or_404(Usuario.objects.select_for_update(), pk=id_usuario)
+            if Usuario.objects.filter(rut=normalizado).exclude(pk=usuario.pk).exists():
+                raise OperacionProtegida("El identificador ya está registrado en otra cuenta.")
+            if usuario.rut != normalizado:
+                usuario.rut = normalizado
+                usuario.save(update_fields=["rut"])
+                registrar_auditoria(
+                    usuario=admin, modulo="USUARIOS", accion="IDENTIFICACION_USUARIO_ACTUALIZADA",
+                    entidad_afectada="usuario", id_registro_afectado=usuario.pk,
+                    detalle_evento="Identificación institucional actualizada; cuenta e historial conservados.",
+                    direccion_ip=ip,
+                )
+            return usuario
+    except IntegrityError as exc:
+        raise OperacionProtegida("El identificador ya está registrado en otra cuenta.") from exc

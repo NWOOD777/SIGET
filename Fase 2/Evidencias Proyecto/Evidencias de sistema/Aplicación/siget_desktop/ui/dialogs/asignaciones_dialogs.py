@@ -66,7 +66,7 @@ class DetalleAsignacionDialog(SessionDialog):
         layout_card.addRow("Usuario custodio:", self.lbl_solicitante)
 
         self.lbl_correo = QLabel("—")
-        layout_card.addRow("Correo / RUT:", self.lbl_correo)
+        layout_card.addRow("Correo:", self.lbl_correo)
 
         self.lbl_tecnico = QLabel("—")
         layout_card.addRow("Técnico que entregó:", self.lbl_tecnico)
@@ -141,8 +141,7 @@ class DetalleAsignacionDialog(SessionDialog):
         self.lbl_solicitante.setText(texto_relacion(solicitante))
 
         correo = solicitante.get("correo", "")
-        rut = solicitante.get("rut", "")
-        self.lbl_correo.setText(f"{correo}  |  {rut}".strip(" |"))
+        self.lbl_correo.setText(correo or "—")
 
         self.lbl_tecnico.setText(texto_relacion(tecnico))
         self.lbl_estado.setText(texto_relacion(asig.get("estado")))

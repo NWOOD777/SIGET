@@ -9,7 +9,7 @@ Ruta: `/api/tickets/`
 
 ## Consultar
 
-`GET /api/tickets/` admite `search` para código, asunto o descripción; `estado` y `prioridad` por identificador o nombre; y `activo` por identificador, código o serie. Para Administrador y Técnico, `usuario` permite filtrar por identificador, correo, RUT, nombres o apellidos del solicitante.
+`GET /api/tickets/` admite `search` para código, asunto o descripción; `estado` y `prioridad` por identificador o nombre; y `activo` por identificador, código o serie. Para Administrador y Técnico, `usuario` permite filtrar por identificador, correo, nombres o apellidos del solicitante.
 
 ### Bandeja de tickets disponibles
 

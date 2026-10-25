@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from siget_desktop.api.services import (
+    actualizar_identificacion_usuario,
     actualizar_roles_usuario,
     aprovisionar_usuario,
     asignar_permiso_rol,
@@ -199,10 +201,6 @@ class DetalleAccesoUsuarioDialog(SessionDialog):
         layout_info.addWidget(self.lbl_roles)
         layout.addWidget(self.card_info)
 
-        lbl_permisos = QLabel("Permisos efectivos en el sistema:")
-        lbl_permisos.setObjectName("sectionTitle")
-        layout.addWidget(lbl_permisos)
-
         self.progreso = QProgressBar()
         self.progreso.setRange(0, 0)
         self.progreso.setFixedHeight(4)
@@ -212,6 +210,25 @@ class DetalleAccesoUsuarioDialog(SessionDialog):
         self.lbl_mensaje = QLabel("")
         self.lbl_mensaje.hide()
         layout.addWidget(self.lbl_mensaje)
+
+        self.lbl_identificacion = QLabel("RUT institucional: —")
+        self.lbl_identificacion.setTextFormat(Qt.TextFormat.PlainText)
+        layout.addWidget(self.lbl_identificacion)
+        fila_identificacion = QHBoxLayout()
+        self.input_rut_correccion = QLineEdit()
+        self.input_rut_correccion.setMaxLength(12)
+        self.input_rut_correccion.setPlaceholderText("Nuevo RUT institucional, solo para corregir el registro")
+        fila_identificacion.addWidget(self.input_rut_correccion)
+        self.btn_actualizar_rut = QPushButton("Actualizar RUT")
+        self.btn_actualizar_rut.setObjectName("btnSecundario")
+        self.btn_actualizar_rut.setEnabled(False)
+        self.btn_actualizar_rut.clicked.connect(self._actualizar_rut)
+        fila_identificacion.addWidget(self.btn_actualizar_rut)
+        layout.addLayout(fila_identificacion)
+
+        lbl_permisos = QLabel("Permisos efectivos en el sistema:")
+        lbl_permisos.setObjectName("sectionTitle")
+        layout.addWidget(lbl_permisos)
 
         self.tabla_permisos = QTableWidget()
         self.tabla_permisos.setColumnCount(3)
@@ -237,10 +254,12 @@ class DetalleAccesoUsuarioDialog(SessionDialog):
 
     def _on_datos(self, datos: dict[str, Any]):
         self.progreso.hide()
+        self.btn_actualizar_rut.setEnabled(True)
         usuario_info = datos
         nombre = f"{usuario_info.get('nombres', '')} {usuario_info.get('apellidos', '')}".strip()
-        rut = usuario_info.get("rut", "")
-        self.lbl_titulo.setText(f"{nombre} ({rut})" if nombre else f"Usuario #{self.id_usuario}")
+        self.lbl_titulo.setText(f"{nombre} — Usuario #{self.id_usuario}" if nombre else f"Usuario #{self.id_usuario}")
+
+        self.lbl_identificacion.setText(f"RUT institucional: {usuario_info.get("rut") or "Sin registrar"}")
 
         roles = datos.get("roles", [])
         self.lbl_roles.setText(f"Roles asignados: {', '.join(str(r.get('nombre', '')) for r in roles) if roles else 'Sin roles asignados'}")
@@ -263,9 +282,26 @@ class DetalleAccesoUsuarioDialog(SessionDialog):
         if not permisos:
             mostrar_mensaje(self.lbl_mensaje, "Este usuario no cuenta con permisos efectivos activos.", "empty")
 
+    def _actualizar_rut(self):
+        rut = self.input_rut_correccion.text().strip()
+        if not rut or not self.btn_actualizar_rut.isEnabled():
+            return
+        if not confirmar_operacion(self, "Actualizar identificación institucional", f"Usuario #{self.id_usuario}. Se corregirá su RUT y se conservarán la cuenta y sus movimientos."):
+            return
+        self.btn_actualizar_rut.setEnabled(False)
+        self.progreso.show()
+        self._worker = ApiWorker(actualizar_identificacion_usuario, id_usuario=self.id_usuario, rut=rut)
+        self.conectar_worker(self._worker, self._identificacion_actualizada, self._on_error)
+        self._worker.start()
+
+    def _identificacion_actualizada(self, datos):
+        self.input_rut_correccion.clear()
+        self._cargar_datos()
+
     def _on_error(self, exc: Exception):
         self.progreso.hide()
-        mostrar_mensaje(self.lbl_mensaje, f"Error al consultar el acceso del usuario: {exc}", "error")
+        self.btn_actualizar_rut.setEnabled(True)
+        mostrar_mensaje(self.lbl_mensaje, f"Error al consultar o actualizar la ficha del usuario: {exc}", "error")
 
 
 class GestionarRolesUsuarioDialog(SessionDialog):

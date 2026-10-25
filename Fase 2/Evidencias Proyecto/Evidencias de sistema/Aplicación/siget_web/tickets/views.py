@@ -131,7 +131,6 @@ class TicketListCreateView(APIView):
             else:
                 tickets = tickets.filter(
                     Q(id_usuario_solicitante__correo__icontains=usuario_param)
-                    | Q(id_usuario_solicitante__rut__icontains=usuario_param)
                     | Q(id_usuario_solicitante__nombres__icontains=usuario_param)
                     | Q(id_usuario_solicitante__apellidos__icontains=usuario_param)
                 )

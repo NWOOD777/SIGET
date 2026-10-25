@@ -7,6 +7,7 @@ Garantiza trazabilidad de operaciones críticas, orden cronológico e inmutabili
 from __future__ import annotations
 
 import math
+import re
 from typing import Any
 
 from django.db.models import Q, Value
@@ -33,7 +34,6 @@ def serializar_evento_auditoria(evento: BitacoraAuditoria) -> dict[str, Any]:
     usuario = evento.id_usuario
     nombre_usuario = None
     correo_usuario = None
-    rut_usuario = None
     id_usuario_val = None
 
     if usuario is not None:
@@ -41,7 +41,6 @@ def serializar_evento_auditoria(evento: BitacoraAuditoria) -> dict[str, Any]:
         nombre_completo = f"{usuario.nombres} {usuario.apellidos}".strip()
         nombre_usuario = nombre_completo if nombre_completo else usuario.correo
         correo_usuario = usuario.correo
-        rut_usuario = usuario.rut
 
     recurso_str = evento.entidad_afectada
     if evento.id_registro_afectado is not None:
@@ -53,13 +52,12 @@ def serializar_evento_auditoria(evento: BitacoraAuditoria) -> dict[str, Any]:
         "id_usuario": id_usuario_val,
         "usuario": nombre_usuario,
         "usuario_correo": correo_usuario,
-        "usuario_rut": rut_usuario,
         "modulo": evento.modulo,
         "accion": evento.accion,
         "entidad_afectada": evento.entidad_afectada,
         "id_registro_afectado": evento.id_registro_afectado,
         "recurso": recurso_str,
-        "detalle_evento": evento.detalle_evento,
+        "detalle_evento": re.sub(r"\b(?:[0-9]{1,2}\.?[0-9]{3}\.?[0-9]{3})-[0-9Kk]\b", "[identificador reservado]", evento.detalle_evento or ""),
         "direccion_ip": str(evento.direccion_ip) if evento.direccion_ip else None,
     }
 
@@ -173,7 +171,6 @@ class AuditoriaListAPIView(APIView):
             else:
                 queryset = queryset.filter(
                     Q(id_usuario__correo__icontains=usuario_param)
-                    | Q(id_usuario__rut__icontains=usuario_param)
                     | Q(id_usuario__nombres__icontains=usuario_param)
                     | Q(id_usuario__apellidos__icontains=usuario_param)
                 )

@@ -40,7 +40,7 @@ from siget_desktop.ui.workers import ApiWorker
 class UsuariosView(QWidget):
     """Módulo administrativo de usuarios y asignación de roles RBAC."""
 
-    COLUMNAS = ["ID", "RUT", "Nombre Completo", "Correo Institucional", "Roles Asignados", "Estado"]
+    COLUMNAS = ["ID", "Nombre Completo", "Correo Institucional", "Roles Asignados", "Estado"]
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -153,7 +153,7 @@ class UsuariosView(QWidget):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.tabla.setAlternatingRowColors(True)
-        configurar_tabla(self.tabla, (5,))
+        configurar_tabla(self.tabla, (4,))
         self.tabla.itemSelectionChanged.connect(self._on_seleccion_cambiada)
         self.tabla.cellDoubleClicked.connect(lambda _r, _c: self._abrir_acceso_seleccionado())
         layout_admin.addWidget(self.tabla, 1)
@@ -333,7 +333,6 @@ class UsuariosView(QWidget):
 
             valores = [
                 str(item.get("id_usuario", "")),
-                str(item.get("rut", "—")),
                 nombre_completo,
                 str(item.get("correo", "")),
                 roles_str,

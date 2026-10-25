@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from siget.administracion import OperacionProtegida
 from siget.http import direccion_ip_cliente
-from usuarios.administracion import cambiar_estado_usuario, eliminar_usuario_sin_actividad
+from usuarios.administracion import actualizar_identificacion_usuario, cambiar_estado_usuario, eliminar_usuario_sin_actividad
 from usuarios.models import Rol, Usuario
 from usuarios.permissions import EsUsuarioSigetAutenticado, PuedeAdministrarUsuarios
 from usuarios.serializers import (
@@ -178,7 +178,9 @@ class UsuarioAccesoDetailAPIView(APIView):
     def get(self, request: Request, pk: int) -> Response:
         usuario = get_object_or_404(Usuario, pk=pk)
         detalle = consultar_usuario_detalle_rbac(usuario)
-        return Response(detalle, status=status.HTTP_200_OK)
+        respuesta = Response(detalle, status=status.HTTP_200_OK)
+        respuesta["Cache-Control"] = "no-store, private"
+        return respuesta
 
 
 class UsuarioRolesAPIView(APIView):
@@ -325,3 +327,24 @@ class RolPermisoManageAPIView(APIView):
             )
         except RbacError as exc:
             return Response({"error": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UsuarioIdentificacionSerializer(serializers.Serializer):
+    rut = serializers.CharField(max_length=12)
+
+
+class UsuarioIdentificacionAPIView(APIView):
+    """Corrección del RUT exclusivamente desde la administración de usuarios."""
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def patch(self, request: Request, pk: int) -> Response:
+        entrada = UsuarioIdentificacionSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        assert isinstance(datos, dict)
+        admin = obtener_usuario_actual(request._request)
+        assert admin is not None
+        usuario = actualizar_identificacion_usuario(pk, datos["rut"], admin, _obtener_ip(request))
+        respuesta = Response({"id_usuario": usuario.pk, "rut": usuario.rut})
+        respuesta["Cache-Control"] = "no-store, private"
+        return respuesta

@@ -257,7 +257,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
         self.assertIsNone(data["id_usuario"])
         self.assertIsNone(data["usuario"])
         self.assertIsNone(data["usuario_correo"])
-        self.assertIsNone(data["usuario_rut"])
+        self.assertNotIn("usuario_rut", data)
         self.assertIsNone(data["direccion_ip"])
         self.assertIsNone(data["id_registro_afectado"])
         self.assertEqual(data["recurso"], "sistema")

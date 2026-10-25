@@ -69,7 +69,6 @@ class TicketReadSerializer(serializers.ModelSerializer):
             "nombres": u.nombres,
             "apellidos": u.apellidos,
             "correo": u.correo,
-            "rut": u.rut,
         }
 
     def get_tecnico_asignado(self, obj: Ticket):

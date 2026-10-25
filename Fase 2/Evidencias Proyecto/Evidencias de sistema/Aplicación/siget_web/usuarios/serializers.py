@@ -23,9 +23,6 @@ class UsuarioListItemSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = [
             "id_usuario",
-            "identificador_externo",
-            "proveedor_identidad",
-            "rut",
             "nombres",
             "apellidos",
             "correo",

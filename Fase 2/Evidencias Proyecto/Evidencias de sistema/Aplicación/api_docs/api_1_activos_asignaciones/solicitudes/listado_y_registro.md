@@ -9,7 +9,7 @@ Ruta: `/api/solicitudes-asignacion/`
 
 ## Consultar
 
-`GET /api/solicitudes-asignacion/` admite `estado` y `categoria` por identificador o nombre; `search` busca en motivo, categoría o identificador de solicitud. El Administrador y el Técnico también pueden filtrar por `usuario`, usando identificador, correo, RUT, nombres o apellidos. El alcance del Solicitante siempre se limita a sus registros. Para revisar las solicitudes pendientes se utiliza `/api/solicitudes-asignacion/?estado=Pendiente`.
+`GET /api/solicitudes-asignacion/` admite `estado` y `categoria` por identificador o nombre; `search` busca en motivo, categoría o identificador de solicitud. El Administrador y el Técnico también pueden filtrar por `usuario`, usando identificador, correo, nombres o apellidos. El alcance del Solicitante siempre se limita a sus registros. Para revisar las solicitudes pendientes se utiliza `/api/solicitudes-asignacion/?estado=Pendiente`.
 
 ## Crear
 

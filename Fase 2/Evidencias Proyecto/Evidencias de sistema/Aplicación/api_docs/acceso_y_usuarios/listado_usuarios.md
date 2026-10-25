@@ -6,7 +6,7 @@ Ruta: `/api/usuarios/`
 |---|---|---|
 | `GET` | Administrador del sistema. | `200`, lista de usuarios. |
 
-No recibe cuerpo ni filtros de búsqueda específicos. Entrega `id_usuario`, `identificador_externo`, `proveedor_identidad`, `rut`, `nombres`, `apellidos`, `correo`, `activo`, `fecha_creacion` y `roles`. `roles` contiene los nombres asignados.
+No recibe cuerpo ni filtros de búsqueda específicos. Entrega `id_usuario`, `nombres`, `apellidos`, `correo`, `activo`, `fecha_creacion` y `roles`. `roles` contiene los nombres asignados.
 
 El detalle de permisos se obtiene en la [consulta de acceso](acceso_usuario.md).
 

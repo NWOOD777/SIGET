@@ -26,7 +26,7 @@ Permite al Administrador del sistema consultar el registro histórico de operaci
 
 | Parámetro | Tipo | Descripción |
 |---|---|---|
-| `usuario` | String / Entero | Filtra por el actor responsable de la operación. Un valor numérico busca exclusivamente el ID del usuario. Un texto permite buscar RUT con formato, correo o fragmento de nombre. |
+| `usuario` | String / Entero | Filtra por el actor responsable de la operación. Un valor numérico busca exclusivamente el ID del usuario. Un texto permite buscar correo o fragmento de nombre. El RUT no forma parte de los filtros. |
 | `id_usuario` | Entero | Filtro estricto por el identificador numérico de clave primaria del usuario en PostgreSQL. Admite enteros positivos ASCII de hasta 2147483647; los valores inválidos retornan error 400. |
 | `activo` | String | Filtra por el código de inventario exacto del equipo (ej. `ACT-001`), aunque sea completamente numérico. No se interpreta como clave primaria. |
 | `codigo_inventario` | String | Alias equivalente a `activo`. |
@@ -74,7 +74,6 @@ Los resultados se ordenan de forma estable y determinista utilizando orden crono
       "id_usuario": 1,
       "usuario": "Administrador Principal",
       "usuario_correo": "admin@siget.example",
-      "usuario_rut": "11111111-1",
       "modulo": "ACTIVOS",
       "accion": "ACTIVO_MODIFICADO",
       "entidad_afectada": "activo",
@@ -89,7 +88,6 @@ Los resultados se ordenan de forma estable y determinista utilizando orden crono
       "id_usuario": null,
       "usuario": null,
       "usuario_correo": null,
-      "usuario_rut": null,
       "modulo": "NOTIFICACIONES",
       "accion": "PROCESO_CORREO",
       "entidad_afectada": "notificacion",
@@ -161,3 +159,5 @@ Permite consultar el registro individual completo en solo lectura.
 «Elegir actor» permite buscar por nombre completo o correo y seleccionar el ID exacto de un actor registrado en la bitácora. «Elegir equipo» busca por código, serie, marca o modelo y aplica el código de inventario exacto del resultado elegido. No es necesario memorizar identificadores. Si se modifica el texto seleccionado, deja de utilizarse la selección anterior. «Limpiar filtros» elimina ambas selecciones.
 
 `GET /api/auditoria/opciones/?tipo=usuario|activo&search=texto` utiliza los mismos permisos de auditoría, devuelve `results` y `has_more`, y limita cada consulta a 20 opciones ordenadas. La búsqueda admite hasta 120 caracteres. Los actores contienen únicamente `id` y `etiqueta` (nombre/correo); los equipos contienen `codigo` y `etiqueta` (código, marca, modelo y serie). No expone RUT, credenciales ni el catálogo completo. Cuando `has_more` es verdadero, debe acotarse la búsqueda.
+
+Los eventos administrativos no copian el RUT. La respuesta de auditoría omite ese campo y oculta identificadores con formato de RUT en textos históricos.

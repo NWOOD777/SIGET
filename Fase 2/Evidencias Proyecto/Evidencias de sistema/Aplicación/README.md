@@ -183,3 +183,12 @@ La función, configuración y comandos de Ruff y Pyright se explican en [Revisi�
 ## Documentación de las APIs
 
 El [índice de APIs](api_docs/README.md) reúne los contratos del backend y de las integraciones externas. Cada endpoint documenta sus métodos, permisos, entradas y respuestas.
+
+## Identificación de usuarios
+
+El Administrador registra el RUT institucional al aprovisionar una cuenta y puede
+consultarlo o corregirlo en **Usuarios, roles y permisos → Ver acceso**. El identificador se
+conserva para trazabilidad. Cada usuario puede revisar su propio RUT en **Mi perfil**
+y contactar al Administrador si requiere una corrección. No aparece en los listados,
+tickets, asignaciones ni consultas habituales de auditoría. El acceso a SIGET utiliza Auth0 y los roles
+registrados en PostgreSQL, sin solicitar el RUT al iniciar sesión.

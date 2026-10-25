@@ -105,7 +105,6 @@ class SolicitudAsignacionListCreateView(APIView):
             else:
                 solicitudes = solicitudes.filter(
                     Q(id_usuario__correo__icontains=usuario_param)
-                    | Q(id_usuario__rut__icontains=usuario_param)
                     | Q(id_usuario__nombres__icontains=usuario_param)
                     | Q(id_usuario__apellidos__icontains=usuario_param)
                 )
@@ -326,7 +325,6 @@ class AsignacionListCreateView(APIView):
             else:
                 asignaciones = asignaciones.filter(
                     Q(id_solicitud__id_usuario__correo__icontains=usuario_param)
-                    | Q(id_solicitud__id_usuario__rut__icontains=usuario_param)
                     | Q(id_solicitud__id_usuario__nombres__icontains=usuario_param)
                     | Q(id_solicitud__id_usuario__apellidos__icontains=usuario_param)
                 )
@@ -352,7 +350,6 @@ class AsignacionListCreateView(APIView):
                 Q(id_activo__codigo_inventario__icontains=search)
                 | Q(id_activo__numero_serie__icontains=search)
                 | Q(id_solicitud__id_usuario__correo__icontains=search)
-                | Q(id_solicitud__id_usuario__rut__icontains=search)
                 | Q(id_solicitud__id_usuario__nombres__icontains=search)
                 | Q(id_solicitud__id_usuario__apellidos__icontains=search)
             )

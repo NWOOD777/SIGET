@@ -791,7 +791,7 @@ def listar_usuarios_sistema() -> list[Usuario]:
 def consultar_usuario_detalle_rbac(usuario: Usuario) -> dict[str, Any]:
     """
     Retorna la ficha de acceso RBAC completa de un usuario:
-    - Datos de identificación (RUT, correo, nombres, apellidos, activo, proveedor)
+    - Datos de identificación (RUT, correo, nombres, apellidos y estado de acceso)
     - Roles asignados actualmente mediante UsuarioRol
     - Permisos efectivos consolidados derivados de sus roles
     """
@@ -800,8 +800,6 @@ def consultar_usuario_detalle_rbac(usuario: Usuario) -> dict[str, Any]:
 
     return {
         "id_usuario": usuario.id_usuario,
-        "identificador_externo": usuario.identificador_externo,
-        "proveedor_identidad": usuario.proveedor_identidad,
         "rut": usuario.rut,
         "nombres": usuario.nombres,
         "apellidos": usuario.apellidos,
@@ -1322,8 +1320,7 @@ def aprovisionar_usuario(
                 entidad_afectada="usuario",
                 id_registro_afectado=nuevo_usuario.id_usuario,
                 detalle_evento=(
-                    f"Usuario '{correo}' (RUT: {rut_normalizado}) aprovisionado "
-                    f"con rol inicial '{rol_obj.nombre}' e identificador Auth0 '{auth0_sub}'."
+                    f"Cuenta #{nuevo_usuario.id_usuario} aprovisionada con rol inicial '{rol_obj.nombre}'."
                 ),
                 direccion_ip=direccion_ip,
             )
@@ -1471,8 +1468,7 @@ def bootstrap_primer_admin(
                 entidad_afectada="usuario",
                 id_registro_afectado=nuevo_admin.id_usuario,
                 detalle_evento=(
-                    f"Bootstrap inicial: Primer Administrador '{correo}' (RUT: {rut_normalizado}) "
-                    f"creado con rol '{rol_obj.nombre}' e identificador Auth0 '{auth0_sub}'."
+                    f"Primera cuenta administrativa #{nuevo_admin.id_usuario} creada."
                 ),
                 direccion_ip=None,
             )

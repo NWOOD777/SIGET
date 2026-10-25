@@ -11,7 +11,7 @@ Ruta: `/api/asignaciones/`
 
 `GET /api/asignaciones/` admite `usuario`, `equipo`, `estado` y `search`. `activo` se admite como alternativa a `equipo`.
 
-- `usuario`: identificador, correo, RUT, nombres o apellidos; disponible para Administrador y Técnico.
+- `usuario`: identificador, correo, nombres o apellidos; disponible para Administrador y Técnico.
 - `equipo`: identificador, código de inventario, serie o modelo.
 - `estado`: identificador o nombre del estado de asignación.
 - `search`: identificador de asignación, datos del equipo o del solicitante.

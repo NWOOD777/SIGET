@@ -69,9 +69,9 @@ class ConsultarAsignacionesPostgreSQLTests(PostgreSQLTestBase):
             with self.subTest(usuario=usuario.pk):
                 self.assertEqual(self.ids(usuario=usuario), [self.ajena.pk, self.finalizada.pk, self.primera.pk])
 
-    def test_busqueda_por_usuario_id_correo_rut_nombres_y_apellidos(self):
+    def test_busqueda_por_usuario_id_correo_nombres_y_apellidos(self):
         for criterio in (
-            str(self.solicitante.pk), self.solicitante.correo.upper(), self.solicitante.rut,
+            str(self.solicitante.pk), self.solicitante.correo.upper(),
             "alicia", "FUENTES",
         ):
             with self.subTest(criterio=criterio):
@@ -106,7 +106,6 @@ class ConsultarAsignacionesPostgreSQLTests(PostgreSQLTestBase):
             (self.primera.id_activo.codigo_inventario, [self.primera.pk]),
             (self.primera.id_activo.numero_serie, [self.primera.pk]),
             (self.solicitante.correo, [self.finalizada.pk, self.primera.pk]),
-            (self.solicitante.rut, [self.finalizada.pk, self.primera.pk]),
             ("ALICIA", [self.finalizada.pk, self.primera.pk]),
             ("Fuentes", [self.finalizada.pk, self.primera.pk]),
         ):
