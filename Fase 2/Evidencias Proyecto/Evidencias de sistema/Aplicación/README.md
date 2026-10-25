@@ -188,6 +188,10 @@ La función, configuración y comandos de Ruff y Pyright se explican en [Revisi�
   de solicitudes aprobadas y devoluciones, toma y atiende tickets, y gestiona las OT.
 
 Las vistas compartidas muestran únicamente las acciones permitidas para cada perfil.
+En **Órdenes de Trabajo → Historial y Trazabilidad**, se ingresa el código o ID de
+una OT y se selecciona «Buscar». La consulta muestra los eventos registrados para
+esa orden; si no existen, informa que no hay movimientos. Abrir la pestaña por sí
+solo no ejecuta una búsqueda.
 
 ## Documentación de las APIs
 

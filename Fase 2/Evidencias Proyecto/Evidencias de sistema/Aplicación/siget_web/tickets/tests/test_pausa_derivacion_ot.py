@@ -156,3 +156,15 @@ class IntegracionOTPausaDerivacionTests(IntegracionOTEstadosTests):
         )
 
         self.assertEqual(tiempo, timedelta(minutes=15))
+
+
+    def test_historial_devuelve_creacion_pausa_y_reanudacion_reales(self):
+        orden = self.crear_ot()
+        pausar_orden_trabajo(orden.pk, self.tecnico, "Esperando repuesto")
+        reanudar_orden_trabajo(orden.pk, self.tecnico)
+        ruta = f"/api/ordenes-trabajo/{orden.pk}/historial/"
+        respuesta = self.cliente(self.tecnico).get(ruta)
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertEqual([evento["accion"] for evento in respuesta.data], ["OT_REANUDADA", "OT_PAUSADA", "OT_CREADA"])
+        self.assertIn("Esperando repuesto", respuesta.data[1]["detalles"])
+        self.assertEqual(self.cliente(self.admin).get(ruta).status_code, 403)
