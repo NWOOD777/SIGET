@@ -9,7 +9,21 @@ from usuarios.models import BitacoraAuditoria
 
 from .models import Diagnostico, OrdenTrabajo
 from .permissions import PuedeGestionarOrdenesTrabajo
+from .serializers import (
+    CrearOrdenTrabajoSerializer, OperacionOTSerializer, PausarOrdenTrabajoSerializer,
+    ReasignarOrdenTrabajoSerializer, RutaOrdenTrabajoSerializer,
+)
 from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo
+
+
+def validar_entrada(serializer_class, datos):
+    serializer = serializer_class(data=datos)
+    serializer.is_valid(raise_exception=True)
+    return serializer.validated_data
+
+
+def validar_id_orden(pk):
+    return validar_entrada(RutaOrdenTrabajoSerializer, {"id_orden": pk})["id_orden"]
 
 
 def serializar_orden(orden):
@@ -68,22 +82,7 @@ class OrdenTrabajoListCreateView(APIView):
         )
 
     def post(self, request):
-        datos = request.data
-
-        id_ticket = datos.get("id_ticket")
-        if not str(id_ticket or "").isdigit():
-            raise exceptions.ValidationError(
-                {"id_ticket": ["Debe indicar un ID de ticket válido."]}
-            )
-
-        descripcion = datos.get("descripcion_falla", "")
-        procedimiento = datos.get("procedimiento_inicial", "")
-        es_reparable = datos.get("es_reparable", True)
-
-        if not isinstance(es_reparable, bool):
-            raise exceptions.ValidationError(
-                {"es_reparable": ["Debe ser verdadero o falso."]}
-            )
+        datos = validar_entrada(CrearOrdenTrabajoSerializer, request.data)
 
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
@@ -91,11 +90,11 @@ class OrdenTrabajoListCreateView(APIView):
                 "Debe iniciar sesión para gestionar órdenes de trabajo."
             )
         orden = crear_orden_trabajo(
-            id_ticket=int(id_ticket),
+            id_ticket=datos["id_ticket"],
             tecnico=tecnico,
-            descripcion_falla=descripcion,
-            procedimiento_inicial=procedimiento,
-            es_reparable=es_reparable,
+            descripcion_falla=datos["descripcion_falla"],
+            procedimiento_inicial=datos["procedimiento_inicial"],
+            es_reparable=datos["es_reparable"],
             ip_origen=direccion_ip_cliente(request),
         )
 
@@ -112,6 +111,7 @@ class HistorialOrdenTrabajoView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def get(self, request, pk):
+        pk = validar_id_orden(pk)
         if not OrdenTrabajo.objects.filter(pk=pk).exists():
             raise exceptions.NotFound(
                 "La orden de trabajo no existe."
@@ -155,6 +155,8 @@ class IniciarReparacionView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def post(self, request, pk):
+        pk = validar_id_orden(pk)
+        validar_entrada(OperacionOTSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
             raise exceptions.NotAuthenticated(
@@ -182,12 +184,14 @@ class PausarOrdenTrabajoView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def post(self, request, pk):
+        pk = validar_id_orden(pk)
+        datos = validar_entrada(PausarOrdenTrabajoSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
             raise exceptions.NotAuthenticated(
                 "Debe iniciar sesión para gestionar órdenes de trabajo."
             )
-        justificacion = request.data.get("justificacion", "")
+        justificacion = datos["justificacion"]
 
         orden = pausar_orden_trabajo(
             id_orden=pk,
@@ -253,25 +257,20 @@ class ReasignarOrdenTrabajoView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def post(self, request, pk):
+        pk = validar_id_orden(pk)
+        datos = validar_entrada(ReasignarOrdenTrabajoSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
             raise exceptions.NotAuthenticated(
                 "Debe iniciar sesión para gestionar órdenes de trabajo."
             )
-        id_nuevo_tecnico = request.data.get("id_tecnico_responsable")
-        observaciones = request.data.get("observaciones", "")
-
-        if not str(id_nuevo_tecnico or "").isdigit():
-            raise exceptions.ValidationError({
-                "id_tecnico_responsable": [
-                    "Debe indicar un ID de técnico válido."
-                ]
-            })
+        id_nuevo_tecnico = datos["id_tecnico_responsable"]
+        observaciones = datos["observaciones"]
 
         from usuarios.models import Usuario
 
         nuevo_tecnico = Usuario.objects.filter(
-            pk=int(id_nuevo_tecnico),
+            pk=id_nuevo_tecnico,
             activo=True,
         ).first()
 
@@ -301,6 +300,8 @@ class ReanudarOrdenTrabajoView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def post(self, request, pk):
+        pk = validar_id_orden(pk)
+        validar_entrada(OperacionOTSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
             raise exceptions.NotAuthenticated(

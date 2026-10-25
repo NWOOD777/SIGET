@@ -1,6 +1,6 @@
 # API 2 — Service Desk y Taller/Reparaciones
 
-Expone creación, consulta y gestión de tickets, prioridades, estados y políticas SLA.
+Expone creación, consulta y gestión de tickets, prioridades, estados, políticas SLA y órdenes de trabajo.
 
 Consultar la [organización de las APIs](../organizacion.md) para conocer la relación de estos servicios con el resto del backend.
 
@@ -18,6 +18,24 @@ Consultar la [organización de las APIs](../organizacion.md) para conocer la rel
 | GET, POST | `/api/tickets/{id}/csat/` | [Calificación de servicio (CSAT)](tickets/csat.md) |
 | GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 | GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
+| GET, POST | `/api/ordenes-trabajo/` | [Listar y crear OT](ordenes_trabajo/contratos_actuales.md#listar-ot) |
+| GET | `/api/ordenes-trabajo/tecnicos-disponibles/` | [Técnicos disponibles](ordenes_trabajo/contratos_actuales.md#consultar-técnicos-disponibles) |
+| GET | `/api/ordenes-trabajo/{id}/historial/` | [Historial de OT](ordenes_trabajo/contratos_actuales.md#consultar-historial) |
+| POST | `/api/ordenes-trabajo/{id}/iniciar-reparacion/` | [Iniciar reparación](ordenes_trabajo/contratos_actuales.md#iniciar-reparación) |
+| POST | `/api/ordenes-trabajo/{id}/pausar/` | [Pausar OT](ordenes_trabajo/contratos_actuales.md#pausar-ot) |
+| POST | `/api/ordenes-trabajo/{id}/reasignar/` | [Reasignar OT](ordenes_trabajo/contratos_actuales.md#reasignar-ot) |
+| POST | `/api/ordenes-trabajo/{id}/reanudar/` | [Reanudar OT](ordenes_trabajo/contratos_actuales.md#reanudar-ot) |
+
+Los [contratos actuales de OT](ordenes_trabajo/contratos_actuales.md) describen el
+comportamiento implementado y sus limitaciones. Las correcciones propuestas se
+separan en el [informe de consolidación](ordenes_trabajo/pendientes_consolidacion.md).
+
+La gestión de OT es colaborativa: cualquier Técnico de soporte activo puede
+pausar, reanudar o reasignar una OT, aunque no sea su responsable, sujeto a las
+validaciones de estado. Reanudar recupera la fase anterior y comprueba el activo;
+no inicia reparación automáticamente. `OT_GESTIONAR` existe en el catálogo, pero
+su comprobación explícita queda como decisión futura de granularidad, sin cambiar
+la autorización actual por rol.
 
 ## Operación desde el escritorio
 

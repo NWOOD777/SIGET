@@ -12,6 +12,7 @@ from usuarios.models import BitacoraAuditoria, Usuario
 from usuarios.services import registrar_auditoria
 
 from .models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
+from .auditoria_fases import detalle_fase, recuperar_fase_pausada
 
 ESTADO_OT_DIAGNOSTICO = "En Diagnóstico"
 ESTADO_OT_REPARACION = "En Reparación"
@@ -95,7 +96,7 @@ def crear_orden_trabajo(
         })
 
     activo = (
-        Activo.objects.select_for_update()
+        Activo.objects.select_for_update(of=("self",))
         .select_related("id_estado_activo")
         .filter(pk=ticket.id_activo_id)
         .first()
@@ -120,6 +121,16 @@ def crear_orden_trabajo(
                 "Este ticket ya tiene una orden de trabajo registrada. "
                 "La base de datos permite una sola OT por ticket."
             ]
+        })
+
+    # El bloqueo del activo serializa la comprobación con otras creaciones
+    # para ese equipo; no bloquear las OT encontradas ni sus catálogos.
+    if OrdenTrabajo.objects.filter(
+        id_ticket__id_activo_id=activo.pk,
+        id_estado_ot__nombre__in=ESTADOS_OT_VIGENTES,
+    ).exists():
+        raise exceptions.ValidationError({
+            "id_activo": ["El activo ya tiene una orden de trabajo vigente."]
         })
 
     estado_ot = EstadoOrdenTrabajo.objects.filter(
@@ -176,11 +187,9 @@ def iniciar_reparacion(
     bloquear_operacion(70617, id_orden)
 
     orden = (
-        OrdenTrabajo.objects.select_related(
-            "id_estado_ot",
-            "id_ticket",
-            "id_tecnico_responsable",
-        )
+        # Bloquear OT antes de validar y antes del activo: pausa/reanudación
+        # comparten esta fila y no pueden cambiar el estado entre lectura y save.
+        OrdenTrabajo.objects.select_for_update(of=("self",))
         .filter(pk=id_orden)
         .first()
     )
@@ -232,7 +241,7 @@ def iniciar_reparacion(
         })
 
     activo = (
-        Activo.objects.select_for_update()
+        Activo.objects.select_for_update(of=("self",))
         .select_related("id_estado_activo")
         .filter(pk=ticket.id_activo_id)
         .first()
@@ -324,8 +333,7 @@ def pausar_orden_trabajo(
     bloquear_operacion(70618, id_orden)
 
     orden = (
-        OrdenTrabajo.objects.select_for_update()
-        .select_related("id_estado_ot")
+        OrdenTrabajo.objects.select_for_update(of=("self",))
         .filter(pk=id_orden)
         .first()
     )
@@ -352,6 +360,7 @@ def pausar_orden_trabajo(
             "estado": ["El estado 'Pausada' no está configurado."]
         })
 
+    fase_anterior = orden.id_estado_ot.nombre
     orden.id_estado_ot = estado_pausada
     orden.justificacion_pausa = justificacion
     orden.save(update_fields=["id_estado_ot", "justificacion_pausa"])
@@ -362,9 +371,10 @@ def pausar_orden_trabajo(
         accion="OT_PAUSADA",
         entidad_afectada="orden_trabajo",
         id_registro_afectado=orden.id_orden,
-        detalle_evento=(
-            f"Se pausó la OT {orden.codigo_ot}. "
-            f"Motivo: {justificacion}"
+        detalle_evento=detalle_fase(
+            orden, accion="OT_PAUSADA", origen=fase_anterior, destino=ESTADO_OT_PAUSADA,
+            motivo=justificacion,
+            resumen=f"Se pausó la OT {orden.codigo_ot}. Motivo: {justificacion}",
         ),
         direccion_ip=ip_origen,
     )
@@ -392,8 +402,7 @@ def reasignar_orden_trabajo(
     bloquear_operacion(70619, id_orden)
 
     orden = (
-        OrdenTrabajo.objects.select_for_update()
-        .select_related("id_estado_ot", "id_tecnico_responsable")
+        OrdenTrabajo.objects.select_for_update(of=("self",))
         .filter(pk=id_orden)
         .first()
     )
@@ -482,8 +491,7 @@ def reanudar_orden_trabajo(
     bloquear_operacion(70620, id_orden)
 
     orden = (
-        OrdenTrabajo.objects.select_for_update()
-        .select_related("id_estado_ot")
+        OrdenTrabajo.objects.select_for_update(of=("self",))
         .filter(pk=id_orden)
         .first()
     )
@@ -500,20 +508,35 @@ def reanudar_orden_trabajo(
             ]
         })
 
-    estado_reparacion = EstadoOrdenTrabajo.objects.filter(
-        nombre=ESTADO_OT_REPARACION
+    fase_anterior = recuperar_fase_pausada(orden)
+    estado_destino = EstadoOrdenTrabajo.objects.filter(
+        nombre=fase_anterior
     ).first()
 
-    if estado_reparacion is None:
+    if estado_destino is None:
         raise exceptions.ValidationError({
             "estado": [
-                "El estado 'En Reparación' no está configurado."
+                f"El estado '{fase_anterior}' no está configurado."
             ]
         })
 
     motivo_anterior = orden.justificacion_pausa or "Sin detalle"
 
-    orden.id_estado_ot = estado_reparacion
+    # Orden de recursos compartido con iniciar_reparacion: OT → activo.
+    # No corregir estados históricos del activo de manera implícita.
+    activo = Activo.objects.select_for_update(of=("self",)).filter(
+        pk=orden.id_ticket.id_activo_id,
+    ).first()
+    estado_activo_esperado = (
+        ESTADO_ACTIVO_REVISION if fase_anterior == ESTADO_OT_DIAGNOSTICO
+        else ESTADO_ACTIVO_REPARACION
+    )
+    if activo is None or activo.id_estado_activo.nombre != estado_activo_esperado:
+        raise exceptions.ValidationError({
+            "id_activo": [f"El activo debe estar en '{estado_activo_esperado}' para reanudar esta fase."]
+        })
+
+    orden.id_estado_ot = estado_destino
     orden.justificacion_pausa = None
     orden.save(update_fields=["id_estado_ot", "justificacion_pausa"])
 
@@ -523,9 +546,10 @@ def reanudar_orden_trabajo(
         accion="OT_REANUDADA",
         entidad_afectada="orden_trabajo",
         id_registro_afectado=orden.id_orden,
-        detalle_evento=(
-            f"Se reanudó la OT {orden.codigo_ot}. "
-            f"Motivo de pausa anterior: {motivo_anterior}"
+        detalle_evento=detalle_fase(
+            orden, accion="OT_REANUDADA", origen=ESTADO_OT_PAUSADA, destino=fase_anterior,
+            motivo=motivo_anterior,
+            resumen=f"Se reanudó la OT {orden.codigo_ot} en {fase_anterior}. Motivo de pausa anterior: {motivo_anterior}",
         ),
         direccion_ip=ip_origen,
     )

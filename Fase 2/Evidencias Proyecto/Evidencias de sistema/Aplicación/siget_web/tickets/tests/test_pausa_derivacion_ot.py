@@ -55,7 +55,7 @@ class IntegracionOTPausaDerivacionTests(IntegracionOTEstadosTests):
         reanudar_orden_trabajo(orden.pk, self.tecnico)
 
         orden.refresh_from_db()
-        self.assertEqual(orden.id_estado_ot.nombre, "En Reparación")
+        self.assertEqual(orden.id_estado_ot.nombre, "En Diagnóstico")
         self.assertFalse(orden.justificacion_pausa)
         self.assertTrue(
             BitacoraAuditoria.objects.filter(
