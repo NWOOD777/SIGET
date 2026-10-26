@@ -688,3 +688,38 @@ def listar_repuestos(busqueda: str = "") -> list[dict[str, Any]]:
         raise ValueError("La API no devolvió un listado de repuestos.")
 
     return resultado
+
+
+def listar_alertas_repuestos() -> dict[str, Any]:
+    """Consulta los repuestos con stock crítico (Administrador)."""
+    resultado = api_client.get("/api/repuestos/alertas/")
+    return _objeto(resultado)
+
+
+def actualizar_stock_minimo_repuesto(
+    id_repuesto: int,
+    stock_minimo: int,
+) -> dict[str, Any]:
+    """Actualiza el umbral mínimo de un repuesto (Administrador)."""
+    resultado = api_client.patch(
+        f"/api/repuestos/{id_repuesto}/stock-minimo/",
+        json={"stock_minimo": stock_minimo},
+    )
+    return _objeto(resultado)
+
+
+
+def ajustar_stock_repuesto(
+    id_repuesto: int,
+    nuevo_stock: int,
+    motivo: str,
+) -> dict[str, Any]:
+    """Corrige el stock de un repuesto y registra el motivo en SIGET."""
+    resultado = api_client.patch(
+        f"/api/repuestos/{id_repuesto}/ajustar-stock/",
+        json={
+            "nuevo_stock": nuevo_stock,
+            "motivo": motivo,
+        },
+    )
+    return _objeto(resultado)

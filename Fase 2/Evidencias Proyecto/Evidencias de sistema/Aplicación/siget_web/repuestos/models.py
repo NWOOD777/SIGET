@@ -8,7 +8,7 @@ class Repuesto(models.Model):
     marca_modelo = models.CharField(max_length=150, null=True, blank=True)
     unidad_medida = models.CharField(max_length=50, default="Unidad")
     stock_actual = models.IntegerField(default=0)
-    stock_minimo = models.IntegerField(default=1)
+    stock_minimo = models.IntegerField(default=5)
     precio_unitario = models.DecimalField(
         max_digits=12, decimal_places=2, default=0
     )

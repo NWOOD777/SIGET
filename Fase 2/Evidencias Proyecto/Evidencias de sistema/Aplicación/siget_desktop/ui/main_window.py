@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         ):
             self.stacked_views.addWidget(view)
         self.view_dashboard.modulo_seleccionado.connect(self.sidebar.setCurrentRow)
+        self.view_dashboard.ver_repuestos_criticos.connect(self._abrir_repuestos_criticos)
         area_trabajo.addWidget(self.stacked_views, 1)
         layout_principal.addLayout(area_trabajo, 1)
 
@@ -250,6 +251,8 @@ class MainWindow(QMainWindow):
                 item_auditoria.setToolTip("Módulo restringido a Administrador del sistema")
 
         self.view_dashboard.actualizar_datos()
+        if self._sesion_activa:
+            self.view_dashboard.actualizar_alertas()
         self.view_activos.actualizar_permisos_ui()
         self.view_solicitudes.actualizar_permisos_ui()
         self.view_tickets.actualizar_permisos_ui()
@@ -308,6 +311,8 @@ class MainWindow(QMainWindow):
             return
 
         self.stacked_views.setCurrentIndex(index)
+        if index == 0 and current_session.is_admin():
+            self.view_dashboard.actualizar_alertas()
 
         if index == 7:
             self.view_repuestos.cargar_repuestos()
@@ -335,6 +340,12 @@ class MainWindow(QMainWindow):
         ):
             self.view_auditoria.cargar_auditoria()
 
+
+    def _abrir_repuestos_criticos(self):
+        if not current_session.is_admin():
+            return
+        self.sidebar.setCurrentRow(7)
+        self.view_repuestos.mostrar_solo_criticos()
 
     def invalidar_consultas(self, origen: QWidget):
         for view in (self.view_activos, self.view_tickets, self.view_usuarios):

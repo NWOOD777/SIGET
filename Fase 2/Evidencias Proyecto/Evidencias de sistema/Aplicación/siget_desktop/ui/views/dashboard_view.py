@@ -1,21 +1,14 @@
-"""Panel de inicio con accesos a módulos e información de la cuenta vigente."""
-
+"""Panel de inicio con accesos a módulos, cuenta y alertas de repuestos."""
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QFrame,
-    QGridLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
+    QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton,
+    QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
 )
-
+from siget_desktop.api.services import listar_alertas_repuestos
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.workers import ApiWorker
 
 NOMBRES_PERMISOS = {
     "CATALOGO_CONSULTAR": "Consultar catálogo y disponibilidad de activos",
@@ -33,12 +26,15 @@ NOMBRES_PERMISOS = {
 
 
 class DashboardView(QWidget):
-    """Inicio del escritorio; muestra información real de la sesión y navegación."""
+    """Inicio del escritorio con alertas visibles solo para Administrador."""
 
     modulo_seleccionado = Signal(int)
+    ver_repuestos_criticos = Signal()
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        self._worker_alertas = None
+        self._recargar_alertas = False
         self._init_ui()
 
     def _init_ui(self):
@@ -61,6 +57,24 @@ class DashboardView(QWidget):
         layout.setSpacing(20)
         scroll.setWidget(content)
         outer.addWidget(scroll, 1)
+
+        self.alertas_card = QFrame()
+        self.alertas_card.setObjectName("permissionsCard")
+        alertas_layout = QHBoxLayout(self.alertas_card)
+        alertas_layout.setContentsMargins(22, 18, 22, 18)
+        alertas_textos = QVBoxLayout()
+        self.lbl_alertas_titulo = QLabel("Alertas de repuestos")
+        self.lbl_alertas_titulo.setObjectName("sectionTitle")
+        alertas_textos.addWidget(self.lbl_alertas_titulo)
+        self.lbl_alertas_estado = QLabel("Consultando existencias...")
+        self.lbl_alertas_estado.setWordWrap(True)
+        alertas_textos.addWidget(self.lbl_alertas_estado)
+        alertas_layout.addLayout(alertas_textos, 1)
+        self.btn_ver_criticos = QPushButton("Ver repuestos críticos")
+        self.btn_ver_criticos.setObjectName("btnSecundario")
+        self.btn_ver_criticos.clicked.connect(self.ver_repuestos_criticos.emit)
+        alertas_layout.addWidget(self.btn_ver_criticos)
+        layout.addWidget(self.alertas_card)
 
         modules = QHBoxLayout()
         modules.setSpacing(16)
@@ -141,6 +155,7 @@ class DashboardView(QWidget):
     def actualizar_datos(self):
         self.lbl_nombre.setText(current_session.nombre_completo or "Usuario SIGET")
         self.lbl_correo.setText(current_session.correo or "—")
+        self.alertas_card.setVisible(current_session.is_admin())
         for container in (self.layout_badges, self.layout_lista_perm):
             while container.count():
                 item = container.takeAt(0)
@@ -163,3 +178,48 @@ class DashboardView(QWidget):
             empty.setObjectName("subtitulo")
             self.layout_lista_perm.addWidget(empty)
         self.layout_lista_perm.addStretch()
+
+    def actualizar_alertas(self):
+        if not current_session.is_admin() or not current_session.is_authenticated():
+            self.alertas_card.hide()
+            return
+        self.alertas_card.show()
+        if self._worker_alertas is not None and self._worker_alertas.isRunning():
+            self._recargar_alertas = True
+            return
+        self._recargar_alertas = False
+        self.lbl_alertas_estado.setText("Consultando existencias...")
+        worker = ApiWorker(listar_alertas_repuestos)
+        self._worker_alertas = worker
+        worker.signals.finished.connect(lambda datos: self._alertas_recibidas(datos, worker))
+        worker.signals.error.connect(lambda error: self._alertas_error(error, worker))
+        worker.start()
+
+    def _alertas_recibidas(self, datos, worker):
+        if worker is not self._worker_alertas:
+            return
+        if current_session.is_admin() and current_session.is_authenticated():
+            total = int(datos.get("total_alertas", 0))
+            if total:
+                self.lbl_alertas_estado.setText(f"⚠ {total} repuesto(s) con stock crítico. Revisa las compras sugeridas.")
+                self.lbl_alertas_estado.setStyleSheet("color: #DC2626; font-weight: bold;")
+            else:
+                self.lbl_alertas_estado.setText("✓ Inventario normal: no hay repuestos con stock crítico.")
+                self.lbl_alertas_estado.setStyleSheet("color: #16A34A; font-weight: bold;")
+            self.btn_ver_criticos.setEnabled(total > 0)
+        self._finalizar_alertas()
+
+    def _alertas_error(self, error, worker):
+        if worker is not self._worker_alertas:
+            return
+        if current_session.is_admin() and current_session.is_authenticated():
+            self.lbl_alertas_estado.setText(f"No fue posible consultar alertas: {error}")
+            self.lbl_alertas_estado.setStyleSheet("color: #DC2626;")
+            self.btn_ver_criticos.setEnabled(False)
+        self._finalizar_alertas()
+
+    def _finalizar_alertas(self):
+        self._worker_alertas = None
+        if self._recargar_alertas:
+            self._recargar_alertas = False
+            self.actualizar_alertas()

@@ -28,7 +28,7 @@ class IngresoRepuestoDialog(SessionDialog):
         super().__init__(parent)
 
         self.setWindowTitle("SIGET - Ingreso de repuestos")
-        self.resize(530, 370)
+        self.resize(530, 410)
 
         self._worker = None
         self._worker_listado = None
@@ -42,12 +42,14 @@ class IngresoRepuestoDialog(SessionDialog):
 
         descripcion = QLabel(
             "Registra un repuesto nuevo o agrega stock a uno existente. "
-            "Los códigos se generan automáticamente."
+            "Los códigos se generan automáticamente. "
+            "El stock mínimo inicial de los repuestos nuevos es 5."
         )
         descripcion.setWordWrap(True)
         layout.addWidget(descripcion)
 
         formulario = QFormLayout()
+        self.formulario = formulario
 
         self.tipo = QComboBox()
         self.tipo.addItem("Nuevo repuesto", "nuevo")
@@ -64,6 +66,11 @@ class IngresoRepuestoDialog(SessionDialog):
         self.nombre.setPlaceholderText("Ej. Memoria RAM DDR4")
         formulario.addRow("Nombre *:", self.nombre)
 
+        self.marca_modelo = QLineEdit()
+        self.marca_modelo.setMaxLength(150)
+        self.marca_modelo.setPlaceholderText("Ej. Kingston Fury (opcional)")
+        formulario.addRow("Marca / Modelo:", self.marca_modelo)
+
         self.cantidad = QLineEdit()
         self.cantidad.setPlaceholderText("Ej. 5")
         formulario.addRow("Cantidad *:", self.cantidad)
@@ -79,7 +86,6 @@ class IngresoRepuestoDialog(SessionDialog):
         layout.addWidget(self.mensaje)
 
         botones = QHBoxLayout()
-
         self.btn_cerrar = QPushButton("Cerrar")
         self.btn_cerrar.setObjectName("btnSecundario")
         self.btn_cerrar.clicked.connect(self.reject)
@@ -90,7 +96,6 @@ class IngresoRepuestoDialog(SessionDialog):
         botones.addWidget(self.btn_cerrar)
         botones.addStretch()
         botones.addWidget(self.btn_guardar)
-
         layout.addLayout(botones)
 
         self.cambiar_tipo()
@@ -112,11 +117,11 @@ class IngresoRepuestoDialog(SessionDialog):
 
         self.repuesto.setVisible(existente)
         self.nombre.setVisible(not existente)
+        self.marca_modelo.setVisible(not existente)
 
-        # Ocultar también las etiquetas del formulario.
-        formulario = self.layout().itemAt(2).layout()
-        formulario.labelForField(self.repuesto).setVisible(existente)
-        formulario.labelForField(self.nombre).setVisible(not existente)
+        self.formulario.labelForField(self.repuesto).setVisible(existente)
+        self.formulario.labelForField(self.nombre).setVisible(not existente)
+        self.formulario.labelForField(self.marca_modelo).setVisible(not existente)
 
         self.limpiar_errores()
         self.mensaje.setText("")
@@ -146,14 +151,13 @@ class IngresoRepuestoDialog(SessionDialog):
         self.repuesto.addItem("Seleccione un repuesto", None)
 
         for item in repuestos:
+            marca = item.get("marca_modelo") or ""
             etiqueta = (
                 f"{item['codigo_repuesto']} - {item['nombre']} "
+                f"{f'({marca}) ' if marca else ''}"
                 f"(Stock: {item['stock_actual']})"
             )
-            self.repuesto.addItem(
-                etiqueta,
-                item["id_repuesto"],
-            )
+            self.repuesto.addItem(etiqueta, item["id_repuesto"])
 
         self._repuestos_cargados = True
         self.actualizar_boton()
@@ -172,14 +176,13 @@ class IngresoRepuestoDialog(SessionDialog):
         self.actualizar_boton()
 
     def marcar_error(self, campo):
-        campo.setStyleSheet(
-            "border: 2px solid #dc2626;"
-        )
+        campo.setStyleSheet("border: 2px solid #dc2626;")
 
     def limpiar_errores(self):
         for campo in (
             self.repuesto,
             self.nombre,
+            self.marca_modelo,
             self.cantidad,
             self.costo,
         ):
@@ -196,56 +199,49 @@ class IngresoRepuestoDialog(SessionDialog):
 
         self.limpiar_errores()
         errores = []
-
         existente = self.tipo.currentData() == "existente"
         datos = {}
 
         if existente:
             id_repuesto = self.repuesto.currentData()
-
             if id_repuesto is None:
                 self.marcar_error(self.repuesto)
                 errores.append("Seleccione un repuesto existente.")
             else:
                 datos["id_repuesto"] = id_repuesto
-
         else:
             nombre = self.nombre.text().strip()
-
             if not nombre:
                 self.marcar_error(self.nombre)
                 errores.append("El nombre es obligatorio.")
             else:
                 datos["nombre"] = nombre
 
+            marca_modelo = self.marca_modelo.text().strip()
+            if marca_modelo:
+                datos["marca_modelo"] = marca_modelo
+
         cantidad_texto = self.cantidad.text().strip()
         costo_texto = self.costo.text().strip()
 
         try:
             cantidad = int(cantidad_texto)
-
             if cantidad <= 0:
                 raise ValueError
-
         except ValueError:
             cantidad = None
             self.marcar_error(self.cantidad)
-            errores.append(
-                "La cantidad debe ser un entero mayor que cero."
-            )
+            errores.append("La cantidad debe ser un entero mayor que cero.")
 
         try:
             costo = Decimal(costo_texto)
-
             if not costo.is_finite() or costo < 0:
                 raise InvalidOperation
-
             if (
                 costo.as_tuple().exponent < -2
                 or costo >= Decimal("10000000000")
             ):
                 raise InvalidOperation
-
         except (InvalidOperation, ValueError):
             costo = None
             self.marcar_error(self.costo)
@@ -264,11 +260,7 @@ class IngresoRepuestoDialog(SessionDialog):
         self.btn_guardar.setEnabled(False)
         self.mensaje.setText("Registrando ingreso...")
 
-        self._worker = ApiWorker(
-            registrar_ingreso_repuesto,
-            datos,
-        )
-
+        self._worker = ApiWorker(registrar_ingreso_repuesto, datos)
         self.conectar_worker(
             self._worker,
             self._on_exito,
@@ -279,15 +271,14 @@ class IngresoRepuestoDialog(SessionDialog):
     def _on_exito(self, resultado):
         self._worker = None
         self.actualizar_boton()
-
         QMessageBox.information(
             self,
             "Ingreso registrado",
             f"Repuesto: {resultado['codigo_repuesto']}\n"
             f"Stock actual: {resultado['stock_actual']}\n"
+            f"Stock mínimo: {resultado.get('stock_minimo', 'No disponible')}\n"
             f"Costo promedio: {resultado['precio_unitario']}",
         )
-
         self.accept()
 
     def _on_error(self, error):

@@ -10,6 +10,12 @@ from .services import registrar_ingreso_repuesto
 
 from .models import Repuesto
 
+from .serializers import StockMinimoRepuestoSerializer
+from .services import actualizar_stock_minimo_repuesto
+
+from .serializers import AjusteStockRepuestoSerializer
+from .services import ajustar_stock_repuesto
+
 
 
 class IngresoRepuestoView(APIView):
@@ -57,10 +63,110 @@ class ListadoRepuestosView(APIView):
                 "id_repuesto": r.id_repuesto,
                 "codigo_repuesto": r.codigo_repuesto,
                 "nombre": r.nombre,
+                "marca_modelo": r.marca_modelo,
                 "stock_actual": r.stock_actual,
+                "stock_minimo": r.stock_minimo,
+                "estado_stock": (
+                    "Stock crítico"
+                    if r.stock_actual <= r.stock_minimo
+                    else "Normal"
+                ),
+                "cantidad_sugerida": max(
+                    0, r.stock_minimo - r.stock_actual + 1
+                ),
                 "precio_unitario": str(r.precio_unitario),
             }
             for r in repuestos
         ]
 
         return Response(resultado)
+
+from django.db.models import F
+
+
+class AlertasRepuestosView(APIView):
+    """Listado de repuestos con stock igual o inferior al mínimo."""
+
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def get(self, request):
+        repuestos = (
+            Repuesto.objects
+            .filter(stock_actual__lte=F("stock_minimo"))
+            .order_by("stock_actual", "id_repuesto")
+        )
+
+        alertas = []
+
+        for repuesto in repuestos:
+            cantidad_sugerida = max(
+                0,
+                repuesto.stock_minimo - repuesto.stock_actual + 1,
+            )
+
+            alertas.append({
+                "id_repuesto": repuesto.id_repuesto,
+                "codigo_repuesto": repuesto.codigo_repuesto,
+                "nombre": repuesto.nombre,
+                "stock_actual": repuesto.stock_actual,
+                "stock_minimo": repuesto.stock_minimo,
+                "cantidad_sugerida": cantidad_sugerida,
+                "estado": "Stock Crítico",
+            })
+
+        return Response({
+            "total_alertas": len(alertas),
+            "estado_general": (
+                "STOCK_CRITICO" if alertas else "NORMAL"
+            ),
+            "alertas": alertas,
+        })
+
+
+
+
+
+class StockMinimoRepuestoView(APIView):
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def patch(self, request, id_repuesto):
+        serializer = StockMinimoRepuestoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        usuario = obtener_usuario_actual(request._request)
+
+        resultado = actualizar_stock_minimo_repuesto(
+            id_repuesto=id_repuesto,
+            nuevo_minimo=serializer.validated_data["stock_minimo"],
+            usuario=usuario,
+        )
+
+        return Response({
+            "mensaje": "Stock mínimo actualizado correctamente.",
+            **resultado,
+        })
+
+
+
+
+
+class AjusteStockRepuestoView(APIView):
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def patch(self, request, id_repuesto):
+        serializer = AjusteStockRepuestoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        usuario = obtener_usuario_actual(request._request)
+
+        resultado = ajustar_stock_repuesto(
+            id_repuesto=id_repuesto,
+            nuevo_stock=serializer.validated_data["nuevo_stock"],
+            motivo=serializer.validated_data["motivo"],
+            usuario=usuario,
+        )
+
+        return Response({
+            "mensaje": "Stock ajustado correctamente.",
+            **resultado,
+        })

@@ -13,6 +13,13 @@ class IngresoRepuestoSerializer(serializers.Serializer):
         allow_blank=False,
         trim_whitespace=True,
     )
+    marca_modelo = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        trim_whitespace=True,
+    )
 
     cantidad = serializers.IntegerField(
         min_value=1,
@@ -42,5 +49,34 @@ class IngresoRepuestoSerializer(serializers.Serializer):
             raise serializers.ValidationError({
                 "nombre": "Para un repuesto existente, seleccione su ID."
             })
+        if id_repuesto is not None and attrs.get("marca_modelo"):
+            raise serializers.ValidationError({
+                "marca_modelo": (
+                    "La marca/modelo solo se ingresa "
+                    "al registrar un repuesto nuevo."
+                )
+            })
 
         return attrs
+
+
+
+class StockMinimoRepuestoSerializer(serializers.Serializer):
+    stock_minimo = serializers.IntegerField(
+        min_value=0,
+        error_messages={
+            "required": "El stock mínimo es obligatorio.",
+            "invalid": "El stock mínimo debe ser un número entero.",
+            "min_value": "El stock mínimo no puede ser negativo.",
+        },
+    )
+
+
+class AjusteStockRepuestoSerializer(serializers.Serializer):
+    nuevo_stock = serializers.IntegerField(min_value=0)
+
+    motivo = serializers.CharField(
+        max_length=180,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
