@@ -32,6 +32,8 @@ from siget_desktop.ui.views.solicitudes_view import SolicitudesView
 from siget_desktop.ui.views.tickets_view import TicketsView
 from siget_desktop.ui.views.usuarios_view import UsuariosView
 from siget_desktop.ui.workers import ApiWorker
+from siget_desktop.ui.dialogs.repuestos_dialog import IngresoRepuestoDialog
+from siget_desktop.ui.views.repuestos_view import RepuestosView
 
 
 class MainWindow(QMainWindow):
@@ -72,6 +74,7 @@ class MainWindow(QMainWindow):
         self.view_ordenes_trabajo = OrdenesTrabajoView()
         self.view_usuarios = UsuariosView()
         self.view_auditoria = AuditoriaView()
+        self.view_repuestos = RepuestosView()
 
         for view in (
             self.view_dashboard,
@@ -81,6 +84,7 @@ class MainWindow(QMainWindow):
             self.view_ordenes_trabajo,
             self.view_usuarios,
             self.view_auditoria,
+            self.view_repuestos,
         ):
             self.stacked_views.addWidget(view)
         self.view_dashboard.modulo_seleccionado.connect(self.sidebar.setCurrentRow)
@@ -159,13 +163,14 @@ class MainWindow(QMainWindow):
         sidebar.setObjectName("desktopNavigation")
 
         items = [
-            ("Panel de control", True),
+            ("Panel de Control", True),
             ("Activos TI", True),
-            ("Solicitudes y entregas", True),
-            ("Mesa de ayuda", True),
+            ("Solicitudes y Entregas", True),
+            ("Mesa de Ayuda", True),
             ("Órdenes de Trabajo", current_session.is_tecnico()),
-            ("Usuarios y roles", current_session.is_admin()),
-            ("Auditoría interna", current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")),
+            ("Usuarios y Roles", current_session.is_admin()),
+            ("Auditoría Interna", current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")),
+            ("Inventario de Repuestos", current_session.is_admin()),
         ]
 
        
@@ -182,6 +187,8 @@ class MainWindow(QMainWindow):
 
             sidebar.addItem(item)
 
+            if texto == "Inventario de Repuestos":
+                item.setHidden(not current_session.is_admin())
             if texto == "Órdenes de Trabajo":
                 item.setHidden(not current_session.is_tecnico())
             elif texto == "Usuarios y roles":
@@ -249,6 +256,7 @@ class MainWindow(QMainWindow):
         self.view_usuarios.actualizar_visibilidad_rbac()
         self.view_ordenes_trabajo.actualizar_permisos_ui()
         self.view_auditoria.actualizar_permisos_ui()
+        self.view_repuestos.actualizar_permisos_ui()
 
         # Mostrar Órdenes de Trabajo solo al Técnico de soporte.
         item_ordenes = self.sidebar.item(4)
@@ -265,8 +273,24 @@ class MainWindow(QMainWindow):
                 item_ordenes.setFlags(Qt.ItemFlag.NoItemFlags)
                 item_ordenes.setToolTip("Exclusivo para Técnico de soporte")
 
+        # Mostrar item de repuestos solo a Administrador
+        item_repuestos = self.sidebar.item(7)
+        if item_repuestos:
+            es_admin = current_session.is_admin()
+            item_repuestos.setHidden(not es_admin)
+            item_repuestos.setFlags(
+                Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                if es_admin else Qt.ItemFlag.NoItemFlags
+            )
+
  
     def _cambiar_vista(self, index: int):
+
+        if index == 7 and not current_session.is_admin():
+            self.sidebar.setCurrentRow(0)
+            return
+
+
         if index < 0 or index >= self.stacked_views.count():
             return
 
@@ -284,6 +308,9 @@ class MainWindow(QMainWindow):
             return
 
         self.stacked_views.setCurrentIndex(index)
+
+        if index == 7:
+            self.view_repuestos.cargar_repuestos()
 
         # Carga automática bajo demanda.
         if index == 1 and self.view_activos.tabla.rowCount() == 0:

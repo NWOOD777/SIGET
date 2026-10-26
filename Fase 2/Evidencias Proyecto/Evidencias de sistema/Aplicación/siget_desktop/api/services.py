@@ -663,3 +663,28 @@ def cambiar_estado_ticket(id_ticket: int, id_estado_ticket: int, mensaje: str) -
 def asignar_ticket(id_ticket: int, id_tecnico_asignado: int, motivo: str) -> dict[str, Any]:
     """Asigna o reasigna un responsable mediante la administración de tickets."""
     return _objeto(api_client.post(f"/api/tickets/{id_ticket}/asignar/", json={"id_tecnico_asignado": id_tecnico_asignado, "motivo": motivo}))
+
+
+
+# ============================================================================
+# REPUESTOS 
+# ============================================================================
+
+def registrar_ingreso_repuesto(datos: dict[str, Any]) -> dict[str, Any]:
+    """Registra una compra de repuestos (exclusivo Administrador)."""
+    resultado = api_client.post("/api/repuestos/ingresos/", json=datos)
+    return _objeto(resultado)
+
+def listar_repuestos(busqueda: str = "") -> list[dict[str, Any]]:
+    """Consulta el inventario de repuestos desde Django."""
+    params = {"search": busqueda} if busqueda else None
+
+    resultado = api_client.get(
+        "/api/repuestos/",
+        params=params,
+    )
+
+    if not isinstance(resultado, list):
+        raise ValueError("La API no devolvió un listado de repuestos.")
+
+    return resultado

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "usuarios",
     "activos",
     "asignaciones",
+    "repuestos",
     "tickets",
     "ordenes_trabajo",
     "notificaciones",
