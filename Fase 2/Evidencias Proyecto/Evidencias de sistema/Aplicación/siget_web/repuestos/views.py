@@ -16,6 +16,9 @@ from .services import actualizar_stock_minimo_repuesto
 from .serializers import AjusteStockRepuestoSerializer
 from .services import ajustar_stock_repuesto
 
+from .serializers import EstadoRepuestoSerializer
+from .services import cambiar_estado_repuesto
+
 
 
 class IngresoRepuestoView(APIView):
@@ -48,7 +51,23 @@ class ListadoRepuestosView(APIView):
     def get(self, request):
         busqueda = request.query_params.get("search", "").strip()
 
-        repuestos = Repuesto.objects.all().order_by("id_repuesto")
+     
+        estado = request.query_params.get("estado", "activos").strip().lower()
+
+        if estado not in ("activos", "inactivos", "todos"):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({
+                "estado": "Utilice activos, inactivos o todos."
+            })
+
+        repuestos = Repuesto.objects.all()
+
+        if estado == "activos":
+            repuestos = repuestos.filter(activo=True)
+        elif estado == "inactivos":
+            repuestos = repuestos.filter(activo=False)
+
+        repuestos = repuestos.order_by("id_repuesto")
 
         if busqueda:
             from django.db.models import Q
@@ -66,6 +85,7 @@ class ListadoRepuestosView(APIView):
                 "marca_modelo": r.marca_modelo,
                 "stock_actual": r.stock_actual,
                 "stock_minimo": r.stock_minimo,
+                "activo": r.activo,
                 "estado_stock": (
                     "Stock crítico"
                     if r.stock_actual <= r.stock_minimo
@@ -92,7 +112,7 @@ class AlertasRepuestosView(APIView):
     def get(self, request):
         repuestos = (
             Repuesto.objects
-            .filter(stock_actual__lte=F("stock_minimo"))
+            .filter(activo=True, stock_actual__lte=F("stock_minimo"))
             .order_by("stock_actual", "id_repuesto")
         )
 
@@ -168,5 +188,31 @@ class AjusteStockRepuestoView(APIView):
 
         return Response({
             "mensaje": "Stock ajustado correctamente.",
+            **resultado,
+        })
+
+
+class EstadoRepuestoView(APIView):
+    permission_classes = [PuedeAdministrarUsuarios]
+
+    def patch(self, request, id_repuesto):
+        serializer = EstadoRepuestoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        usuario = obtener_usuario_actual(request._request)
+
+        resultado = cambiar_estado_repuesto(
+            id_repuesto=id_repuesto,
+            activo=serializer.validated_data["activo"],
+            motivo=serializer.validated_data["motivo"],
+            usuario=usuario,
+        )
+
+        return Response({
+            "mensaje": (
+                "Repuesto reactivado correctamente."
+                if resultado["activo"]
+                else "Repuesto dado de baja correctamente."
+            ),
             **resultado,
         })

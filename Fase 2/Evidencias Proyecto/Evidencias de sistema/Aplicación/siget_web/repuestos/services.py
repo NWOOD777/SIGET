@@ -27,10 +27,26 @@ def registrar_ingreso_repuesto(datos, usuario):
             Repuesto.objects.select_for_update()
             .filter(id_repuesto=id_repuesto)
             .first()
-        )
+        )        
 
         if repuesto is None:
             raise NotFound("El repuesto seleccionado no existe.")
+
+        # Impedir ingresos de compras a repuestos inactivos.
+        if not repuesto.activo:
+            raise ValidationError({
+                "id_repuesto": (
+                    "El repuesto está dado de baja. "
+                    "Debe reactivarlo antes de registrar un ingreso."
+                )
+            })
+
+        stock_anterior = repuesto.stock_actual
+
+        if not repuesto.activo:
+            raise ValidationError({
+                "id_repuesto": "El repuesto está dado de baja. Debe reactivarlo antes de registrar ingresos."
+            })
 
         stock_anterior = repuesto.stock_actual
         costo_anterior = repuesto.precio_unitario
@@ -124,6 +140,15 @@ def actualizar_stock_minimo_repuesto(id_repuesto, nuevo_minimo, usuario):
     if repuesto is None:
         raise NotFound("El repuesto seleccionado no existe.")
 
+    # Impedir modificar repuestos dados de baja.
+    if not repuesto.activo:
+        raise ValidationError({
+            "id_repuesto": (
+                "El repuesto está dado de baja. "
+                "Debe reactivarlo antes de modificar su stock mínimo."
+            )
+        })
+
     minimo_anterior = repuesto.stock_minimo
 
     repuesto.stock_minimo = nuevo_minimo
@@ -161,8 +186,6 @@ def actualizar_stock_minimo_repuesto(id_repuesto, nuevo_minimo, usuario):
 
 
 
-
-
 @transaction.atomic
 def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
     repuesto = (
@@ -173,6 +196,15 @@ def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
 
     if repuesto is None:
         raise NotFound("El repuesto seleccionado no existe.")
+
+    # Impedir ajustes sobre repuestos dados de baja.
+    if not repuesto.activo:
+        raise ValidationError({
+            "id_repuesto": (
+                "El repuesto está dado de baja. "
+                "Debe reactivarlo antes de ajustar su stock."
+            )
+        })
 
     stock_anterior = repuesto.stock_actual
 
@@ -225,4 +257,60 @@ def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
         "diferencia": diferencia,
         "motivo": motivo,
         "estado": "Stock crítico" if es_critico else "Normal",
+    }
+
+
+
+@transaction.atomic
+def cambiar_estado_repuesto(id_repuesto, activo, motivo, usuario):
+    repuesto = (
+        Repuesto.objects.select_for_update()
+        .filter(id_repuesto=id_repuesto)
+        .first()
+    )
+
+    if repuesto is None:
+        raise NotFound("El repuesto seleccionado no existe.")
+
+    if repuesto.activo == activo:
+        raise ValidationError({
+            "activo": (
+                "El repuesto ya se encuentra activo."
+                if activo
+                else "El repuesto ya se encuentra dado de baja."
+            )
+        })
+
+    estado_anterior = repuesto.activo
+    repuesto.activo = activo
+    repuesto.save(update_fields=["activo"])
+
+    accion = (
+        "REACTIVAR_REPUESTO"
+        if activo
+        else "DAR_BAJA_REPUESTO"
+    )
+
+    registrar_auditoria(
+        usuario=usuario,
+        modulo="REPUESTOS",
+        accion=accion,
+        entidad_afectada="repuesto",
+        id_registro_afectado=repuesto.id_repuesto,
+        detalle_evento=(
+            f"{'Reactivación' if activo else 'Baja'} del repuesto "
+            f"{repuesto.codigo_repuesto} ({repuesto.nombre}). "
+            f"Estado anterior: {'Activo' if estado_anterior else 'Inactivo'}. "
+            f"Estado nuevo: {'Activo' if activo else 'Inactivo'}. "
+            f"Motivo: {motivo}."
+        ),
+    )
+
+    return {
+        "id_repuesto": repuesto.id_repuesto,
+        "codigo_repuesto": repuesto.codigo_repuesto,
+        "nombre": repuesto.nombre,
+        "activo": repuesto.activo,
+        "motivo": motivo,
+        "stock_actual": repuesto.stock_actual,
     }

@@ -80,3 +80,15 @@ class AjusteStockRepuestoSerializer(serializers.Serializer):
         allow_blank=False,
         trim_whitespace=True,
     )
+
+
+
+
+class EstadoRepuestoSerializer(serializers.Serializer):
+    activo = serializers.BooleanField()
+    motivo = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        max_length=180,
+        trim_whitespace=True,
+    )

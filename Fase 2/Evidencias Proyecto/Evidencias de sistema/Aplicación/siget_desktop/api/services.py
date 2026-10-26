@@ -672,22 +672,28 @@ def asignar_ticket(id_ticket: int, id_tecnico_asignado: int, motivo: str) -> dic
 
 def registrar_ingreso_repuesto(datos: dict[str, Any]) -> dict[str, Any]:
     """Registra una compra de repuestos (exclusivo Administrador)."""
-    resultado = api_client.post("/api/repuestos/ingresos/", json=datos)
+    resultado = api_client.post(
+        "/api/repuestos/ingresos/",
+        json=datos,
+    )
     return _objeto(resultado)
 
-def listar_repuestos(busqueda: str = "") -> list[dict[str, Any]]:
-    """Consulta el inventario de repuestos desde Django."""
-    params = {"search": busqueda} if busqueda else None
+def listar_repuestos(
+    busqueda: str = "",
+    estado: str = "activos",
+) -> list[dict[str, Any]]:
+    """Consulta el inventario de repuestos, incluyendo filtros de estado."""
+    params = {"estado": estado}
+
+    if busqueda:
+        params["search"] = busqueda.strip()
 
     resultado = api_client.get(
         "/api/repuestos/",
         params=params,
     )
 
-    if not isinstance(resultado, list):
-        raise ValueError("La API no devolvió un listado de repuestos.")
-
-    return resultado
+    return _lista(resultado)
 
 
 def listar_alertas_repuestos() -> dict[str, Any]:
@@ -722,4 +728,32 @@ def ajustar_stock_repuesto(
             "motivo": motivo,
         },
     )
+    return _objeto(resultado)
+
+
+def cambiar_estado_repuesto(
+    id_repuesto: int,
+    activo: bool,
+    motivo: str,
+) -> dict[str, Any]:
+    """
+    Da de baja o reactiva un repuesto sin eliminarlo
+    de PostgreSQL ni perder su historial.
+    """
+    motivo = motivo.strip()
+
+    if not motivo:
+        raise ValueError("Debes ingresar un motivo obligatorio.")
+
+    if len(motivo) > 180:
+        raise ValueError("El motivo no puede superar 180 caracteres.")
+
+    resultado = api_client.patch(
+        f"/api/repuestos/{id_repuesto}/estado/",
+        json={
+            "activo": activo,
+            "motivo": motivo,
+        },
+    )
+
     return _objeto(resultado)
