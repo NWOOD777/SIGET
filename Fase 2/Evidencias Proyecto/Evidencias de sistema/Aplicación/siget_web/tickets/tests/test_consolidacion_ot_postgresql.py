@@ -1,21 +1,19 @@
-"""Regresión de concurrencia OT y caracterización de comportamientos pendientes.
-
-Los casos pendientes están omitidos expresamente, no son regresiones deliberadas.
-La sincronización instrumental solo controla el orden de SQL; no reemplaza servicios.
-"""
+"""Pruebas de concurrencia, estados y validación de órdenes de trabajo en PostgreSQL."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Event
 from unittest.mock import patch
 
 from django.db import connection, connections
 from rest_framework.exceptions import ValidationError
-from notificaciones.models import Notificacion
 
 from activos.models import EstadoActivo
 from asignaciones.models import HistorialEstadoActivo
+from notificaciones.models import Notificacion
 from ordenes_trabajo.models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
 from ordenes_trabajo.services import (
-    crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo,
+    crear_orden_trabajo,
+    iniciar_reparacion,
+    pausar_orden_trabajo,
     reanudar_orden_trabajo,
 )
 from tickets.services import crear_ticket
@@ -26,7 +24,7 @@ from usuarios.models import BitacoraAuditoria
 class ConsolidacionOTFixture(EstadoFixture):
     def setUp(self):
         super().setUp()
-        # También acota la conexión principal si una implementación futura cambia los bloqueos.
+        # Limita la espera de bloqueos en la conexión principal.
         with connection.cursor() as cursor:
             cursor.execute("SET lock_timeout = '4s'")
             cursor.execute("SET statement_timeout = '8s'")
@@ -48,20 +46,6 @@ class ConsolidacionOTFixture(EstadoFixture):
         ticket = crear_ticket(self.otro, "Otra falla", "Descripción", id_activo=activo.pk)
         return self.crear_ot(ticket)
 
-
-class CaracterizacionIntegracionOTTests(ConsolidacionOTFixture):
-    def test_dos_tickets_del_mismo_activo_rechaza_segunda_ot_sin_efectos(self):
-        primera = self.crear_ot()
-        otro_ticket = crear_ticket(
-            self.otro, "Otro incidente", "Descripción", id_activo=self.activo_ot.pk
-        )
-        antes = (Diagnostico.objects.count(), BitacoraAuditoria.objects.count(), Notificacion.objects.count())
-        with self.assertRaises(ValidationError) as error:
-            self.crear_ot(otro_ticket)
-        self.assertIn("id_activo", error.exception.detail)
-        self.assertEqual(OrdenTrabajo.objects.count(), 1)
-        self.assertEqual(OrdenTrabajo.objects.get().pk, primera.pk)
-        self.assertEqual((Diagnostico.objects.count(), BitacoraAuditoria.objects.count(), Notificacion.objects.count()), antes)
 
     def carrera_controlada(self, primero, segundo, accion, rollback=False):
         tomado, intentando, continuar = Event(), Event(), Event()
@@ -110,6 +94,23 @@ class CaracterizacionIntegracionOTTests(ConsolidacionOTFixture):
             finally:
                 continuar.set()
             return a.result(timeout=15), b.result(timeout=15)
+
+
+
+class CaracterizacionIntegracionOTTests(ConsolidacionOTFixture):
+    def test_dos_tickets_del_mismo_activo_rechaza_segunda_ot_sin_efectos(self):
+        primera = self.crear_ot()
+        otro_ticket = crear_ticket(
+            self.otro, "Otro incidente", "Descripción", id_activo=self.activo_ot.pk
+        )
+        antes = (Diagnostico.objects.count(), BitacoraAuditoria.objects.count(), Notificacion.objects.count())
+        with self.assertRaises(ValidationError) as error:
+            self.crear_ot(otro_ticket)
+        self.assertIn("id_activo", error.exception.detail)
+        self.assertEqual(OrdenTrabajo.objects.count(), 1)
+        self.assertEqual(OrdenTrabajo.objects.get().pk, primera.pk)
+        self.assertEqual((Diagnostico.objects.count(), BitacoraAuditoria.objects.count(), Notificacion.objects.count()), antes)
+
 
     def test_reanudar_diagnostico_conserva_fase_y_activo_en_revision(self):
         orden = self.crear_ot()
@@ -169,8 +170,10 @@ class CaracterizacionIntegracionOTTests(ConsolidacionOTFixture):
             for pausa_primero in (True, False):
                 with self.subTest(repeticion=repeticion, pausa_primero=pausa_primero):
                     orden = self.segunda_ot()
-                    iniciar = lambda: iniciar_reparacion(orden.pk, self.tecnico)
-                    pausar = lambda: pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa concurrente")
+                    def iniciar():
+                        return iniciar_reparacion(orden.pk, self.tecnico)
+                    def pausar():
+                        return pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa concurrente")
                     if pausa_primero:
                         resultados = self.carrera_controlada(pausar, iniciar, "OT_PAUSADA")
                         self.assertEqual(resultados, (200, 400))

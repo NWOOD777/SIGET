@@ -1,23 +1,4 @@
-"""
-Pruebas unitarias para el comando de gestión Django primer_admin (Bootstrap inicial de SIGET).
-
-Cubre exhaustivamente:
-1. Creación exitosa del primer Administrador.
-2. Se crea identidad Auth0 mediante mock.
-3. Se crea Usuario local.
-4. Se crea UsuarioRol con Administrador del sistema.
-5. No se persiste contraseña localmente.
-6. No se imprime ni expone contraseña transitoria en salida.
-7. Se dispara recuperación/configuración inicial en Auth0.
-8. Correo inválido rechazado con CommandError.
-9. Usuario local duplicado rechazado (por correo o RUT).
-10. Rol Administrador inexistente en base de datos rechazado.
-11. Si ya existe Administrador local, comando aborta por defecto.
-12. Fallo en Auth0 aborta sin mutar PostgreSQL.
-13. Fallo en PostgreSQL dispara compensación en Auth0.
-14. Fallo en envío de correo de invitación se maneja controladamente sin revertir la cuenta.
-15. Auditoría se registra con acción PRIMER_ADMIN.
-"""
+"""Pruebas del registro del primer Administrador, validaciones y compensación de errores de Auth0."""
 
 from io import StringIO
 from unittest.mock import patch

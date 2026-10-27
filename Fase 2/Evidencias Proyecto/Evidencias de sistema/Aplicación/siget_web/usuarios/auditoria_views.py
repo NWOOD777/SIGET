@@ -1,8 +1,4 @@
-"""
-Vistas API REST para la consulta de la bitácora de auditoría protegida.
-Exclusivas para Administradores del sistema autorizados (permiso AUDITORIA_CONSULTAR).
-Garantiza trazabilidad de operaciones críticas, orden cronológico e inmutabilidad estricta.
-"""
+"""Consulta de auditoría para Administradores con permiso AUDITORIA_CONSULTAR. Solo admite lectura."""
 
 from __future__ import annotations
 

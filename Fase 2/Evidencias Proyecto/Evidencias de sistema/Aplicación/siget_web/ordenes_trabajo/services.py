@@ -11,8 +11,8 @@ from tickets.models import SLA, Ticket
 from usuarios.models import BitacoraAuditoria, Usuario
 from usuarios.services import registrar_auditoria
 
-from .models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
 from .auditoria_fases import detalle_fase, recuperar_fase_pausada
+from .models import Diagnostico, EstadoOrdenTrabajo, OrdenTrabajo
 
 ESTADO_OT_DIAGNOSTICO = "En Diagnóstico"
 ESTADO_OT_REPARACION = "En Reparación"

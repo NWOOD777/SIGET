@@ -17,6 +17,7 @@ class EstadoOrdenTrabajo(models.Model):
 
 class OrdenTrabajo(models.Model):
     id_ticket_id: int
+    id_tecnico_responsable_id: int
 
     id_orden = models.AutoField(primary_key=True)
     codigo_ot = models.CharField(max_length=50, unique=True)

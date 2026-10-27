@@ -12,7 +12,7 @@ La respuesta contiene `id_ticket`, `codigo_ticket`, `id_usuario_solicitante`, `s
 
 `estado` y `prioridad` son objetos con sus datos de catálogo. `solicitante`, `tecnico_asignado` y `activo` contienen información del registro relacionado; los dos últimos pueden ser `null`.
 
-Un ticket inexistente responde `404` y un ticket de otra persona fuera del alcance permitido, `403`. Esta ruta ofrece consulta; no incluye asignación de Técnico ni resolución.
+Un ticket inexistente responde `404` y un ticket de otra persona fuera del alcance permitido, `403`.
 
 Consultar [autenticación y uso general](../../uso_general.md) y [respuestas y errores](../../respuestas_y_errores.md).
 

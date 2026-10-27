@@ -1,7 +1,6 @@
 import time
 
 from django.conf import settings
-from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import DatabaseError, close_old_connections
 from psycopg import Error as PsycopgError
@@ -39,7 +38,6 @@ class Command(BaseCommand):
             raise CommandError("Intervalo y límite deben ser positivos.")
         if settings.RESEND_TIMEOUT_SECONDS <= 0 or not 1 <= settings.RESEND_MAX_ATTEMPTS <= 20 or settings.RESEND_RETRY_SECONDS < 1:
             raise CommandError("Configuración inválida de timeout, máximo de intentos o espera.")
-        call_command("preparar_notificaciones", verbosity=0)
         if not options["continuo"]:
             try:
                 self._procesar_ciclo(options, revisar_recordatorios=True)

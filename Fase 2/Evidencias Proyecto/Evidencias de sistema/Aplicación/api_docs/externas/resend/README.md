@@ -26,16 +26,9 @@ Para una instalación nueva:
 docker compose up -d --build
 ```
 
-Para actualizar una instalación que ya contiene datos:
-
-```bash
-docker compose build web
-docker compose up -d postgres
-docker compose run --rm --no-deps web python manage.py preparar_notificaciones
-docker compose up -d web correo
-```
-
-`preparar_notificaciones` amplía la tabla de notificaciones de forma aditiva. Conserva los registros existentes y puede ejecutarse más de una vez. El archivo de inicialización de la base contiene instrucciones de borrado y se utiliza solamente al crear una base nueva.
+El esquema de notificaciones está definido en `init_siget_bd.sql`, junto con
+el resto de las tablas. El servicio de correo procesa esa estructura existente;
+no crea ni modifica tablas al arrancar.
 
 ## Funcionamiento
 

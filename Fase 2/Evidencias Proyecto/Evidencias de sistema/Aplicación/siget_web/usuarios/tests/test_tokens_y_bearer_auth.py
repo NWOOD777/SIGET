@@ -1,7 +1,4 @@
-"""
-Pruebas exhaustivas para la validación de access tokens Auth0,
-autenticación Bearer en DRF y el endpoint /api/usuarios/me/.
-"""
+"""Pruebas de validación de tokens, autenticación Bearer y consulta de identidad."""
 
 import time
 from typing import Any
@@ -54,7 +51,7 @@ TEST_PRIVATE_KEY_2, _ = _generar_par_claves_rsa()
 
 
 class ValidacionAccessTokenUnitTests(TestCase):
-    """Pruebas unitarias de tokens.py verificando todos los criterios RFC y Auth0."""
+    """Pruebas de firma, emisor, audiencia y vigencia de los tokens de acceso."""
 
     DOMAIN = "siget.us.auth0.com"
     ISSUER = "https://siget.us.auth0.com/"

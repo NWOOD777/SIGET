@@ -76,7 +76,7 @@ Cada ticket admite como máximo una evaluación (`UNIQUE (id_ticket)` en `evalua
     "detail": "Este ticket ya cuenta con una evaluación de satisfacción registrada."
   }
   ```
-- Si llegan dos envíos simultáneos para el mismo ticket, el bloqueo `FOR UPDATE` sobre el ticket y la restricción `UNIQUE` de PostgreSQL garantizan que se persista una única evaluación (`201 Created`) y que la solicitud concurrente reciba una respuesta controlada `400 Bad Request` (nunca un error `500`).
+- Los envíos simultáneos se procesan por turnos mediante un bloqueo sobre el ticket. La restricción `UNIQUE` permite guardar una sola evaluación: el primer envío responde `201 Created` y el segundo, `400 Bad Request`.
 
 ---
 

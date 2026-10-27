@@ -1,10 +1,27 @@
 """Validación de entrada sin PostgreSQL, con límites de los AutoField existentes."""
+from typing import Any
+
 from django.test import SimpleTestCase
 
 from ordenes_trabajo.serializers import (
-    CrearOrdenTrabajoSerializer, OperacionOTSerializer, PausarOrdenTrabajoSerializer,
-    ReasignarOrdenTrabajoSerializer, RutaOrdenTrabajoSerializer,
+    CrearOrdenTrabajoSerializer,
+    OperacionOTSerializer,
+    PausarOrdenTrabajoSerializer,
+    ReasignarOrdenTrabajoSerializer,
+    RutaOrdenTrabajoSerializer,
 )
+
+
+def datos_validados(serializer) -> dict[str, Any]:
+    datos = serializer.validated_data
+    assert isinstance(datos, dict)
+    return datos
+
+
+def errores(serializer) -> dict[str, Any]:
+    datos = serializer.errors
+    assert isinstance(datos, dict)
+    return datos
 
 
 class ValidacionEntradasOTTests(SimpleTestCase):
@@ -18,7 +35,7 @@ class ValidacionEntradasOTTests(SimpleTestCase):
                 with self.subTest(serializer=serializer_class.__name__, valor=valor):
                     serializer = serializer_class(data={**base, nombre: valor})
                     self.assertTrue(serializer.is_valid(), serializer.errors)
-                    self.assertEqual(serializer.validated_data[nombre], int(valor))
+                    self.assertEqual(datos_validados(serializer)[nombre], int(valor))
             for valor in (None, True, False, 0, -1, 1.0, 2147483648, "", " ", "1.0", "²", "١", "１", "9"*5000, [], {}):
                 with self.subTest(serializer=serializer_class.__name__, valor=str(valor)[:30]):
                     serializer = serializer_class(data={**base, nombre: valor})
@@ -41,21 +58,21 @@ class ValidacionEntradasOTTests(SimpleTestCase):
                     self.assertIn(campo, serializer.errors)
             serializer = clase(data={**base, campo: "  Texto válido  "})
             self.assertTrue(serializer.is_valid(), serializer.errors)
-            self.assertEqual(serializer.validated_data[campo], "Texto válido")
+            self.assertEqual(datos_validados(serializer)[campo], "Texto válido")
 
     def test_booleano_estricto_y_predeterminado(self):
         base = {"id_ticket": 1, "descripcion_falla": "Falla", "procedimiento_inicial": "Revisión"}
         serializer = CrearOrdenTrabajoSerializer(data=base)
         self.assertTrue(serializer.is_valid())
-        self.assertIs(serializer.validated_data["es_reparable"], True)
+        self.assertIs(datos_validados(serializer)["es_reparable"], True)
         for valor in (True, False):
             serializer = CrearOrdenTrabajoSerializer(data={**base, "es_reparable": valor})
             self.assertTrue(serializer.is_valid(), serializer.errors)
-            self.assertIs(serializer.validated_data["es_reparable"], valor)
+            self.assertIs(datos_validados(serializer)["es_reparable"], valor)
         for valor in (None, 0, 1, "true", "false", "", [], {}):
             serializer = CrearOrdenTrabajoSerializer(data={**base, "es_reparable": valor})
             self.assertFalse(serializer.is_valid())
-            self.assertEqual(str(serializer.errors["es_reparable"][0]), "Debe ser verdadero o falso.")
+            self.assertEqual(str(errores(serializer)["es_reparable"][0]), "Debe ser verdadero o falso.")
 
     def test_operaciones_sin_campos_admiten_objeto_y_extras_ignorados(self):
         for datos in ({}, {"extra": "ignorado"}):
@@ -68,6 +85,6 @@ class ValidacionEntradasOTTests(SimpleTestCase):
     def test_mensajes_existentes_por_campo_se_conservan(self):
         serializer = CrearOrdenTrabajoSerializer(data={})
         self.assertFalse(serializer.is_valid())
-        self.assertEqual(str(serializer.errors["id_ticket"][0]), "Debe indicar un ID de ticket válido.")
-        self.assertEqual(str(serializer.errors["descripcion_falla"][0]), "La descripción de la falla es obligatoria.")
-        self.assertEqual(str(serializer.errors["procedimiento_inicial"][0]), "El procedimiento inicial es obligatorio.")
+        self.assertEqual(str(errores(serializer)["id_ticket"][0]), "Debe indicar un ID de ticket válido.")
+        self.assertEqual(str(errores(serializer)["descripcion_falla"][0]), "La descripción de la falla es obligatoria.")
+        self.assertEqual(str(errores(serializer)["procedimiento_inicial"][0]), "El procedimiento inicial es obligatorio.")

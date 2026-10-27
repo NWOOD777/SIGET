@@ -1,8 +1,4 @@
-"""
-Gestión de sesión del usuario en memoria para el cliente PySide6.
-Garantiza que los tokens y datos de autorización se almacenen de forma controlada
-y se eliminen limpiamente al cerrar sesión.
-"""
+"""Datos de sesión y permisos del usuario autenticado en el escritorio."""
 
 from __future__ import annotations
 

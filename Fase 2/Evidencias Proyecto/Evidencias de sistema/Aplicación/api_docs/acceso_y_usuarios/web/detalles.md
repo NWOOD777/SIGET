@@ -14,6 +14,6 @@ En `/tickets/{id}/`, la sección de **Calificación de servicio (CSAT)** adapta 
 - **Ticket ya evaluado**: muestra la puntuación otorgada, el comentario (escapado como texto seguro) y la fecha de evaluación en modo de solo lectura, sin habilitar edición ni reenvío.
 - **Ticket aún no cerrado (`Abierto`, `En Proceso`, `En Espera` o `Resuelto`)**: informa que la calificación estará disponible únicamente cuando el ticket alcance el estado `Cerrado`.
 
-El inicio del portal y los correos enlazan a estas páginas de detalle. La creación desde los formularios conduce primero a `/solicitudes/{id}/confirmacion/` o `/tickets/{id}/confirmacion/`. La confirmación se muestra una sola vez en la sesión que registró el caso; las visitas posteriores redirigen al detalle. Así, los enlaces anteriores conservan su utilidad sin mostrar nuevamente un mensaje de registro exitoso.
+El inicio del portal y los correos enlazan a estas páginas de detalle. La creación desde los formularios conduce primero a `/solicitudes/{id}/confirmacion/` o `/tickets/{id}/confirmacion/`. La confirmación se muestra una sola vez en la sesión que registró el caso; las visitas posteriores redirigen al detalle.
 
 [Acceso y usuarios](../README.md) · [Índice general](../../README.md)

@@ -11,11 +11,11 @@ En las tablas se utilizan los nombres abreviados **Solicitante**, **Técnico** y
 SIGET admite dos modalidades de autenticación según el canal de interacción:
 
 1. **Sesión Web (Plataforma Web):** Evaluada mediante cookies de sesión HTTP. Las operaciones que registran, modifican o retiran información requieren además el encabezado `X-CSRFToken` con el valor vigente de la cookie `csrftoken`.
-2. **Access Token Bearer (Aplicación de Escritorio PySide6):** Las peticiones envían el encabezado `Authorization: Bearer <access_token>`, obtenido mediante el flujo OAuth 2.0 Authorization Code con PKCE. No utiliza cookies ni requiere protección CSRF. El backend valida criptográficamente la firma RS256 contra las claves públicas JWKS de Auth0, el emisor (`iss`), la audiencia configurada (`aud`) y la vigencia (`exp`). La resolución de la identidad se realiza contra los registros en PostgreSQL, garantizando que los permisos y roles asignados se validen de forma autoritativa.
+2. **Access Token Bearer (Aplicación de Escritorio PySide6):** El escritorio envía `Authorization: Bearer <access_token>`, obtenido con OAuth 2.0 y PKCE. El backend comprueba la firma del token, su emisor, audiencia y vencimiento mediante las claves públicas de Auth0. Luego consulta la cuenta y sus permisos en PostgreSQL. Esta modalidad no usa cookies de sesión.
 
 Los valores entre llaves, como `{id}`, se reemplazan por el identificador del registro. Los identificadores de los ejemplos son ilustrativos: deben consultarse los registros y catálogos del entorno utilizado. Las fechas simples usan `AAAA-MM-DD`; las fechas con hora usan el formato ISO 8601, por ejemplo `2026-10-20T15:00:00Z`.
 
-Las consultas de listado responden con una lista. Si no hay coincidencias, devuelven `[]` y código `200`. Actualmente los listados no tienen paginación. Las rutas de API admiten `OPTIONS` para consultar sus métodos disponibles; las rutas con consulta `GET` también admiten `HEAD`.
+Las consultas de listado responden con una lista. Si no hay coincidencias, devuelven `[]` y código `200`. Las rutas de API admiten `OPTIONS` para consultar sus métodos disponibles; las rutas con consulta `GET` también admiten `HEAD`.
 
 En solicitudes de sesión Web, visitar `/` obtiene la cookie CSRF. Su valor debe leerse nuevamente después del login. Las cookies de un navegador no se comparten automáticamente con otro cliente.
 

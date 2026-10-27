@@ -1,11 +1,10 @@
-"""Alternativa A: fase explícita, legado conservador, activos y concurrencia."""
+"""Fase explícita de OT, integridad del activo y concurrencia."""
 import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from unittest.mock import patch
 
 from django.db import connections, transaction
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from activos.models import Activo, EstadoActivo
@@ -13,7 +12,9 @@ from notificaciones.models import Notificacion
 from ordenes_trabajo.auditoria_fases import MARCADOR_FASE
 from ordenes_trabajo.models import OrdenTrabajo
 from ordenes_trabajo.services import (
-    iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo,
+    iniciar_reparacion,
+    pausar_orden_trabajo,
+    reanudar_orden_trabajo,
     reasignar_orden_trabajo,
 )
 from tickets.tests.test_consolidacion_ot_postgresql import ConsolidacionOTFixture
@@ -22,17 +23,19 @@ from usuarios.models import BitacoraAuditoria
 
 class ReanudacionFaseOTTests(ConsolidacionOTFixture):
     def evento(self, orden, accion="OT_PAUSADA"):
-        return BitacoraAuditoria.objects.filter(
+        evento = BitacoraAuditoria.objects.filter(
             modulo="ORDENES_TRABAJO", entidad_afectada="orden_trabajo",
             id_registro_afectado=orden.pk, accion=accion,
         ).order_by("-id_auditoria").first()
+        assert evento is not None, "Debe existir el evento de auditoría de la operación."
+        return evento
 
     def instantanea(self, orden):
         return (OrdenTrabajo.objects.values().get(pk=orden.pk),
                 Activo.objects.values().get(pk=orden.id_ticket.id_activo_id),
                 BitacoraAuditoria.objects.count(), Notificacion.objects.count())
 
-    def legado(self, orden):
+    def quitar_metadatos_pausa(self, orden):
         evento = self.evento(orden)
         evento.detalle_evento = f"Se pausó la OT {orden.codigo_ot}. Motivo: {orden.justificacion_pausa}"
         evento.save(update_fields=["detalle_evento"])
@@ -68,26 +71,25 @@ class ReanudacionFaseOTTests(ConsolidacionOTFixture):
         self.assertEqual(sum(e["accion"] == "OT_PAUSADA" for e in historial.data), 6)
         self.assertEqual(sum(e["accion"] == "OT_REANUDADA" for e in historial.data), 6)
 
-    def test_legacy_primer_ciclo_en_ambas_fases_con_fechas_iguales(self):
+    def test_pausa_sin_metadatos_no_permite_inferir_la_fase(self):
         for reparar in (False, True):
             with self.subTest(reparar=reparar):
                 orden = self.segunda_ot()
                 if reparar:
                     iniciar_reparacion(orden.pk, self.tecnico)
-                pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa histórica")
-                self.legado(orden)
-                # El orden causal usa ID, sin depender de desempates de fecha.
-                BitacoraAuditoria.objects.filter(entidad_afectada="orden_trabajo", id_registro_afectado=orden.pk).update(fecha_evento=timezone.now())
-                reanudar_orden_trabajo(orden.pk, self.tecnico)
-                orden.refresh_from_db()
-                self.assertEqual(orden.id_estado_ot.nombre, "En Reparación" if reparar else "En Diagnóstico")
+                pausar_orden_trabajo(orden.pk, self.tecnico, "Espera de insumo")
+                self.quitar_metadatos_pausa(orden)
+                antes = self.instantanea(orden)
+                with self.assertRaises(ValidationError):
+                    reanudar_orden_trabajo(orden.pk, self.tecnico)
+                self.assertEqual(self.instantanea(orden), antes)
 
-    def test_legacy_incompleto_o_ambiguo_rechazado_sin_efectos(self):
+    def test_historial_incompleto_o_ambiguo_rechazado_sin_efectos(self):
         for problema in ("sin_creacion", "sin_pausa", "reanudacion_antigua", "accion_desconocida"):
             with self.subTest(problema=problema):
                 orden = self.segunda_ot()
                 pausar_orden_trabajo(orden.pk, self.tecnico, "Histórica")
-                self.legado(orden)
+                self.quitar_metadatos_pausa(orden)
                 if problema == "sin_creacion":
                     self.evento(orden, "OT_CREADA").delete()
                 elif problema == "sin_pausa":
@@ -96,7 +98,7 @@ class ReanudacionFaseOTTests(ConsolidacionOTFixture):
                     evento = self.evento(orden)
                     BitacoraAuditoria.objects.create(
                         id_usuario=self.tecnico, modulo="ORDENES_TRABAJO", accion="OT_REANUDADA",
-                        entidad_afectada="orden_trabajo", id_registro_afectado=orden.pk, detalle_evento="Legado",
+                        entidad_afectada="orden_trabajo", id_registro_afectado=orden.pk, detalle_evento="Evento sin metadatos",
                     )
                     evento.pk = None
                     evento.save(force_insert=True)
@@ -180,14 +182,15 @@ class ReanudacionFaseOTTests(ConsolidacionOTFixture):
 
     def test_reanudacion_y_reasignacion_concurrentes_preservan_ambos_cambios(self):
         # Reutiliza el arnés con dos conexiones y esperas limitadas de consolidación.
-        from tickets.tests.test_consolidacion_ot_postgresql import CaracterizacionIntegracionOTTests
         for primero_reanudar in (True, False):
             orden = self.segunda_ot()
             pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa")
-            reanudar = lambda: reanudar_orden_trabajo(orden.pk, self.tecnico)
-            reasignar = lambda: reasignar_orden_trabajo(orden.pk, self.tecnico, self.segundo, "Turno")
-            resultados = CaracterizacionIntegracionOTTests.carrera_controlada(
-                self, reanudar if primero_reanudar else reasignar,
+            def reanudar():
+                return reanudar_orden_trabajo(orden.pk, self.tecnico)
+            def reasignar():
+                return reasignar_orden_trabajo(orden.pk, self.tecnico, self.segundo, "Turno")
+            resultados = self.carrera_controlada(
+                reanudar if primero_reanudar else reasignar,
                 reasignar if primero_reanudar else reanudar,
                 "OT_REANUDADA" if primero_reanudar else "OT_REASIGNADA",
             )
@@ -197,17 +200,18 @@ class ReanudacionFaseOTTests(ConsolidacionOTFixture):
             self.assertEqual(orden.id_tecnico_responsable_id, self.segundo.pk)
 
     def test_pausa_y_reanudacion_misma_ot_en_ambos_ordenes(self):
-        from tickets.tests.test_consolidacion_ot_postgresql import CaracterizacionIntegracionOTTests
         for repeticion in range(3):
             for primero_pausar in (True, False):
                 with self.subTest(repeticion=repeticion, primero_pausar=primero_pausar):
                     orden = self.segunda_ot()
                     if not primero_pausar:
                         pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa previa")
-                    pausar = lambda: pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa nueva")
-                    reanudar = lambda: reanudar_orden_trabajo(orden.pk, self.tecnico)
-                    resultados = CaracterizacionIntegracionOTTests.carrera_controlada(
-                        self, pausar if primero_pausar else reanudar,
+                    def pausar():
+                        return pausar_orden_trabajo(orden.pk, self.tecnico, "Pausa nueva")
+                    def reanudar():
+                        return reanudar_orden_trabajo(orden.pk, self.tecnico)
+                    resultados = self.carrera_controlada(
+                        pausar if primero_pausar else reanudar,
                         reanudar if primero_pausar else pausar,
                         "OT_PAUSADA" if primero_pausar else "OT_REANUDADA",
                     )
@@ -259,4 +263,7 @@ class ReanudacionFaseOTTests(ConsolidacionOTFixture):
             futuro.result(timeout=15)
         orden.refresh_from_db()
         self.assertEqual(orden.id_estado_ot.nombre, "Pausada")
-        self.assertFalse(self.evento(orden, "OT_REANUDADA"))
+        self.assertFalse(BitacoraAuditoria.objects.filter(
+            modulo="ORDENES_TRABAJO", entidad_afectada="orden_trabajo",
+            id_registro_afectado=orden.pk, accion="OT_REANUDADA",
+        ).exists())

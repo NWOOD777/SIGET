@@ -1,4 +1,6 @@
 
+from typing import Any
+
 from rest_framework import exceptions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,19 +12,24 @@ from usuarios.models import BitacoraAuditoria
 from .models import Diagnostico, OrdenTrabajo
 from .permissions import PuedeGestionarOrdenesTrabajo
 from .serializers import (
-    CrearOrdenTrabajoSerializer, OperacionOTSerializer, PausarOrdenTrabajoSerializer,
-    ReasignarOrdenTrabajoSerializer, RutaOrdenTrabajoSerializer,
+    CrearOrdenTrabajoSerializer,
+    OperacionOTSerializer,
+    PausarOrdenTrabajoSerializer,
+    ReasignarOrdenTrabajoSerializer,
+    RutaOrdenTrabajoSerializer,
 )
 from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo
 
 
-def validar_entrada(serializer_class, datos):
+def validar_entrada(serializer_class, datos) -> dict[str, Any]:
     serializer = serializer_class(data=datos)
     serializer.is_valid(raise_exception=True)
-    return serializer.validated_data
+    validados = serializer.validated_data
+    assert isinstance(validados, dict)
+    return validados
 
 
-def validar_id_orden(pk):
+def validar_id_orden(pk) -> int:
     return validar_entrada(RutaOrdenTrabajoSerializer, {"id_orden": pk})["id_orden"]
 
 

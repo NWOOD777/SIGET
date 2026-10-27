@@ -1,4 +1,4 @@
-"""Tema de escritorio basado en los mockups de media fidelidad de SIGET."""
+"""Estilos compartidos de la aplicación de escritorio."""
 
 from pathlib import Path
 

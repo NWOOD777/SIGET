@@ -5,7 +5,7 @@ from threading import Event
 from unittest.mock import Mock, patch
 
 from django.core.management import call_command
-from django.db import connections, transaction
+from django.db import connection, connections, transaction
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -270,11 +270,18 @@ class NotificacionesPostgreSQLTests(PostgreSQLTestBase):
                 notificar_actualizacion_ticket(t, id_evento="auditoria-1", detalle=detalle)
         self.assertFalse(Notificacion.objects.exists())
 
-    def test_esquema_aditivo_repetido_conserva_notificacion(self):
-        _, n = self.aprobada()
-        for _ in range(2):
-            call_command("preparar_notificaciones", stdout=StringIO())
-        self.assertTrue(Notificacion.objects.filter(pk=n.pk).exists())
+    def test_procesar_correo_no_modifica_el_esquema(self):
+        _, notificacion = self.aprobada()
+        sentencias = []
+
+        def observar(execute, sql, params, many, context):
+            sentencias.append(sql.lstrip().split(None, 1)[0].upper())
+            return execute(sql, params, many, context)
+
+        with connection.execute_wrapper(observar):
+            call_command("procesar_notificaciones", sin_recordatorios=True, stdout=StringIO())
+        self.assertTrue(Notificacion.objects.filter(pk=notificacion.pk).exists())
+        self.assertFalse({"ALTER", "CREATE", "DROP"}.intersection(sentencias))
 
     def test_comando_reintenta_despues_de_corregir_configuracion(self):
         _, n = self.aprobada()

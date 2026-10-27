@@ -656,7 +656,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
         self.assertIn("id_usuario", resp_uid.json())
 
     # =========================================================================
-    # Inmutabilidad estricta y protección contra modificación/borrado
+    # La API rechaza los métodos de modificación y eliminación.
     # =========================================================================
 
     def test_13_metodos_escritura_rechazados_e_inmutabilidad_en_postgresql(self):

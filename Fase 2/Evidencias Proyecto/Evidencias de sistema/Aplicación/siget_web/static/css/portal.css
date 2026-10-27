@@ -10,7 +10,7 @@
 .portal-perfil-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; gap: 24px; }
 .nav-pendiente { display: block; padding: 10px 14px; color: #64748b; font-size: 13px; }
 
-/* Barra superior e indicador de notificaciones (E10-H29) */
+/* Barra superior e indicador de notificaciones. */
 .top-navbar-actions {
     display: flex;
     align-items: center;

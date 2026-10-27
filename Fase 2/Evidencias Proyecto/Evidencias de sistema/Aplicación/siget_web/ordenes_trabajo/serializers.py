@@ -1,5 +1,6 @@
 """Validación de entrada OT; las reglas de negocio permanecen en los servicios."""
 from collections.abc import Mapping
+from typing import Any
 
 from django.db import connection
 from rest_framework import serializers
@@ -41,6 +42,9 @@ class TextoOTField(serializers.CharField):
 
 
 class BooleanoOTField(serializers.Field):
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+
     default_error_messages = {"invalid": "Debe ser verdadero o falso.", "null": "Debe ser verdadero o falso."}
 
     def to_internal_value(self, valor):

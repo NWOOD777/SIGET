@@ -26,16 +26,10 @@ Consultar la [organización de las APIs](../organizacion.md) para conocer la rel
 | POST | `/api/ordenes-trabajo/{id}/reasignar/` | [Reasignar OT](ordenes_trabajo/contratos_actuales.md#reasignar-ot) |
 | POST | `/api/ordenes-trabajo/{id}/reanudar/` | [Reanudar OT](ordenes_trabajo/contratos_actuales.md#reanudar-ot) |
 
-Los [contratos actuales de OT](ordenes_trabajo/contratos_actuales.md) describen el
-comportamiento implementado y sus limitaciones. Las correcciones propuestas se
-separan en el [informe de consolidación](ordenes_trabajo/pendientes_consolidacion.md).
-
-La gestión de OT es colaborativa: cualquier Técnico de soporte activo puede
-pausar, reanudar o reasignar una OT, aunque no sea su responsable, sujeto a las
-validaciones de estado. Reanudar recupera la fase anterior y comprueba el activo;
-no inicia reparación automáticamente. `OT_GESTIONAR` existe en el catálogo, pero
-su comprobación explícita queda como decisión futura de granularidad, sin cambiar
-la autorización actual por rol.
+Los [endpoints de órdenes de trabajo](ordenes_trabajo/contratos_actuales.md)
+permiten consultar órdenes y registrar diagnóstico, inicio de reparación, pausas
+y reasignaciones. Estas operaciones requieren un Técnico de soporte activo.
+La reanudación recupera la fase registrada al pausar la orden.
 
 ## Operación desde el escritorio
 

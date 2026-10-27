@@ -294,26 +294,7 @@ def iniciar_sesion_siget(request, usuario: Usuario, sub: str) -> None:
 
 
 def solicitar_recuperacion_acceso(correo: str) -> bool:
-    """
-    Solicita a Auth0 el envío del correo de recuperación de contraseña para la conexión
-    de base de datos institucional configurada.
-
-    Endpoint Auth0:
-        POST https://<AUTH0_DOMAIN>/dbconnections/change_password
-
-    Payload:
-        {
-            "client_id": settings.AUTH0_CLIENT_ID,
-            "email": correo,
-            "connection": settings.AUTH0_DB_CONNECTION
-        }
-
-    Restricciones y seguridad:
-    - NO envía client_secret ni tokens.
-    - Aplica un timeout explícito de 10 segundos.
-    - No consulta ni modifica modelos locales de PostgreSQL.
-    - No registra credenciales ni datos sensibles en logs.
-    """
+    """Solicita a Auth0 el correo para restablecer la contraseña de la cuenta indicada."""
     domain = getattr(settings, "AUTH0_DOMAIN", "")
     client_id = getattr(settings, "AUTH0_CLIENT_ID", "")
     connection = getattr(
@@ -388,7 +369,7 @@ ATRIBUTO_USUARIO_BEARER = "_siget_usuario_bearer"
 def obtener_usuario_actual(request: HttpRequest) -> Usuario | None:
     """
     Obtiene la instancia de Usuario SIGET para la sesión actual consultando PostgreSQL.
-    Garantiza que el usuario exista y se encuentre activo.
+    Comprueba que la cuenta local esté activa.
     No asume ni confía en datos mutables de la sesión para autorización.
 
     Si la petición fue autenticada con un access token validado
@@ -533,8 +514,7 @@ def registrar_auditoria(
     direccion_ip: str | None = None,
 ) -> BitacoraAuditoria:
     """
-    Registra un evento en la tabla bitacora_auditoria de PostgreSQL (Tabla 34).
-    Garantiza trazabilidad de acciones administrativas y eventos críticos.
+    Registra el actor, la operación y el recurso afectado en bitacora_auditoria.
     """
     return BitacoraAuditoria.objects.create(
         id_usuario=usuario,
@@ -1371,24 +1351,11 @@ def aprovisionar_usuario(
 def bootstrap_primer_admin(
     datos: dict[str, Any],
 ) -> tuple[Usuario, bool]:
-    """
-    Bootstrap inicial del primer Administrador del sistema en SIGET.
+    """Registra el primer Administrador si todavía no existe uno.
 
-    Flujo y Reglas de Negocio:
-    1. Validar que NO exista ningún usuario con el rol oficial 'Administrador del sistema' en PostgreSQL.
-       Si ya existe, la operación aborta inmediatamente por seguridad (destinada únicamente a bootstrap inicial).
-    2. Validar existencia del rol oficial 'Administrador del sistema'.
-    3. Validar campos obligatorios (correo, rut, nombres, apellidos) y formato de correo y RUT (Módulo 11).
-    4. Validar no duplicidad de correo o RUT en PostgreSQL.
-    5. Crear la identidad externa en Auth0 vía Management API (no guarda contraseñas locales).
-    6. Persistir el Usuario y UsuarioRol en PostgreSQL de forma atómica.
-    7. Transacción compensatoria: Si PostgreSQL falla, revierte la identidad creada en Auth0.
-    8. Registrar la operación en bitacora_auditoria (acción PRIMER_ADMIN).
-    9. Disparar el flujo de configuración inicial de contraseña (solicitar_recuperacion_acceso).
-       Si falla el despacho del correo, la cuenta se mantiene creada de forma consistente y se registra advertencia.
-
-    Retorna:
-        tuple[Usuario, bool]: El usuario creado y un booleano indicando si el correo de configuración fue despachado exitosamente.
+    Valida los datos, crea la identidad Auth0 y guarda el usuario con su rol. Si
+    falla PostgreSQL, elimina la identidad recién creada. Devuelve la cuenta y
+    un indicador del envío del correo para configurar la contraseña.
     """
     # 1. Regla crítica de bootstrap: abortar si ya existe un Administrador
     if UsuarioRol.objects.filter(rol__nombre=ROL_ADMINISTRADOR).exists():

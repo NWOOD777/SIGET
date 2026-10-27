@@ -1,22 +1,7 @@
-"""
-Validación de access tokens emitidos por Auth0 para la API de SIGET.
+"""Validación de tokens de acceso Auth0 para la API.
 
-Utilizado por clientes nativos (aplicación de Escritorio PySide6) que obtienen
-un access token mediante Authorization Code con PKCE y lo envían en el
-encabezado ``Authorization: Bearer <token>``.
-
-Reglas aplicadas (https://auth0.com/docs/secure/tokens/access-tokens/validate-access-tokens):
-- Firma verificada con las claves públicas JWKS del tenant Auth0.
-- Algoritmo restringido a la lista permitida (RS256); se rechazan ``none`` y HS*.
-- Emisor (``iss``) igual al dominio Auth0 configurado.
-- Audiencia (``aud``) igual al identificador de la API de SIGET. Esto excluye
-  ID tokens (audiencia = client_id) y tokens de Management API.
-- Vigencia (``exp``, ``iat`` y ``nbf`` si existe) con tolerancia acotada.
-- Se rechazan tokens de máquina (client credentials): SIGET solo autoriza
-  operaciones a nombre de un usuario.
-
-Este módulo solo valida el token. La resolución del Usuario SIGET y sus
-permisos se realiza en ``usuarios.services`` contra PostgreSQL.
+Comprueba firma RS256, emisor, audiencia y vigencia del token del cliente de
+escritorio. La cuenta local y sus permisos se resuelven en usuarios.services.
 """
 
 import logging

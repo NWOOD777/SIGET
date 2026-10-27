@@ -5,7 +5,6 @@ from rest_framework.exceptions import ValidationError
 
 from usuarios.models import BitacoraAuditoria
 
-
 MARCADOR_FASE = "\nSIGET_OT_FASE_V1:"
 FASES = {"En Diagnóstico", "En Reparación"}
 
@@ -53,12 +52,4 @@ def recuperar_fase_pausada(orden):
             _error_fase()
         return origen
 
-    # Compatibilidad acotada: primer ciclo histórico completo, anclado en la
-    # creación y, opcionalmente, inicio explícito de reparación. Una reanudación
-    # antigua no documenta destino fiable para la nueva regla: no asumirlo.
-    acciones = [e.accion for e in transiciones]
-    if acciones == ["OT_CREADA", "OT_PAUSADA"]:
-        return "En Diagnóstico"
-    if acciones == ["OT_CREADA", "REPARACION_INICIADA", "OT_PAUSADA"]:
-        return "En Reparación"
     _error_fase()
