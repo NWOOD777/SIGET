@@ -1,24 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.db.models import F
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from usuarios.permissions import PuedeAdministrarUsuarios
 from usuarios.services import obtener_usuario_actual
 
-from .serializers import IngresoRepuestoSerializer
-from .services import registrar_ingreso_repuesto
-
 from .models import Repuesto
-
-from .serializers import StockMinimoRepuestoSerializer
-from .services import actualizar_stock_minimo_repuesto
-
-from .serializers import AjusteStockRepuestoSerializer
-from .services import ajustar_stock_repuesto
-
-from .serializers import EstadoRepuestoSerializer
-from .services import cambiar_estado_repuesto
-
+from .serializers import AjusteStockRepuestoSerializer, EstadoRepuestoSerializer, IngresoRepuestoSerializer, StockMinimoRepuestoSerializer
+from .services import actualizar_stock_minimo_repuesto, ajustar_stock_repuesto, cambiar_estado_repuesto, registrar_ingreso_repuesto
 
 
 class IngresoRepuestoView(APIView):
@@ -27,11 +17,14 @@ class IngresoRepuestoView(APIView):
     def post(self, request):
         serializer = IngresoRepuestoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        assert isinstance(datos, dict)
 
         usuario = obtener_usuario_actual(request._request)
+        assert usuario is not None
 
         resultado = registrar_ingreso_repuesto(
-            serializer.validated_data,
+            datos,
             usuario,
         )
 
@@ -42,7 +35,6 @@ class IngresoRepuestoView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-from .models import Repuesto
 
 
 class ListadoRepuestosView(APIView):
@@ -51,7 +43,7 @@ class ListadoRepuestosView(APIView):
     def get(self, request):
         busqueda = request.query_params.get("search", "").strip()
 
-     
+
         estado = request.query_params.get("estado", "activos").strip().lower()
 
         if estado not in ("activos", "inactivos", "todos"):
@@ -101,7 +93,6 @@ class ListadoRepuestosView(APIView):
 
         return Response(resultado)
 
-from django.db.models import F
 
 
 class AlertasRepuestosView(APIView):
@@ -152,12 +143,15 @@ class StockMinimoRepuestoView(APIView):
     def patch(self, request, id_repuesto):
         serializer = StockMinimoRepuestoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        assert isinstance(datos, dict)
 
         usuario = obtener_usuario_actual(request._request)
+        assert usuario is not None
 
         resultado = actualizar_stock_minimo_repuesto(
             id_repuesto=id_repuesto,
-            nuevo_minimo=serializer.validated_data["stock_minimo"],
+            nuevo_minimo=datos["stock_minimo"],
             usuario=usuario,
         )
 
@@ -176,13 +170,16 @@ class AjusteStockRepuestoView(APIView):
     def patch(self, request, id_repuesto):
         serializer = AjusteStockRepuestoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        assert isinstance(datos, dict)
 
         usuario = obtener_usuario_actual(request._request)
+        assert usuario is not None
 
         resultado = ajustar_stock_repuesto(
             id_repuesto=id_repuesto,
-            nuevo_stock=serializer.validated_data["nuevo_stock"],
-            motivo=serializer.validated_data["motivo"],
+            nuevo_stock=datos["nuevo_stock"],
+            motivo=datos["motivo"],
             usuario=usuario,
         )
 
@@ -198,13 +195,16 @@ class EstadoRepuestoView(APIView):
     def patch(self, request, id_repuesto):
         serializer = EstadoRepuestoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        assert isinstance(datos, dict)
 
         usuario = obtener_usuario_actual(request._request)
+        assert usuario is not None
 
         resultado = cambiar_estado_repuesto(
             id_repuesto=id_repuesto,
-            activo=serializer.validated_data["activo"],
-            motivo=serializer.validated_data["motivo"],
+            activo=datos["activo"],
+            motivo=datos["motivo"],
             usuario=usuario,
         )
 

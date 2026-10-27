@@ -22,7 +22,7 @@ from siget_desktop.ui.workers import ApiWorker
 
 
 class IngresoRepuestoDialog(SessionDialog):
-    """Formulario administrativo de carga de stock E7-H25."""
+    """Formulario administrativo para ingresar existencias de repuestos."""
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -237,10 +237,8 @@ class IngresoRepuestoDialog(SessionDialog):
             costo = Decimal(costo_texto)
             if not costo.is_finite() or costo < 0:
                 raise InvalidOperation
-            if (
-                costo.as_tuple().exponent < -2
-                or costo >= Decimal("10000000000")
-            ):
+            exponente = costo.as_tuple().exponent
+            if not isinstance(exponente, int) or exponente < -2 or costo >= Decimal("10000000000"):
                 raise InvalidOperation
         except (InvalidOperation, ValueError):
             costo = None

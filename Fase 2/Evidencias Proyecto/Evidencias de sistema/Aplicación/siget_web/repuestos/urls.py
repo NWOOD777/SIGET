@@ -1,12 +1,12 @@
 from django.urls import path
 
 from .views import (
+    AjusteStockRepuestoView,
+    AlertasRepuestosView,
+    EstadoRepuestoView,
     IngresoRepuestoView,
     ListadoRepuestosView,
-    AlertasRepuestosView,
     StockMinimoRepuestoView,
-    AjusteStockRepuestoView,
-    EstadoRepuestoView,
 )
 
 urlpatterns = [

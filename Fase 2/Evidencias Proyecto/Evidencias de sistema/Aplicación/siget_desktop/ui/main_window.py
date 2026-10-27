@@ -28,12 +28,11 @@ from siget_desktop.ui.views.activos_view import ActivosView
 from siget_desktop.ui.views.auditoria_view import AuditoriaView
 from siget_desktop.ui.views.dashboard_view import DashboardView
 from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
+from siget_desktop.ui.views.repuestos_view import RepuestosView
 from siget_desktop.ui.views.solicitudes_view import SolicitudesView
 from siget_desktop.ui.views.tickets_view import TicketsView
 from siget_desktop.ui.views.usuarios_view import UsuariosView
 from siget_desktop.ui.workers import ApiWorker
-from siget_desktop.ui.dialogs.repuestos_dialog import IngresoRepuestoDialog
-from siget_desktop.ui.views.repuestos_view import RepuestosView
 
 
 class MainWindow(QMainWindow):
@@ -174,7 +173,7 @@ class MainWindow(QMainWindow):
             ("Inventario de Repuestos", current_session.is_admin()),
         ]
 
-       
+
         for texto, habilitado in items:
             item = QListWidgetItem(texto)
 
@@ -188,14 +187,7 @@ class MainWindow(QMainWindow):
 
             sidebar.addItem(item)
 
-            if texto == "Inventario de Repuestos":
-                item.setHidden(not current_session.is_admin())
-            if texto == "Órdenes de Trabajo":
-                item.setHidden(not current_session.is_tecnico())
-            elif texto == "Usuarios y roles":
-                item.setHidden(not current_session.is_admin())
-            elif texto == "Auditoría interna":
-                item.setHidden(not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")))
+            item.setHidden(not habilitado)
 
         sidebar.setCurrentRow(0)
         return sidebar
@@ -286,7 +278,7 @@ class MainWindow(QMainWindow):
                 if es_admin else Qt.ItemFlag.NoItemFlags
             )
 
- 
+
     def _cambiar_vista(self, index: int):
 
         if index == 7 and not current_session.is_admin():
@@ -385,7 +377,7 @@ class MainWindow(QMainWindow):
                 self.sidebar.setCurrentRow(0)
         self.actualizar_sesion()
 
- 
+
     def _cerrar_sesion(self):
         """Cierra la sesión, limpia las credenciales en memoria y notifica."""
         self._sesion_activa = False

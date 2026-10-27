@@ -1,12 +1,11 @@
 from decimal import Decimal
 
 from django.db import connection, transaction
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from usuarios.services import registrar_auditoria
-from .models import Repuesto, MovimientoRepuesto
-from rest_framework.exceptions import ValidationError
 
+from .models import MovimientoRepuesto, Repuesto
 
 
 @transaction.atomic
@@ -27,7 +26,7 @@ def registrar_ingreso_repuesto(datos, usuario):
             Repuesto.objects.select_for_update()
             .filter(id_repuesto=id_repuesto)
             .first()
-        )        
+        )
 
         if repuesto is None:
             raise NotFound("El repuesto seleccionado no existe.")

@@ -456,6 +456,7 @@ CREATE TABLE repuesto (
     unidad_medida VARCHAR(50) NOT NULL DEFAULT 'Unidad',
     stock_actual INT NOT NULL DEFAULT 0 CHECK (stock_actual >= 0),
     stock_minimo INT NOT NULL DEFAULT 1 CHECK (stock_minimo >= 0),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
     precio_unitario NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (precio_unitario >= 0),
     ubicacion_bodega VARCHAR(100)
 );

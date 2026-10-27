@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 from django.db import DatabaseError
 
-from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 from usuarios.models import BitacoraAuditoria
+from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 
 from .models import Repuesto
 
