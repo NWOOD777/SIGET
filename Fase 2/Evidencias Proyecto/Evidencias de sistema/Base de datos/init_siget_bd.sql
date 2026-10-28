@@ -470,7 +470,11 @@ CREATE TABLE orden_repuesto (
     id_repuesto INT NOT NULL REFERENCES repuesto(id_repuesto) ON DELETE RESTRICT,
     cantidad INT NOT NULL CHECK (cantidad > 0),
     costo_unitario NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (costo_unitario >= 0),
-    fecha_imputacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    fecha_imputacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    anulado BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_anulacion TIMESTAMPTZ,
+    motivo_anulacion VARCHAR(255),
+    id_usuario_anulacion INT REFERENCES usuario(id_usuario) ON DELETE RESTRICT
 );
 
 COMMENT ON TABLE orden_repuesto IS 'Consumo de repuestos imputado a una orden de trabajo.';

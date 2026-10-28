@@ -604,6 +604,61 @@ def obtener_historial_orden_trabajo(
     return _lista(resultado)
 
 
+def listar_repuestos_orden(
+    id_orden: int,
+) -> dict[str, Any]:
+    """Consulta los repuestos asociados a una orden de trabajo."""
+    resultado = api_client.get(
+        f"/api/ordenes-trabajo/{id_orden}/repuestos/"
+    )
+    return _objeto(resultado)
+
+
+def asignar_repuesto_orden(
+    id_orden: int,
+    id_repuesto: int,
+    cantidad: int,
+) -> dict[str, Any]:
+    """Asigna un repuesto a una OT y solicita descontar su stock."""
+    if id_orden <= 0 or id_repuesto <= 0:
+        raise ValueError("La orden y el repuesto deben ser válidos.")
+
+    if cantidad <= 0:
+        raise ValueError("La cantidad debe ser mayor que cero.")
+
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/repuestos/",
+        json={
+            "id_repuesto": id_repuesto,
+            "cantidad": cantidad,
+        },
+    )
+    return _objeto(resultado)
+
+
+def anular_asignacion_repuesto_orden(
+    id_orden: int,
+    id_orden_repuesto: int,
+    motivo: str,
+) -> dict[str, Any]:
+    """Anula una asignación y solicita reintegrar el stock."""
+    motivo = motivo.strip()
+
+    if id_orden <= 0 or id_orden_repuesto <= 0:
+        raise ValueError("La orden y la asignación deben ser válidas.")
+
+    if not motivo:
+        raise ValueError("Debes indicar el motivo de anulación.")
+
+    resultado = api_client.post(
+        f"/api/ordenes-trabajo/{id_orden}/repuestos/"
+        f"{id_orden_repuesto}/anular/",
+        json={"motivo": motivo},
+    )
+    return _objeto(resultado)
+
+
+
 # ============================================================================
 # AUDITORÍA INTERNA
 # ============================================================================

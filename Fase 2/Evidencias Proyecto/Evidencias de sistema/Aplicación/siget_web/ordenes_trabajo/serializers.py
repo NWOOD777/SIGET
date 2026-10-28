@@ -2,14 +2,15 @@
 from collections.abc import Mapping
 from typing import Any
 
+from repuestos.models import Repuesto
+
 from django.db import connection
 from rest_framework import serializers
 
 from tickets.models import Ticket
 from usuarios.models import Usuario
 
-from .models import OrdenTrabajo
-
+from .models import OrdenRepuesto, OrdenTrabajo
 
 class IdentificadorOTField(serializers.Field):
     """Acepta enteros o cadenas ASCII de dígitos, sin coerción de bool/float."""
@@ -79,3 +80,34 @@ class ReasignarOrdenTrabajoSerializer(OperacionOTSerializer):
 
 class RutaOrdenTrabajoSerializer(OperacionOTSerializer):
     id_orden = IdentificadorOTField(modelo=OrdenTrabajo, mensaje="Debe indicar un ID de orden válido.")
+
+class AsignarRepuestoOTSerializer(OperacionOTSerializer):
+    """Valida los datos necesarios para asignar un repuesto a una OT."""
+
+    id_repuesto = IdentificadorOTField(
+        modelo=Repuesto,
+        mensaje="Debe indicar un ID de repuesto válido.",
+    )
+
+    cantidad = IdentificadorOTField(
+        modelo=Repuesto,
+        mensaje="La cantidad debe ser un número entero mayor que cero.",
+    )
+
+
+class AnularAsignacionRepuestoOTSerializer(OperacionOTSerializer):
+    """Valida el motivo de anulación de una asignación."""
+
+    motivo = TextoOTField(
+        mensaje="Debe indicar el motivo de la anulación.",
+        max_length=255,
+    )
+
+
+class RutaAsignacionRepuestoOTSerializer(OperacionOTSerializer):
+    """Valida el identificador de una asignación de repuesto."""
+
+    id_orden_repuesto = IdentificadorOTField(
+        modelo=OrdenRepuesto,
+        mensaje="Debe indicar un ID de asignación válido.",
+    )

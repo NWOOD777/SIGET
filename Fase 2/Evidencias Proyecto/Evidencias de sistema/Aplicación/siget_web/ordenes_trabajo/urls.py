@@ -9,9 +9,25 @@ from .views import (
     PausarOrdenTrabajoView,
     ReanudarOrdenTrabajoView,
     ReasignarOrdenTrabajoView,
+    AsignarRepuestoOrdenView,
+    AnularAsignacionRepuestoOrdenView
 )
 
 urlpatterns = [
+    
+    path(
+        "<int:pk>/repuestos/<int:id_orden_repuesto>/anular/",
+        AnularAsignacionRepuestoOrdenView.as_view(),
+        name="anular-asignacion-repuesto",
+    ),
+
+    path(
+        "<int:pk>/repuestos/",
+        AsignarRepuestoOrdenView.as_view(),
+        name="asignar-repuesto-orden",
+    ),
+
+
     
     path(
         "tecnicos-disponibles/",

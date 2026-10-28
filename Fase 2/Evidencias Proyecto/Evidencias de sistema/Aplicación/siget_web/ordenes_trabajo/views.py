@@ -9,7 +9,7 @@ from siget.http import direccion_ip_cliente
 from tickets.permissions import _obtener_usuario_siget
 from usuarios.models import BitacoraAuditoria
 
-from .models import Diagnostico, OrdenTrabajo
+from .models import Diagnostico, OrdenTrabajo, OrdenRepuesto
 from .permissions import PuedeGestionarOrdenesTrabajo
 from .serializers import (
     CrearOrdenTrabajoSerializer,
@@ -17,8 +17,11 @@ from .serializers import (
     PausarOrdenTrabajoSerializer,
     ReasignarOrdenTrabajoSerializer,
     RutaOrdenTrabajoSerializer,
+    AsignarRepuestoOTSerializer,
+    AnularAsignacionRepuestoOTSerializer,
+    RutaAsignacionRepuestoOTSerializer,
 )
-from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo
+from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo, asignar_repuesto_orden, calcular_costo_repuestos_orden, anular_asignacion_repuesto
 
 
 def validar_entrada(serializer_class, datos) -> dict[str, Any]:
@@ -326,3 +329,143 @@ class ReanudarOrdenTrabajoView(APIView):
         ).get(pk=orden.id_orden)
 
         return Response(serializar_orden(orden), status=status.HTTP_200_OK)
+
+
+class AsignarRepuestoOrdenView(APIView):
+    """Asigna repuestos a una OT en reparación."""
+
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def post(self, request, pk):
+        pk = validar_id_orden(pk)
+
+        datos = validar_entrada(
+            AsignarRepuestoOTSerializer,
+            request.data,
+        )
+
+        tecnico = _obtener_usuario_siget(request)
+
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para asignar repuestos."
+            )
+
+        resultado = asignar_repuesto_orden(
+            id_orden=pk,
+            id_repuesto=datos["id_repuesto"],
+            cantidad=datos["cantidad"],
+            tecnico=tecnico,
+            ip_origen=direccion_ip_cliente(request),
+        )
+
+        return Response(
+            resultado,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request, pk):
+        pk = validar_id_orden(pk)
+
+        orden = OrdenTrabajo.objects.filter(pk=pk).first()
+
+        if orden is None:
+            raise exceptions.NotFound(
+                "La orden de trabajo no existe."
+            )
+
+        asignaciones = (
+            OrdenRepuesto.objects
+            .filter(id_orden_id=pk)
+            .select_related("id_repuesto")
+            .order_by("-fecha_imputacion", "-id_orden_repuesto")
+        )
+
+        repuestos = []
+
+        for asignacion in asignaciones:
+            repuesto = asignacion.id_repuesto
+
+            costo_total = (
+                asignacion.cantidad * asignacion.costo_unitario
+            )
+
+            repuestos.append({
+                "id_orden_repuesto": asignacion.pk,
+                "id_repuesto": repuesto.pk,
+                "codigo_repuesto": repuesto.codigo_repuesto,
+                "nombre_repuesto": repuesto.nombre,
+                "cantidad": asignacion.cantidad,
+                "costo_unitario": str(asignacion.costo_unitario),
+                "costo_total": str(costo_total),
+                "fecha_imputacion": asignacion.fecha_imputacion,
+                "anulado": asignacion.anulado,
+                "fecha_anulacion": asignacion.fecha_anulacion,
+                "motivo_anulacion": asignacion.motivo_anulacion,
+            })
+
+        resumen = calcular_costo_repuestos_orden(pk)
+
+        return Response({
+            "id_orden": orden.pk,
+            "codigo_ot": orden.codigo_ot,
+            "repuestos": repuestos,
+            "resumen": resumen,
+        }, status=status.HTTP_200_OK)
+
+
+
+class AnularAsignacionRepuestoOrdenView(APIView):
+    """Anula una asignación de repuesto y reintegra su stock."""
+
+    permission_classes = [PuedeGestionarOrdenesTrabajo]
+
+    def post(self, request, pk, id_orden_repuesto):
+        pk = validar_id_orden(pk)
+
+        datos_ruta = validar_entrada(
+            RutaAsignacionRepuestoOTSerializer,
+            {"id_orden_repuesto": id_orden_repuesto},
+        )
+
+        datos = validar_entrada(
+            AnularAsignacionRepuestoOTSerializer,
+            request.data,
+        )
+
+        tecnico = _obtener_usuario_siget(request)
+
+        if tecnico is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para anular asignaciones."
+            )
+
+        resultado = anular_asignacion_repuesto(
+            id_orden=pk,
+            id_orden_repuesto=datos_ruta["id_orden_repuesto"],
+            motivo=datos["motivo"],
+            tecnico=tecnico,
+            ip_origen=direccion_ip_cliente(request),
+        )
+
+        return Response(
+            resultado,
+            status=status.HTTP_200_OK,
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

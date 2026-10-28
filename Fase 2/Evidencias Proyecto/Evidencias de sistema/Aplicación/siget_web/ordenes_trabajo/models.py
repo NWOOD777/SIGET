@@ -91,3 +91,59 @@ class Intervencion(models.Model):
     class Meta:
         managed = False
         db_table = "intervencion"
+
+
+
+
+class OrdenRepuesto(models.Model):
+    id_orden_repuesto = models.AutoField(primary_key=True)
+
+    id_orden = models.ForeignKey(
+        OrdenTrabajo,
+        on_delete=models.CASCADE,
+        db_column="id_orden",
+    )
+
+    id_repuesto = models.ForeignKey(
+        "repuestos.Repuesto",
+        on_delete=models.PROTECT,
+        db_column="id_repuesto",
+    )
+
+    cantidad = models.IntegerField()
+
+    costo_unitario = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+
+    fecha_imputacion = models.DateTimeField(auto_now_add=True)
+
+    anulado = models.BooleanField(default=False)
+
+    fecha_anulacion = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    motivo_anulacion = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    id_usuario_anulacion = models.ForeignKey(
+        "usuarios.Usuario",
+        on_delete=models.PROTECT,
+        db_column="id_usuario_anulacion",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        managed = False
+        db_table = "orden_repuesto"
+
+    def __str__(self):
+        return f"OT {self.id_orden_id} - Repuesto {self.id_repuesto_id}"

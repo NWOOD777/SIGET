@@ -11,6 +11,11 @@ from .serializers import AjusteStockRepuestoSerializer, EstadoRepuestoSerializer
 from .services import actualizar_stock_minimo_repuesto, ajustar_stock_repuesto, cambiar_estado_repuesto, registrar_ingreso_repuesto
 
 
+from rest_framework import exceptions, permissions
+from tickets.permissions import _obtener_usuario_siget
+from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
+
+
 class IngresoRepuestoView(APIView):
     permission_classes = [PuedeAdministrarUsuarios]
 
@@ -37,8 +42,31 @@ class IngresoRepuestoView(APIView):
         )
 
 
+class PuedeConsultarCatalogoRepuestos(permissions.BasePermission):
+    """
+    Permite consultar el catálogo de repuestos a administradores
+    y técnicos de soporte autenticados.
+    """
+
+    def has_permission(self, request, view):
+        usuario = _obtener_usuario_siget(request)
+
+        if usuario is None:
+            raise exceptions.NotAuthenticated(
+                "Debe iniciar sesión para consultar repuestos."
+            )
+
+        if es_administrador(usuario) or usuario_tiene_rol(
+            usuario, ROL_TECNICO
+        ):
+            return True
+
+        raise exceptions.PermissionDenied(
+            "Solo administradores y técnicos de soporte pueden consultar repuestos."
+        )
+
 class ListadoRepuestosView(APIView):
-    permission_classes = [PuedeAdministrarUsuarios]
+    permission_classes = [PuedeConsultarCatalogoRepuestos]
 
     def get(self, request):
         busqueda = request.query_params.get("search", "").strip()

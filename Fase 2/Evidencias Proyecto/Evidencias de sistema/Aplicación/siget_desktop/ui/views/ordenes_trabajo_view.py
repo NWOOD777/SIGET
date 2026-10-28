@@ -45,6 +45,9 @@ from siget_desktop.ui.dialogs.ordenes_trabajo_dialogs import (
 )
 from siget_desktop.ui.workers import ApiWorker
 
+from siget_desktop.ui.dialogs.gestionar_repuestos_ot_dialog import (
+    GestionarRepuestosOTDialog,
+)
 
 class DetalleOrdenTrabajoDialog(QDialog):
     """Muestra el detalle de una OT en una ventana modal."""
@@ -452,12 +455,14 @@ class OrdenesTrabajoView(QWidget):
         self.btn_pausar = QPushButton("Pausar OT")
         self.btn_reasignar = QPushButton("Reasignar OT")
         self.btn_reanudar = QPushButton("Reanudar OT")
+        self.btn_repuestos = QPushButton("Gestionar repuestos")
 
         for boton in (
             self.btn_iniciar,
             self.btn_pausar,
             self.btn_reasignar,
             self.btn_reanudar,
+            self.btn_repuestos,
         ):
             boton.setMinimumHeight(38)
             acciones.addWidget(boton)
@@ -468,6 +473,7 @@ class OrdenesTrabajoView(QWidget):
         self.btn_pausar.clicked.connect(self._pausar_orden)
         self.btn_reasignar.clicked.connect(self._reasignar_orden)
         self.btn_reanudar.clicked.connect(self._reanudar_orden)
+        self.btn_repuestos.clicked.connect(self._gestionar_repuestos)
 
         layout.addLayout(acciones)
 
@@ -989,6 +995,11 @@ class OrdenesTrabajoView(QWidget):
             es_tecnico and seleccionada
             and estado == "Pausada" and not ocupada
         )
+        self.btn_repuestos.setEnabled(
+            es_tecnico
+            and seleccionada
+            and not ocupada
+        )
 
     def _ver_detalle_orden(self, *_):
         orden = self._orden_seleccionada()
@@ -1001,6 +1012,45 @@ class OrdenesTrabajoView(QWidget):
             return
         dialogo = DetalleOrdenTrabajoDialog(orden, self)
         dialogo.exec()
+    
+    def _gestionar_repuestos(self):
+        if not current_session.is_tecnico():
+            QMessageBox.warning(
+                self,
+                "Acceso denegado",
+                "Esta función requiere el rol Técnico de soporte.",
+            )
+            return
+
+        orden = self._orden_seleccionada()
+
+        if orden is None:
+            QMessageBox.information(
+                self,
+                "Selecciona una OT",
+                "Selecciona una orden de trabajo para gestionar repuestos.",
+            )
+            return
+
+        id_orden = orden.get("id_orden")
+
+        if id_orden is None:
+            QMessageBox.warning(
+                self,
+                "Orden inválida",
+                "La orden seleccionada no tiene un identificador válido.",
+            )
+            return
+
+        codigo_ot = orden.get("codigo_ot", f"OT-{id_orden}")
+
+        dialogo = GestionarRepuestosOTDialog(
+            id_orden=int(id_orden),
+            codigo_ot=str(codigo_ot),
+            parent=self,
+        )
+        dialogo.exec()
+
 
     def _mostrar_error_carga(self, error: Any):
         if self._session_generation != current_session.generation:
