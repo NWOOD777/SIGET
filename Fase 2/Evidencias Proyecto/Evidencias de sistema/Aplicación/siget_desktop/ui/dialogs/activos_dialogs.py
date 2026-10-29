@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from siget_desktop.api.qr_services import obtener_estado_qr
 from siget_desktop.api.services import (
     actualizar_activo,
     actualizar_categoria_activo,
@@ -51,6 +52,7 @@ from siget_desktop.api.services import (
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, mostrar_mensaje
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion, fecha_opcional, monto_decimal
+from siget_desktop.ui.dialogs.qr_dialogs import EtiquetasQRDialog
 from siget_desktop.ui.inputs import (
     ERROR_NUMERO_SERIE,
     MontoLineEdit,
@@ -1314,6 +1316,7 @@ class RegistrarActivoDialog(SessionDialog):
 
     def _on_guardado(self, resultado: dict[str, Any]):
         self.progreso.hide()
+        self.activo_registrado = resultado
         codigo = resultado.get("codigo_inventario", "Nuevo")
         QMessageBox.information(
             self,
@@ -1402,6 +1405,18 @@ class DetalleModificarActivoDialog(SessionDialog):
             layout_card.setRowVisible(campo, not es_admin)
 
         layout.addWidget(self.card_info)
+        acciones_qr = QHBoxLayout()
+        self.btn_generar_qr = QPushButton("Generar Etiqueta QR")
+        self.btn_generar_qr.setObjectName("btnSecundario")
+        self.btn_generar_qr.clicked.connect(lambda: self._abrir_qr(False))
+        self.btn_reimprimir_qr = QPushButton("Reimprimir QR")
+        self.btn_reimprimir_qr.setObjectName("btnSecundario")
+        self.btn_reimprimir_qr.clicked.connect(lambda: self._abrir_qr(True))
+        for boton in (self.btn_generar_qr, self.btn_reimprimir_qr):
+            boton.setVisible(es_admin)
+            boton.setEnabled(False)
+            acciones_qr.addWidget(boton)
+        layout.addLayout(acciones_qr)
 
         self.panel_edicion = QWidget()
         self.panel_edicion.setVisible(es_admin)
@@ -1475,6 +1490,16 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.combo_estado_edit.setEnabled(es_admin)
         self.input_valor.setEnabled(es_admin)
         self.date_garantia.setEnabled(es_admin)
+
+    def _abrir_qr(self, reimprimir: bool):
+        if not current_session.is_admin() or not self._activo_datos:
+            return
+        if not confirmar_operacion(self, "Reimprimir QR" if reimprimir else "Generar Etiqueta QR", f"Activo: {self.lbl_codigo.text()}\nSe conservará el identificador del equipo."):
+            return
+        dialogo = EtiquetasQRDialog([self.id_activo], self, reimprimir=reimprimir)
+        dialogo.exec()
+        if dialogo.etiquetas and not self._closed:
+            self.btn_reimprimir_qr.setEnabled(True)
 
     def abrir_mantenedor_catalogos(self):
         if not current_session.is_admin():
@@ -1585,6 +1610,7 @@ class DetalleModificarActivoDialog(SessionDialog):
                     modelos=listar_modelos_activos(),
                     ubicaciones=listar_ubicaciones_activos(),
                     estados=listar_estados_activos(),
+                    qr=obtener_estado_qr(self.id_activo),
                 )
             return resultado
 
@@ -1602,6 +1628,8 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.progreso.hide()
         activo = res.get("activo", {})
         self._activo_datos = activo
+        self.btn_generar_qr.setEnabled(current_session.is_admin() and bool(activo))
+        self.btn_reimprimir_qr.setEnabled(current_session.is_admin() and res.get("qr", {}).get("generado", False))
 
         codigo = activo.get("codigo_inventario", "")
         self.lbl_titulo.setText(f"Activo {codigo} — {activo.get('modelo', '')}")

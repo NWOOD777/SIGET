@@ -45,10 +45,16 @@ contiene el identificador en `payload`, los bytes en `contenido`, el formato `SV
 y el tipo `image/svg+xml`. El código de inventario debe tener el prefijo `ACT-`
 seguido de al menos cuatro dígitos, dentro del límite de 50 caracteres del campo.
 
-La generación no modifica el activo ni escribe registros en PostgreSQL. El flujo
-que la invoque controla la autorización administrativa, el almacenamiento de la
-etiqueta y su presentación. Mantener la solicitud externa fuera de las transacciones
-que registran el activo permite conservarlo si el proveedor falla.
+`generar_qr_activo` obtiene únicamente la imagen. El flujo administrativo
+`preparar_etiqueta` utiliza ese cliente y registra la asociación en `codigo_qr`, junto
+con su auditoría. La llamada externa ocurre antes de abrir la transacción de
+persistencia. Un fallo conserva los datos del activo y la asociación anterior.
+
+El escritorio utiliza `GET /api/activos/{id}/qr/` para consultar la asociación y
+`POST` para generar o reimprimir. Django verifica el rol de Administrador en
+PostgreSQL. El escritorio recibe el SVG, muestra la vista previa y prepara el PDF
+con las herramientas de impresión de Qt. Consultar el [flujo de etiquetas y su
+contrato](../../api_1_activos_asignaciones/activos/qr.md).
 
 ## Errores y respuesta
 
@@ -81,7 +87,7 @@ y los mismos argumentos.
 ## Pruebas
 
 ```bash
-docker compose exec web python manage.py test activos.tests.test_qr_client activos.tests.test_qr_activos_postgresql --noinput
+docker compose exec web python manage.py test activos.tests.test_qr_client activos.tests.test_qr_activos_postgresql activos.tests.test_etiquetas_qr_postgresql --noinput
 ```
 
 Las pruebas habituales simulan las respuestas HTTP y verifican transporte,
@@ -89,7 +95,7 @@ validaciones, errores y conservación del activo en PostgreSQL. La comprobación
 contra el proveedor se activa por separado:
 
 ```bash
-docker compose exec -e SIGET_TEST_QR_LIVE=1 web python manage.py test activos.tests.test_qr_client.QRServerLiveTests --noinput
+docker compose exec -e SIGET_TEST_QR_LIVE=1 web python manage.py test activos.tests.test_qr_client.QRServerLiveTests activos.tests.test_etiquetas_qr_postgresql.EtiquetasQRLiveTests --noinput
 ```
 
 [APIs externas](../README.md) · [Configuración](../../../configuracion.md)

@@ -92,9 +92,16 @@ Para configurar y utilizar el servicio de correo, consultar [configuración y us
 
 ## Servicio de generación QR
 
-El módulo de activos dispone de un servicio para obtener imágenes SVG desde
-QR Server usando el código de inventario. La configuración, el uso interno y el
-comando de comprobación se describen en la [guía de QR Server](api_docs/externas/qrserver/README.md).
+En **Activos TI**, el Administrador selecciona un equipo y pulsa **Generar Etiqueta
+QR** para ver su etiqueta. **Imprimir Lote** prepara hasta 50 equipos seleccionados;
+**Guardar PDF** exporta una plantilla A4 de 24 rótulos por hoja. Para una etiqueta
+dañada, abrir la ficha del activo y pulsar **Reimprimir QR**.
+
+La imagen se obtiene desde QR Server utilizando únicamente el código de inventario.
+La asociación y las solicitudes de reimpresión quedan registradas en PostgreSQL.
+Los fallos permiten reintentar sin modificar los datos del equipo.
+Consultar el [flujo de etiquetas](api_docs/api_1_activos_asignaciones/activos/qr.md)
+y la [configuración de QR Server](api_docs/externas/qrserver/README.md).
 
 ## Ejecutar el escritorio
 

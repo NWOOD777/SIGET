@@ -127,3 +127,16 @@ class Activo(models.Model):
 
     def __str__(self):
         return self.codigo_inventario
+
+
+class CodigoQR(models.Model):
+    id_qr = models.AutoField(primary_key=True)
+    id_activo = models.OneToOneField(Activo, models.DO_NOTHING, db_column="id_activo")
+    payload_qr = models.TextField(unique=True)
+    formato_imagen = models.CharField(max_length=20, default="PNG")
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    veces_reimpreso = models.IntegerField(default=0)
+
+    class Meta:
+        managed = False
+        db_table = "codigo_qr"

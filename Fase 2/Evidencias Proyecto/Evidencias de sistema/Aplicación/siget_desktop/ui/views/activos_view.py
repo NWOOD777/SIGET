@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 from shiboken6 import isValid
 
+from siget_desktop.api.qr_services import MAX_ETIQUETAS_LOTE
 from siget_desktop.api.services import eliminar_activo, listar_activos
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import configurar_tabla, crear_filtros, mostrar_mensaje, notificar_cambio
@@ -34,6 +35,7 @@ from siget_desktop.ui.dialogs.activos_dialogs import (
     RegistrarActivoDialog,
 )
 from siget_desktop.ui.dialogs.common import confirmar_operacion
+from siget_desktop.ui.dialogs.qr_dialogs import EtiquetasQRDialog
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -56,6 +58,7 @@ class ActivosView(QWidget):
         self._worker: ApiWorker | None = None
         self._worker_mutacion: ApiWorker | None = None
         self._mutacion_en_curso = False
+        self._seleccionar_id: int | None = None
         self._init_ui()
         self.actualizar_permisos_ui()
 
@@ -153,6 +156,22 @@ class ActivosView(QWidget):
         self.btn_reintentar.hide()
         layout.addWidget(self.btn_reintentar)
 
+        self.acciones_qr = QWidget()
+        acciones_qr = QHBoxLayout(self.acciones_qr)
+        acciones_qr.setContentsMargins(0, 0, 0, 0)
+        self.lbl_seleccion_qr = QLabel("Seleccione un activo o varios con Ctrl/Mayús para preparar sus etiquetas.")
+        self.lbl_seleccion_qr.setWordWrap(True)
+        acciones_qr.addWidget(self.lbl_seleccion_qr, 1)
+        self.btn_generar_qr = QPushButton("Generar Etiqueta QR")
+        self.btn_generar_qr.setObjectName("btnSecundario")
+        self.btn_generar_qr.clicked.connect(lambda: self._abrir_etiquetas(False))
+        acciones_qr.addWidget(self.btn_generar_qr)
+        self.btn_imprimir_lote = QPushButton("Imprimir Lote")
+        self.btn_imprimir_lote.setObjectName("btnSecundario")
+        self.btn_imprimir_lote.clicked.connect(lambda: self._abrir_etiquetas(True))
+        acciones_qr.addWidget(self.btn_imprimir_lote)
+        layout.addWidget(self.acciones_qr)
+
         # Tabla de activos
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(len(self.COLUMNAS))
@@ -172,6 +191,10 @@ class ActivosView(QWidget):
         self.btn_eliminar.setVisible(current_session.is_admin())
         self.btn_nuevo_activo.setVisible(current_session.is_admin())
         self.btn_catalogos.setVisible(current_session.is_admin())
+        self.acciones_qr.setVisible(current_session.is_admin())
+        self.tabla.setSelectionMode(
+            QTableWidget.SelectionMode.ExtendedSelection if current_session.is_admin() else QTableWidget.SelectionMode.SingleSelection
+        )
         self._on_seleccion_cambiada()
         self.btn_nuevo_activo.setEnabled(es_admin)
         self.btn_catalogos.setEnabled(es_admin)
@@ -183,18 +206,45 @@ class ActivosView(QWidget):
             self.btn_catalogos.setToolTip("La administración de catálogos está restringida a Administradores del sistema")
 
     def _on_seleccion_cambiada(self):
-        hay_seleccion = self.tabla.currentRow() >= 0
+        cantidad = len(self.tabla.selectionModel().selectedRows())
+        hay_seleccion = cantidad == 1
         self.btn_ver_detalle.setEnabled(hay_seleccion and not self._mutacion_en_curso)
         self.btn_eliminar.setEnabled(hay_seleccion and current_session.is_admin() and not self._mutacion_en_curso)
+        autorizado = current_session.is_admin() and not self._mutacion_en_curso
+        self.btn_generar_qr.setEnabled(hay_seleccion and autorizado)
+        self.btn_imprimir_lote.setEnabled(1 <= cantidad <= MAX_ETIQUETAS_LOTE and autorizado)
+        self.lbl_seleccion_qr.setText(
+            f"{cantidad} seleccionado(s). Máximo {MAX_ETIQUETAS_LOTE} etiquetas por lote."
+            if cantidad else "Seleccione un activo o varios con Ctrl/Mayús para preparar sus etiquetas."
+        )
 
     def _obtener_id_activo_seleccionado(self) -> int | None:
-        fila = self.tabla.currentRow()
-        if fila < 0:
+        filas = self.tabla.selectionModel().selectedRows()
+        if len(filas) != 1:
             return None
+        fila = filas[0].row()
         item_id = self.tabla.item(fila, 0)
         if item_id and item_id.text().isdigit():
             return int(item_id.text())
         return None
+
+    def _abrir_etiquetas(self, lote: bool):
+        if not current_session.is_admin() or self._mutacion_en_curso:
+            return
+        filas = sorted(indice.row() for indice in self.tabla.selectionModel().selectedRows())
+        seleccion = [(self.tabla.item(fila, 0), self.tabla.item(fila, 1)) for fila in filas]
+        if any(item is None or codigo is None for item, codigo in seleccion):
+            return
+        ids = [int(item.text()) for item, _ in seleccion if item is not None]
+        if not 1 <= len(ids) <= MAX_ETIQUETAS_LOTE or (not lote and len(ids) != 1):
+            return
+        codigos = ", ".join(codigo.text() for _, codigo in seleccion if codigo is not None)
+        if not confirmar_operacion(self, "Generar etiquetas QR", f"Activos: {codigos}\nSe solicitarán sus etiquetas y se conservará el identificador de cada equipo."):
+            return
+        dialogo = EtiquetasQRDialog(ids, self)
+        dialogo.exec()
+        if dialogo.etiquetas:
+            notificar_cambio(self)
 
     def _abrir_catalogos(self):
         if not current_session.is_admin():
@@ -208,6 +258,9 @@ class ActivosView(QWidget):
     def _abrir_registro_activo(self):
         dialogo = RegistrarActivoDialog(self)
         if dialogo.exec() == RegistrarActivoDialog.DialogCode.Accepted:
+            self._seleccionar_id = getattr(dialogo, "activo_registrado", {}).get("id_activo")
+            self.input_search.clear()
+            self.combo_estado.setCurrentIndex(0)
             notificar_cambio(self)
             self.cargar_activos()
 
@@ -226,6 +279,7 @@ class ActivosView(QWidget):
         self._mutacion_en_curso = False
         self.tabla.setEnabled(True)
         self.tabla.setRowCount(0)
+        self._seleccionar_id = None
         self.progreso.hide()
         self.lbl_mensaje.hide()
         self.actualizar_permisos_ui()
@@ -234,7 +288,7 @@ class ActivosView(QWidget):
         pk = self._obtener_id_activo_seleccionado()
         if not pk or not current_session.is_admin() or self._mutacion_en_curso:
             return
-        codigo = self.tabla.item(self.tabla.currentRow(), 1)
+        codigo = self.tabla.item(self.tabla.selectionModel().selectedRows()[0].row(), 1)
         if not confirmar_operacion(
             self, "Eliminar activo",
             f"Activo: {codigo.text() if codigo else pk}\n"
@@ -278,6 +332,8 @@ class ActivosView(QWidget):
         self.btn_reintentar.hide()
         self.btn_buscar.setEnabled(False)
         self.btn_ver_detalle.setEnabled(False)
+        self.btn_generar_qr.setEnabled(False)
+        self.btn_imprimir_lote.setEnabled(False)
 
         search_text = self.input_search.text().strip() or None
         estado_sel = self.combo_estado.currentData() or None
@@ -305,6 +361,16 @@ class ActivosView(QWidget):
         self.tabla.setRowCount(len(activos))
         for row_idx, activo in enumerate(activos):
             self._insertar_fila(row_idx, activo)
+        if self._seleccionar_id is not None:
+            for fila, activo in enumerate(activos):
+                if activo.get("id_activo") == self._seleccionar_id:
+                    self.tabla.selectRow(fila)
+                    item = self.tabla.item(fila, 0)
+                    if item is not None:
+                        self.tabla.scrollToItem(item)
+                    break
+            self._seleccionar_id = None
+        self._on_seleccion_cambiada()
 
     def _insertar_fila(self, row: int, item: dict[str, Any]):
         valores = [

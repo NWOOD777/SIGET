@@ -167,6 +167,7 @@ class ApiClient:
         params: dict[str, Any] | None = None,
         json: Any = None,
         headers: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> Any:
         """
         Ejecuta una petición HTTP centralizada.
@@ -176,6 +177,7 @@ class ApiClient:
         url = f"{self.base_url}/{path.lstrip('/')}"
         cabeceras = self._preparar_cabeceras(headers)
         generation = current_session.generation
+        tiempo_espera = timeout if timeout is not None else self.timeout
 
         try:
             resp = self._session.request(
@@ -184,7 +186,7 @@ class ApiClient:
                 params=params,
                 json=json,
                 headers=cabeceras,
-                timeout=self.timeout,
+                timeout=tiempo_espera,
             )
             cuenta_inactiva = False
             if resp.status_code == 403:
@@ -198,7 +200,7 @@ class ApiClient:
             return self._procesar_respuesta(resp)
         except requests.Timeout as exc:
             raise ConnectionApiError(
-                f"Tiempo de espera agotado al conectar con el servidor ({self.timeout}s).",
+                f"Tiempo de espera agotado al conectar con el servidor ({tiempo_espera}s).",
                 payload=str(exc),
             ) from exc
         except requests.ConnectionError as exc:
