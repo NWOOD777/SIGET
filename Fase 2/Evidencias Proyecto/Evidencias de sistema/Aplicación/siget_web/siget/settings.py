@@ -197,3 +197,9 @@ RESEND_FROM_EMAIL = env.str("RESEND_FROM_EMAIL", default="")  # Debe ser un remi
 RESEND_TIMEOUT_SECONDS = env.int("RESEND_TIMEOUT_SECONDS", default=10)
 RESEND_MAX_ATTEMPTS = env.int("RESEND_MAX_ATTEMPTS", default=5)
 RESEND_RETRY_SECONDS = env.int("RESEND_RETRY_SECONDS", default=60)
+
+# Generación vectorial de códigos QR desde el backend.
+QR_SERVER_URL = env.str("QR_SERVER_URL", default="https://api.qrserver.com/v1/create-qr-code/")
+QR_SERVER_CONNECT_TIMEOUT_SECONDS = env.float("QR_SERVER_CONNECT_TIMEOUT_SECONDS", default=5)
+QR_SERVER_READ_TIMEOUT_SECONDS = env.float("QR_SERVER_READ_TIMEOUT_SECONDS", default=15)
+QR_SERVER_SIZE = env.int("QR_SERVER_SIZE", default=300)

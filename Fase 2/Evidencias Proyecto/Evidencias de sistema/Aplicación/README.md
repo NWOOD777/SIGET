@@ -90,6 +90,12 @@ Las instalaciones existentes conservan sus registros en el volumen de PostgreSQL
 
 Para configurar y utilizar el servicio de correo, consultar [configuración y uso de Resend](api_docs/externas/resend/README.md).
 
+## Servicio de generación QR
+
+El módulo de activos dispone de un servicio para obtener imágenes SVG desde
+QR Server usando el código de inventario. La configuración, el uso interno y el
+comando de comprobación se describen en la [guía de QR Server](api_docs/externas/qrserver/README.md).
+
 ## Ejecutar el escritorio
 
 Con el backend en ejecución y las dependencias instaladas, utilizar el launcher correspondiente:

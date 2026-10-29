@@ -50,6 +50,13 @@ En Auth0, registrar la API propia con firma RS256 y un Identifier idéntico a `A
 
 `RESEND_API_KEY` y `RESEND_FROM_EMAIL` configuran el proveedor y remitente. `RESEND_TIMEOUT_SECONDS` vale 10, `RESEND_MAX_ATTEMPTS` vale 5 y `RESEND_RETRY_SECONDS` vale 60 por defecto. La clave es privada del backend; los clientes no la utilizan. El servicio Docker `correo` genera recordatorios y despacha avisos. Consultar [configuración y uso del servicio de correo](api_docs/externas/resend/README.md).
 
+## Generación QR con QR Server
+
+El backend utiliza `QR_SERVER_URL` con el endpoint HTTPS del proveedor.
+`QR_SERVER_CONNECT_TIMEOUT_SECONDS` y `QR_SERVER_READ_TIMEOUT_SECONDS` valen 5 y 15
+segundos; `QR_SERVER_SIZE` vale 300. La API es pública y no requiere clave.
+Consultar [configuración y uso de QR Server](api_docs/externas/qrserver/README.md).
+
 ## Configuración pública del escritorio
 
 El escritorio lee únicamente `SIGET_PUBLIC_URL`, `SIGET_HTTP_TIMEOUT`, `AUTH0_DOMAIN`, `AUTH0_API_AUDIENCE`, `AUTH0_DESKTOP_CLIENT_ID` y `AUTH0_DESKTOP_CALLBACK_PORT`. Las variables del entorno tienen prioridad sobre `.env`; su ubicación se resuelve desde la carpeta de la aplicación, independientemente del directorio de ejecución.
