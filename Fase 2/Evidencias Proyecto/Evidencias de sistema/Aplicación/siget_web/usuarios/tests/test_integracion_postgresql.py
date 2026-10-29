@@ -125,7 +125,54 @@ class IntegracionPostgreSQLTests(PostgreSQLTestBase):
             cursor.execute(
                 "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name NOT LIKE 'django_%' AND table_name NOT LIKE 'auth_%'"
             )
-            self.assertEqual(cursor.fetchone()[0], 34)
+            self.assertEqual(cursor.fetchone()[0], 35)
+            cursor.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema='public' AND table_type='BASE TABLE' "
+                "AND table_name NOT LIKE 'django_%' AND table_name NOT LIKE 'auth_%'"
+            )
+            self.assertEqual({fila[0] for fila in cursor.fetchall()}, {
+                "rol", "permiso", "usuario", "usuario_rol", "rol_permiso",
+                "categoria_activo", "marca", "modelo_activo", "ubicacion", "estado_activo",
+                "activo", "historial_estado_activo", "estado_solicitud_asignacion",
+                "solicitud_asignacion", "estado_asignacion", "asignacion", "devolucion_activo",
+                "prioridad_ticket", "sla", "estado_ticket", "ticket", "comentario_ticket",
+                "adjunto_ticket", "evaluacion_csat", "estado_orden_trabajo", "orden_trabajo",
+                "diagnostico", "intervencion", "cierre_tecnico", "repuesto", "orden_repuesto",
+                "movimiento_repuesto", "codigo_qr", "notificacion", "bitacora_auditoria",
+            })
+            cursor.execute("SELECT to_regclass('public.cierre_tecnico')")
+            self.assertIsNotNone(cursor.fetchone()[0])
+            cursor.execute("""
+                SELECT c.conname, c.contype,
+                       ARRAY(SELECT a.attname FROM pg_attribute a
+                             WHERE a.attrelid=c.conrelid AND a.attnum=ANY(c.conkey)
+                             ORDER BY a.attnum),
+                       (SELECT n.nspname || '.' || t.relname
+                        FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace
+                        WHERE t.oid=c.confrelid),
+                       ARRAY(SELECT a.attname FROM pg_attribute a
+                             WHERE a.attrelid=c.confrelid AND a.attnum=ANY(c.confkey)
+                             ORDER BY a.attnum),
+                       c.confdeltype, c.convalidated, pg_get_constraintdef(c.oid)
+                FROM pg_constraint c
+                WHERE c.conrelid='public.cierre_tecnico'::regclass
+            """)
+            restricciones = cursor.fetchall()
+            self.assertTrue(all(fila[6] for fila in restricciones))
+            self.assertEqual([fila[2] for fila in restricciones if fila[1] == "p"], [["id_cierre_tecnico"]])
+            self.assertEqual([fila[2] for fila in restricciones if fila[1] == "u"], [["id_orden"]])
+            self.assertEqual({(tuple(fila[2]), fila[3], tuple(fila[4]), fila[5])
+                              for fila in restricciones if fila[1] == "f"}, {
+                (("id_orden",), "public.orden_trabajo", ("id_orden",), "r"),
+                (("id_tecnico",), "public.usuario", ("id_usuario",), "r"),
+            })
+            checks = {fila[0]: fila[7] for fila in restricciones if fila[1] == "c"}
+            self.assertEqual(set(checks), {"ck_cierre_tecnico_resultado", "ck_cierre_tecnico_contenido"})
+            for resultado in ("REPARACION_EXITOSA", "NO_REPARABLE"):
+                self.assertIn(resultado, checks["ck_cierre_tecnico_resultado"])
+            for fragmento in ("solucion_aplicada", "pruebas_realizadas", "informe_descarte", "IS NOT NULL", "translate", "length"):
+                self.assertIn(fragmento, checks["ck_cierre_tecnico_contenido"])
         self.assertEqual(Rol.objects.count(), 3)
         self.assertTrue(Permiso.objects.exists())
         self.assertEqual(self.cliente(self.solicitante).get("/api/tickets/sla/").status_code, 200)

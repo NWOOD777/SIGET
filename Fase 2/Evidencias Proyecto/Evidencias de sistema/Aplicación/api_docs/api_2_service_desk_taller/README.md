@@ -19,6 +19,7 @@ Consultar la [organización de las APIs](../organizacion.md) para conocer la rel
 | GET | `/api/tickets/indicadores-csat/` | [Indicadores CSAT por técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 | GET | `/api/tickets/indicadores-csat/{id_tecnico}/` | [Indicadores CSAT de un técnico](tickets/csat.md#5-indicadores-csat-por-técnico) |
 | GET, POST | `/api/ordenes-trabajo/` | [Listar y crear OT](ordenes_trabajo/contratos_actuales.md#listar-ot) |
+| POST | `/api/ordenes-trabajo/{id}/completar/` | [Cierre técnico E6-H17](ordenes_trabajo/cierre_tecnico_api.md) |
 | GET | `/api/ordenes-trabajo/tecnicos-disponibles/` | [Técnicos disponibles](ordenes_trabajo/contratos_actuales.md#consultar-técnicos-disponibles) |
 | GET | `/api/ordenes-trabajo/{id}/historial/` | [Historial de OT](ordenes_trabajo/contratos_actuales.md#consultar-historial) |
 | POST | `/api/ordenes-trabajo/{id}/iniciar-reparacion/` | [Iniciar reparación](ordenes_trabajo/contratos_actuales.md#iniciar-reparación) |
@@ -32,6 +33,9 @@ y reasignaciones. Estas operaciones requieren un Técnico de soporte activo.
 La reanudación recupera la fase registrada al pausar la orden.
 
 ## Operación desde el escritorio
+
+El [cierre técnico E6-H17](ordenes_trabajo/cierre_tecnico_escritorio.md) está integrado
+en Órdenes de trabajo. Su uso real requiere la instalación PostgreSQL pendiente.
 
 En **Mesa de ayuda**, «Ver detalle» consulta el ticket sin modificarlo.
 El Técnico con permiso `TICKET_ATENDER` dispone de «Atender Ticket» para tickets

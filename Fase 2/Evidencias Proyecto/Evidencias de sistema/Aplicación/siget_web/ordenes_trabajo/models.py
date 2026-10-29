@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils import timezone
+
+from .validaciones_cierre import RESULTADOS_CIERRE, validar_contenido_cierre
 
 
 class EstadoOrdenTrabajo(models.Model):
@@ -47,6 +50,36 @@ class OrdenTrabajo(models.Model):
 
     def __str__(self):
         return self.codigo_ot
+
+
+class CierreTecnico(models.Model):
+    """Resultado definitivo; su creación transaccional se implementará después."""
+
+    id_cierre_tecnico = models.AutoField(primary_key=True)
+    id_orden = models.OneToOneField(
+        OrdenTrabajo, on_delete=models.PROTECT, db_column="id_orden", related_name="cierre_tecnico",
+    )
+    id_tecnico = models.ForeignKey(
+        "usuarios.Usuario", on_delete=models.PROTECT, db_column="id_tecnico",
+    )
+    resultado = models.CharField(max_length=32, choices=RESULTADOS_CIERRE)
+    solucion_aplicada = models.TextField(null=True, blank=True)
+    pruebas_realizadas = models.TextField(null=True, blank=True)
+    informe_descarte = models.TextField(null=True, blank=True)
+    fecha_cierre = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        managed = False
+        db_table = "cierre_tecnico"
+
+    def clean(self):
+        super().clean()
+        validar_contenido_cierre(
+            resultado=self.resultado,
+            solucion_aplicada=self.solucion_aplicada,
+            pruebas_realizadas=self.pruebas_realizadas,
+            informe_descarte=self.informe_descarte,
+        )
 
 
 class Diagnostico(models.Model):

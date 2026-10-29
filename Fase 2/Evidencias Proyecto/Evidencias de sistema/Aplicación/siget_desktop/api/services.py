@@ -540,6 +540,18 @@ def iniciar_reparacion(id_orden: int) -> dict[str, Any]:
     return _objeto(resultado)
 
 
+def completar_orden_trabajo(id_orden: int, *, resultado: str, solucion_aplicada: str | None = None,
+                           pruebas_realizadas: str | None = None, informe_descarte: str | None = None) -> dict[str, Any]:
+    """Solicita un cierre una sola vez, sin enviar actor, fecha ni estados."""
+    if type(id_orden) is not int or not 1 <= id_orden <= 2147483647:
+        raise ValueError("Seleccione una orden de trabajo válida.")
+    payload = {"resultado": resultado}
+    for campo, valor in (("solucion_aplicada", solucion_aplicada), ("pruebas_realizadas", pruebas_realizadas), ("informe_descarte", informe_descarte)):
+        if valor is not None:
+            payload[campo] = valor
+    return _objeto(api_client.post(f"/api/ordenes-trabajo/{id_orden}/completar/", json=payload))
+
+
 def pausar_orden_trabajo(
     id_orden: int,
     justificacion: str,

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -36,6 +36,7 @@ from siget_desktop.api.services import (
     reasignar_orden_trabajo,
 )
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.dialogs.cierre_tecnico_dialog import CierreTecnicoDialog, puede_cerrar_tecnicamente
 from siget_desktop.ui.dialogs.acciones_orden_trabajo_dialogs import (
     PausarOTDialog,
     ReasignarOTDialog,
@@ -276,6 +277,7 @@ class DetalleMovimientoHistorialDialog(QDialog):
 
 
 class OrdenesTrabajoView(QWidget):
+    cierre_tecnico_completado = Signal(object)
     """Gestiona órdenes de trabajo y seguimiento de reparaciones."""
 
     COLUMNAS = [
@@ -456,6 +458,7 @@ class OrdenesTrabajoView(QWidget):
         self.btn_reasignar = QPushButton("Reasignar OT")
         self.btn_reanudar = QPushButton("Reanudar OT")
         self.btn_repuestos = QPushButton("Gestionar repuestos")
+        self.btn_cierre_tecnico = QPushButton("Cierre técnico")
 
         for boton in (
             self.btn_iniciar,
@@ -463,6 +466,7 @@ class OrdenesTrabajoView(QWidget):
             self.btn_reasignar,
             self.btn_reanudar,
             self.btn_repuestos,
+            self.btn_cierre_tecnico,
         ):
             boton.setMinimumHeight(38)
             acciones.addWidget(boton)
@@ -474,6 +478,7 @@ class OrdenesTrabajoView(QWidget):
         self.btn_reasignar.clicked.connect(self._reasignar_orden)
         self.btn_reanudar.clicked.connect(self._reanudar_orden)
         self.btn_repuestos.clicked.connect(self._gestionar_repuestos)
+        self.btn_cierre_tecnico.clicked.connect(self._cerrar_tecnicamente)
 
         layout.addLayout(acciones)
 
@@ -803,6 +808,7 @@ class OrdenesTrabajoView(QWidget):
         return valor
 
     def actualizar_permisos_ui(self):
+        self._actualizar_acciones()
         es_tecnico = current_session.is_tecnico()
         self.btn_crear.setEnabled(es_tecnico)
         self.btn_actualizar.setEnabled(es_tecnico)
@@ -976,6 +982,10 @@ class OrdenesTrabajoView(QWidget):
         estado = orden.get("estado") if orden else None
         ocupada = self._worker_ot is not None
 
+        cierre_disponible = puede_cerrar_tecnicamente() and estado in ("En Diagnóstico", "En Reparación")
+        self.btn_cierre_tecnico.setVisible(cierre_disponible)
+        self.btn_cierre_tecnico.setEnabled(cierre_disponible and not ocupada)
+
         self.btn_detalle.setEnabled(seleccionada and not ocupada)
         self.btn_iniciar.setEnabled(
             es_tecnico and seleccionada
@@ -1000,6 +1010,30 @@ class OrdenesTrabajoView(QWidget):
             and seleccionada
             and not ocupada
         )
+
+    def _cerrar_tecnicamente(self):
+        orden = self._orden_seleccionada()
+        if (self._worker_ot is not None or not puede_cerrar_tecnicamente() or orden is None
+                or orden.get("estado") not in ("En Diagnóstico", "En Reparación")):
+            return
+        dialogo = CierreTecnicoDialog(orden, self)
+        if dialogo.exec() == QDialog.DialogCode.Accepted and dialogo.resultado_cierre is not None:
+            # Solo aplicar datos confirmados por el servidor; después recargar la lista.
+            resultado = dialogo.resultado_cierre
+            orden.update(estado=resultado["estado"], fecha_termino=resultado["fecha_cierre"])
+            for guardada in self._ordenes_cargadas:
+                if guardada.get("id_orden") == resultado["id_orden"]:
+                    guardada.update(estado=resultado["estado"], fecha_termino=resultado["fecha_cierre"])
+            for fila in range(self.tabla.rowCount()):
+                item = self.tabla.item(fila, 0)
+                datos = item.data(Qt.ItemDataRole.UserRole) if item else None
+                if isinstance(datos, dict) and datos.get("id_orden") == resultado["id_orden"]:
+                    datos.update(estado=resultado["estado"], fecha_termino=resultado["fecha_cierre"])
+                    item.setData(Qt.ItemDataRole.UserRole, datos)
+                    self.tabla.item(fila, 4).setText(resultado["estado"])
+            self._actualizar_acciones()
+            self.cierre_tecnico_completado.emit(resultado)
+            self.actualizar_datos()
 
     def _ver_detalle_orden(self, *_):
         orden = self._orden_seleccionada()

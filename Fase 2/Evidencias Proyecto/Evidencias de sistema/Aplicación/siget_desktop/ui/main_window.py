@@ -74,6 +74,7 @@ class MainWindow(QMainWindow):
         self.view_usuarios = UsuariosView()
         self.view_auditoria = AuditoriaView()
         self.view_repuestos = RepuestosView()
+        self.view_ordenes_trabajo.cierre_tecnico_completado.connect(self._refrescar_por_cierre_tecnico)
 
         for view in (
             self.view_dashboard,
@@ -92,6 +93,11 @@ class MainWindow(QMainWindow):
         layout_principal.addLayout(area_trabajo, 1)
 
         self.sidebar.currentRowChanged.connect(self._cambiar_vista)
+
+    def _refrescar_por_cierre_tecnico(self, _resultado):
+        self.view_tickets.cargar_tickets()
+        self.view_activos.cargar_activos()
+        self.view_dashboard.actualizar_datos()
 
     def _crear_navegacion(self) -> QWidget:
         frame = QFrame()

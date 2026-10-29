@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    CompletarOrdenTrabajoView,
     AnularAsignacionRepuestoOrdenView,
     AsignarRepuestoOrdenView,
     HistorialOrdenTrabajoView,
@@ -13,6 +14,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("<int:pk>/completar/", CompletarOrdenTrabajoView.as_view(), name="completar-orden-trabajo"),
     path(
         "<int:pk>/repuestos/<int:id_orden_repuesto>/anular/",
         AnularAsignacionRepuestoOrdenView.as_view(),

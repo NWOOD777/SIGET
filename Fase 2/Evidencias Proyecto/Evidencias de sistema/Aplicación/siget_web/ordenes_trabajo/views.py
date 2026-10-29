@@ -9,6 +9,9 @@ from tickets.permissions import _obtener_usuario_siget
 from usuarios.models import BitacoraAuditoria
 
 from .models import Diagnostico, OrdenRepuesto, OrdenTrabajo
+from .cierre import cerrar_orden_trabajo
+from .cierre_serializers import CierreTecnicoEntradaSerializer
+from .permissions import PuedeCompletarOrdenTrabajo
 from .permissions import PuedeGestionarOrdenesTrabajo
 from .repuestos import anular_asignacion_repuesto, asignar_repuesto_orden, calcular_costo_repuestos_orden
 from .serializers import (
@@ -34,6 +37,37 @@ def validar_entrada(serializer_class, datos) -> dict[str, Any]:
 
 def validar_id_orden(pk) -> int:
     return validar_entrada(RutaOrdenTrabajoSerializer, {"id_orden": pk})["id_orden"]
+
+
+class CompletarOrdenTrabajoView(APIView):
+    permission_classes = [PuedeCompletarOrdenTrabajo]
+
+    def post(self, request, pk):
+        pk = validar_id_orden(pk)
+        datos = validar_entrada(CierreTecnicoEntradaSerializer, request.data)
+        adicionales = set(request.data) - set(CierreTecnicoEntradaSerializer().fields)
+        if adicionales:
+            raise exceptions.ValidationError({"non_field_errors": ["El cuerpo contiene campos no permitidos."]})
+        if not OrdenTrabajo.objects.filter(pk=pk).exists():
+            raise exceptions.NotFound("La orden de trabajo no existe.")
+        tecnico = _obtener_usuario_siget(request)
+        if tecnico is None:
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para completar una orden de trabajo.")
+        cierre = cerrar_orden_trabajo(id_orden=pk, tecnico=tecnico, ip_origen=direccion_ip_cliente(request), **datos)
+        orden = cierre.id_orden
+        ticket = orden.id_ticket
+        activo = ticket.id_activo
+        return Response({
+            "id_orden": orden.pk,
+            "estado": orden.id_estado_ot.nombre,
+            "resultado": cierre.resultado,
+            "id_cierre_tecnico": cierre.pk,
+            "fecha_cierre": cierre.fecha_cierre,
+            "id_activo": activo.pk,
+            "estado_activo": activo.id_estado_activo.nombre,
+            "id_ticket": ticket.pk,
+            "estado_ticket": ticket.id_estado_ticket.nombre,
+        }, status=status.HTTP_200_OK)
 
 
 def serializar_orden(orden):
