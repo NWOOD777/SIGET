@@ -1,4 +1,3 @@
-
 from django.db import models
 
 
@@ -93,9 +92,11 @@ class Intervencion(models.Model):
         db_table = "intervencion"
 
 
-
-
 class OrdenRepuesto(models.Model):
+    id_orden_id: int
+    id_repuesto_id: int
+    id_usuario_anulacion_id: int | None
+
     id_orden_repuesto = models.AutoField(primary_key=True)
 
     id_orden = models.ForeignKey(

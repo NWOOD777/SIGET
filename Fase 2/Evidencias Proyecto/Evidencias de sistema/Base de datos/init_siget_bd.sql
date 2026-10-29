@@ -455,7 +455,7 @@ CREATE TABLE repuesto (
     marca_modelo VARCHAR(150),
     unidad_medida VARCHAR(50) NOT NULL DEFAULT 'Unidad',
     stock_actual INT NOT NULL DEFAULT 0 CHECK (stock_actual >= 0),
-    stock_minimo INT NOT NULL DEFAULT 1 CHECK (stock_minimo >= 0),
+    stock_minimo INT NOT NULL DEFAULT 5 CHECK (stock_minimo >= 0),
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     precio_unitario NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (precio_unitario >= 0),
     ubicacion_bodega VARCHAR(100)
@@ -474,10 +474,19 @@ CREATE TABLE orden_repuesto (
     anulado BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_anulacion TIMESTAMPTZ,
     motivo_anulacion VARCHAR(255),
-    id_usuario_anulacion INT REFERENCES usuario(id_usuario) ON DELETE RESTRICT
+    id_usuario_anulacion INT REFERENCES usuario(id_usuario) ON DELETE RESTRICT,
+    CONSTRAINT ck_orden_repuesto_anulacion CHECK (
+        (NOT anulado AND fecha_anulacion IS NULL AND motivo_anulacion IS NULL AND id_usuario_anulacion IS NULL)
+        OR (anulado AND fecha_anulacion IS NOT NULL AND motivo_anulacion IS NOT NULL
+            AND length(btrim(motivo_anulacion)) > 0 AND id_usuario_anulacion IS NOT NULL)
+    )
 );
 
 COMMENT ON TABLE orden_repuesto IS 'Consumo de repuestos imputado a una orden de trabajo.';
+COMMENT ON COLUMN orden_repuesto.anulado IS 'Indica si la imputación fue anulada y sus unidades reintegradas al inventario.';
+COMMENT ON COLUMN orden_repuesto.fecha_anulacion IS 'Fecha y hora del reintegro por anulación.';
+COMMENT ON COLUMN orden_repuesto.motivo_anulacion IS 'Justificación obligatoria de la anulación.';
+COMMENT ON COLUMN orden_repuesto.id_usuario_anulacion IS 'Usuario que registró la anulación de la imputación.';
 
 -- Tabla 31
 CREATE TABLE movimiento_repuesto (

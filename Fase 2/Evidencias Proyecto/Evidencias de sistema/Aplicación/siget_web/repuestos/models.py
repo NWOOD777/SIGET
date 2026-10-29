@@ -10,12 +10,8 @@ class Repuesto(models.Model):
     stock_actual = models.IntegerField(default=0)
     stock_minimo = models.IntegerField(default=5)
     activo = models.BooleanField(default=True)
-    precio_unitario = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0
-    )
-    ubicacion_bodega = models.CharField(
-        max_length=100, null=True, blank=True
-    )
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    ubicacion_bodega = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         managed = False
@@ -48,9 +44,7 @@ class MovimientoRepuesto(models.Model):
         default=0,
     )
 
-    motivo = models.CharField(
-        max_length=255, null=True, blank=True
-    )
+    motivo = models.CharField(max_length=255, null=True, blank=True)
 
     fecha_movimiento = models.DateTimeField(auto_now_add=True)
 

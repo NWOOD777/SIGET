@@ -7,13 +7,9 @@ from usuarios.permissions import PuedeAdministrarUsuarios
 from usuarios.services import obtener_usuario_actual
 
 from .models import Repuesto
+from .permissions import PuedeConsultarCatalogoRepuestos
 from .serializers import AjusteStockRepuestoSerializer, EstadoRepuestoSerializer, IngresoRepuestoSerializer, StockMinimoRepuestoSerializer
 from .services import actualizar_stock_minimo_repuesto, ajustar_stock_repuesto, cambiar_estado_repuesto, registrar_ingreso_repuesto
-
-
-from rest_framework import exceptions, permissions
-from tickets.permissions import _obtener_usuario_siget
-from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
 class IngresoRepuestoView(APIView):
@@ -42,43 +38,18 @@ class IngresoRepuestoView(APIView):
         )
 
 
-class PuedeConsultarCatalogoRepuestos(permissions.BasePermission):
-    """
-    Permite consultar el catálogo de repuestos a administradores
-    y técnicos de soporte autenticados.
-    """
-
-    def has_permission(self, request, view):
-        usuario = _obtener_usuario_siget(request)
-
-        if usuario is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para consultar repuestos."
-            )
-
-        if es_administrador(usuario) or usuario_tiene_rol(
-            usuario, ROL_TECNICO
-        ):
-            return True
-
-        raise exceptions.PermissionDenied(
-            "Solo administradores y técnicos de soporte pueden consultar repuestos."
-        )
-
 class ListadoRepuestosView(APIView):
     permission_classes = [PuedeConsultarCatalogoRepuestos]
 
     def get(self, request):
         busqueda = request.query_params.get("search", "").strip()
 
-
         estado = request.query_params.get("estado", "activos").strip().lower()
 
         if estado not in ("activos", "inactivos", "todos"):
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({
-                "estado": "Utilice activos, inactivos o todos."
-            })
+
+            raise ValidationError({"estado": "Utilice activos, inactivos o todos."})
 
         repuestos = Repuesto.objects.all()
 
@@ -92,10 +63,7 @@ class ListadoRepuestosView(APIView):
         if busqueda:
             from django.db.models import Q
 
-            repuestos = repuestos.filter(
-                Q(codigo_repuesto__icontains=busqueda)
-                | Q(nombre__icontains=busqueda)
-            )
+            repuestos = repuestos.filter(Q(codigo_repuesto__icontains=busqueda) | Q(nombre__icontains=busqueda))
 
         resultado = [
             {
@@ -106,14 +74,8 @@ class ListadoRepuestosView(APIView):
                 "stock_actual": r.stock_actual,
                 "stock_minimo": r.stock_minimo,
                 "activo": r.activo,
-                "estado_stock": (
-                    "Stock crítico"
-                    if r.stock_actual <= r.stock_minimo
-                    else "Normal"
-                ),
-                "cantidad_sugerida": max(
-                    0, r.stock_minimo - r.stock_actual + 1
-                ),
+                "estado_stock": ("Stock crítico" if r.stock_actual <= r.stock_minimo else "Normal"),
+                "cantidad_sugerida": max(0, r.stock_minimo - r.stock_actual + 1),
                 "precio_unitario": str(r.precio_unitario),
             }
             for r in repuestos
@@ -122,18 +84,13 @@ class ListadoRepuestosView(APIView):
         return Response(resultado)
 
 
-
 class AlertasRepuestosView(APIView):
     """Listado de repuestos con stock igual o inferior al mínimo."""
 
     permission_classes = [PuedeAdministrarUsuarios]
 
     def get(self, request):
-        repuestos = (
-            Repuesto.objects
-            .filter(activo=True, stock_actual__lte=F("stock_minimo"))
-            .order_by("stock_actual", "id_repuesto")
-        )
+        repuestos = Repuesto.objects.filter(activo=True, stock_actual__lte=F("stock_minimo")).order_by("stock_actual", "id_repuesto")
 
         alertas = []
 
@@ -143,26 +100,25 @@ class AlertasRepuestosView(APIView):
                 repuesto.stock_minimo - repuesto.stock_actual + 1,
             )
 
-            alertas.append({
-                "id_repuesto": repuesto.id_repuesto,
-                "codigo_repuesto": repuesto.codigo_repuesto,
-                "nombre": repuesto.nombre,
-                "stock_actual": repuesto.stock_actual,
-                "stock_minimo": repuesto.stock_minimo,
-                "cantidad_sugerida": cantidad_sugerida,
-                "estado": "Stock Crítico",
-            })
+            alertas.append(
+                {
+                    "id_repuesto": repuesto.id_repuesto,
+                    "codigo_repuesto": repuesto.codigo_repuesto,
+                    "nombre": repuesto.nombre,
+                    "stock_actual": repuesto.stock_actual,
+                    "stock_minimo": repuesto.stock_minimo,
+                    "cantidad_sugerida": cantidad_sugerida,
+                    "estado": "Stock Crítico",
+                }
+            )
 
-        return Response({
-            "total_alertas": len(alertas),
-            "estado_general": (
-                "STOCK_CRITICO" if alertas else "NORMAL"
-            ),
-            "alertas": alertas,
-        })
-
-
-
+        return Response(
+            {
+                "total_alertas": len(alertas),
+                "estado_general": ("STOCK_CRITICO" if alertas else "NORMAL"),
+                "alertas": alertas,
+            }
+        )
 
 
 class StockMinimoRepuestoView(APIView):
@@ -183,13 +139,12 @@ class StockMinimoRepuestoView(APIView):
             usuario=usuario,
         )
 
-        return Response({
-            "mensaje": "Stock mínimo actualizado correctamente.",
-            **resultado,
-        })
-
-
-
+        return Response(
+            {
+                "mensaje": "Stock mínimo actualizado correctamente.",
+                **resultado,
+            }
+        )
 
 
 class AjusteStockRepuestoView(APIView):
@@ -211,10 +166,12 @@ class AjusteStockRepuestoView(APIView):
             usuario=usuario,
         )
 
-        return Response({
-            "mensaje": "Stock ajustado correctamente.",
-            **resultado,
-        })
+        return Response(
+            {
+                "mensaje": "Stock ajustado correctamente.",
+                **resultado,
+            }
+        )
 
 
 class EstadoRepuestoView(APIView):
@@ -236,11 +193,9 @@ class EstadoRepuestoView(APIView):
             usuario=usuario,
         )
 
-        return Response({
-            "mensaje": (
-                "Repuesto reactivado correctamente."
-                if resultado["activo"]
-                else "Repuesto dado de baja correctamente."
-            ),
-            **resultado,
-        })
+        return Response(
+            {
+                "mensaje": ("Repuesto reactivado correctamente." if resultado["activo"] else "Repuesto dado de baja correctamente."),
+                **resultado,
+            }
+        )

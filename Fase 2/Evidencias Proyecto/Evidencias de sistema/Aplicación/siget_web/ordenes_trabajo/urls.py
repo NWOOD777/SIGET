@@ -1,7 +1,8 @@
-
 from django.urls import path
 
 from .views import (
+    AnularAsignacionRepuestoOrdenView,
+    AsignarRepuestoOrdenView,
     HistorialOrdenTrabajoView,
     IniciarReparacionView,
     ListarTecnicosOTView,
@@ -9,40 +10,29 @@ from .views import (
     PausarOrdenTrabajoView,
     ReanudarOrdenTrabajoView,
     ReasignarOrdenTrabajoView,
-    AsignarRepuestoOrdenView,
-    AnularAsignacionRepuestoOrdenView
 )
 
 urlpatterns = [
-    
     path(
         "<int:pk>/repuestos/<int:id_orden_repuesto>/anular/",
         AnularAsignacionRepuestoOrdenView.as_view(),
         name="anular-asignacion-repuesto",
     ),
-
     path(
         "<int:pk>/repuestos/",
         AsignarRepuestoOrdenView.as_view(),
         name="asignar-repuesto-orden",
     ),
-
-
-    
     path(
         "tecnicos-disponibles/",
         ListarTecnicosOTView.as_view(),
         name="listar-tecnicos-ot",
     ),
-
     path(
         "<int:pk>/historial/",
         HistorialOrdenTrabajoView.as_view(),
         name="historial-orden-trabajo",
     ),
-
-
-
     path("", OrdenTrabajoListCreateView.as_view(), name="ordenes-trabajo"),
     path(
         "<int:pk>/iniciar-reparacion/",

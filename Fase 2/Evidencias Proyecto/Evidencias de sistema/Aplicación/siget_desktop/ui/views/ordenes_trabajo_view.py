@@ -40,14 +40,14 @@ from siget_desktop.ui.dialogs.acciones_orden_trabajo_dialogs import (
     PausarOTDialog,
     ReasignarOTDialog,
 )
+from siget_desktop.ui.dialogs.gestionar_repuestos_ot_dialog import (
+    GestionarRepuestosOTDialog,
+)
 from siget_desktop.ui.dialogs.ordenes_trabajo_dialogs import (
     CrearOrdenTrabajoDialog,
 )
 from siget_desktop.ui.workers import ApiWorker
 
-from siget_desktop.ui.dialogs.gestionar_repuestos_ot_dialog import (
-    GestionarRepuestosOTDialog,
-)
 
 class DetalleOrdenTrabajoDialog(QDialog):
     """Muestra el detalle de una OT en una ventana modal."""
@@ -1047,6 +1047,7 @@ class OrdenesTrabajoView(QWidget):
         dialogo = GestionarRepuestosOTDialog(
             id_orden=int(id_orden),
             codigo_ot=str(codigo_ot),
+            estado_ot=str(orden.get("estado", "")),
             parent=self,
         )
         dialogo.exec()

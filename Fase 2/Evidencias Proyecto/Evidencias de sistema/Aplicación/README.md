@@ -13,6 +13,8 @@ Aplicación/
 │   ├── asignaciones/   # Solicitudes, entregas y devoluciones
 │   ├── notificaciones/ # Centro de avisos en plataforma, correo transaccional y proceso programado
 │   ├── tickets/        # Service Desk
+│   ├── ordenes_trabajo/ # Diagnóstico, reparación y consumo de repuestos
+│   ├── repuestos/      # Existencias, ingresos y alertas de inventario
 │   ├── templates/
 │   ├── static/
 │   └── manage.py
@@ -205,3 +207,11 @@ conserva para trazabilidad. Cada usuario puede revisar su propio RUT en **Mi per
 y contactar al Administrador si requiere una corrección. No aparece en los listados,
 tickets, asignaciones ni consultas habituales de auditoría. El acceso a SIGET utiliza Auth0 y los roles
 registrados en PostgreSQL, sin solicitar el RUT al iniciar sesión.
+
+## Repuestos en reparaciones
+
+En **Órdenes de Trabajo → Gestionar repuestos**, el Técnico consulta las piezas
+imputadas y su costo. Una OT en reparación permite asignar unidades disponibles
+o anular una imputación con un motivo. Ambas acciones solicitan confirmación y
+actualizan las existencias y los costos. El historial conserva las imputaciones
+anuladas. Las reglas y rutas se describen en [Repuestos de una orden de trabajo](api_docs/api_2_service_desk_taller/ordenes_trabajo/repuestos.md).

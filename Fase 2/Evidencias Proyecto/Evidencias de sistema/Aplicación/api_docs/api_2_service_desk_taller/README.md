@@ -232,4 +232,6 @@ Permite al **Usuario solicitante** activo y titular de un ticket evaluar por ún
 
 Véase el detalle de contratos, validaciones, concurrencia e indicadores en [Calificación de servicio (CSAT)](tickets/csat.md).
 
+La [gestión de repuestos de las órdenes de trabajo](ordenes_trabajo/repuestos.md) permite consultar consumos, imputar piezas y anular imputaciones con reintegro de existencias.
+
 [Índice general](../README.md)

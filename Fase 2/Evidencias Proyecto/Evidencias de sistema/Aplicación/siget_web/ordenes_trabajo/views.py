@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from rest_framework import exceptions, status
@@ -9,19 +8,20 @@ from siget.http import direccion_ip_cliente
 from tickets.permissions import _obtener_usuario_siget
 from usuarios.models import BitacoraAuditoria
 
-from .models import Diagnostico, OrdenTrabajo, OrdenRepuesto
+from .models import Diagnostico, OrdenRepuesto, OrdenTrabajo
 from .permissions import PuedeGestionarOrdenesTrabajo
+from .repuestos import anular_asignacion_repuesto, asignar_repuesto_orden, calcular_costo_repuestos_orden
 from .serializers import (
+    AnularAsignacionRepuestoOTSerializer,
+    AsignarRepuestoOTSerializer,
     CrearOrdenTrabajoSerializer,
     OperacionOTSerializer,
     PausarOrdenTrabajoSerializer,
     ReasignarOrdenTrabajoSerializer,
-    RutaOrdenTrabajoSerializer,
-    AsignarRepuestoOTSerializer,
-    AnularAsignacionRepuestoOTSerializer,
     RutaAsignacionRepuestoOTSerializer,
+    RutaOrdenTrabajoSerializer,
 )
-from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo, asignar_repuesto_orden, calcular_costo_repuestos_orden, anular_asignacion_repuesto
+from .services import crear_orden_trabajo, iniciar_reparacion, pausar_orden_trabajo, reanudar_orden_trabajo, reasignar_orden_trabajo
 
 
 def validar_entrada(serializer_class, datos) -> dict[str, Any]:
@@ -37,18 +37,13 @@ def validar_id_orden(pk) -> int:
 
 
 def serializar_orden(orden):
-    diagnostico = Diagnostico.objects.filter(
-        id_orden_id=orden.id_orden
-    ).order_by("-fecha_diagnostico").first()
+    diagnostico = Diagnostico.objects.filter(id_orden_id=orden.id_orden).order_by("-fecha_diagnostico").first()
 
     ticket = orden.id_ticket
     activo = ticket.id_activo
     tecnico_responsable = orden.id_tecnico_responsable
 
-    nombre_tecnico = (
-        f"{tecnico_responsable.nombres} "
-        f"{tecnico_responsable.apellidos}"
-    ).strip() if tecnico_responsable else None
+    nombre_tecnico = (f"{tecnico_responsable.nombres} {tecnico_responsable.apellidos}").strip() if tecnico_responsable else None
 
     return {
         "id_orden": orden.id_orden,
@@ -60,16 +55,12 @@ def serializar_orden(orden):
         "estado": orden.id_estado_ot.nombre,
         "falla_reportada": orden.falla_reportada,
         "diagnostico": diagnostico.descripcion_falla if diagnostico else None,
-        "procedimiento_inicial": (
-            diagnostico.procedimiento_inicial if diagnostico else None
-        ),
+        "procedimiento_inicial": (diagnostico.procedimiento_inicial if diagnostico else None),
         "es_reparable": diagnostico.es_reparable if diagnostico else None,
         "fecha_inicio": orden.fecha_inicio,
         "fecha_termino": orden.fecha_termino,
         "justificacion_pausa": orden.justificacion_pausa,
-        "id_tecnico_responsable": (
-            tecnico_responsable.pk if tecnico_responsable else None
-        ),
+        "id_tecnico_responsable": (tecnico_responsable.pk if tecnico_responsable else None),
         "tecnico_responsable": nombre_tecnico,
     }
 
@@ -78,14 +69,11 @@ class OrdenTrabajoListCreateView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
 
     def get(self, request):
-        ordenes = (
-            OrdenTrabajo.objects.select_related(
-                "id_ticket__id_activo",
-                "id_estado_ot",
-                "id_tecnico_responsable",
-            )
-            .order_by("-fecha_inicio")
-        )
+        ordenes = OrdenTrabajo.objects.select_related(
+            "id_ticket__id_activo",
+            "id_estado_ot",
+            "id_tecnico_responsable",
+        ).order_by("-fecha_inicio")
         return Response(
             [serializar_orden(orden) for orden in ordenes],
             status=status.HTTP_200_OK,
@@ -96,9 +84,7 @@ class OrdenTrabajoListCreateView(APIView):
 
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para gestionar órdenes de trabajo."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para gestionar órdenes de trabajo.")
         orden = crear_orden_trabajo(
             id_ticket=datos["id_ticket"],
             tecnico=tecnico,
@@ -108,14 +94,13 @@ class OrdenTrabajoListCreateView(APIView):
             ip_origen=direccion_ip_cliente(request),
         )
 
-        orden = OrdenTrabajo.objects.select_related(
-            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
-        ).get(pk=orden.id_orden)
+        orden = OrdenTrabajo.objects.select_related("id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable").get(pk=orden.id_orden)
 
         return Response(
             serializar_orden(orden),
             status=status.HTTP_201_CREATED,
         )
+
 
 class HistorialOrdenTrabajoView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
@@ -123,9 +108,7 @@ class HistorialOrdenTrabajoView(APIView):
     def get(self, request, pk):
         pk = validar_id_orden(pk)
         if not OrdenTrabajo.objects.filter(pk=pk).exists():
-            raise exceptions.NotFound(
-                "La orden de trabajo no existe."
-            )
+            raise exceptions.NotFound("La orden de trabajo no existe.")
 
         eventos = (
             BitacoraAuditoria.objects.filter(
@@ -142,24 +125,23 @@ class HistorialOrdenTrabajoView(APIView):
         for evento in eventos:
             usuario = evento.id_usuario
 
-            nombre_usuario = (
-                f"{usuario.nombres} {usuario.apellidos}".strip()
-                if usuario
-                else "Usuario no disponible"
-            )
+            nombre_usuario = f"{usuario.nombres} {usuario.apellidos}".strip() if usuario else "Usuario no disponible"
 
-            historial.append({
-                "id_auditoria": evento.id_auditoria,
-                "fecha": evento.fecha_evento,
-                "accion": evento.accion,
-                "usuario": nombre_usuario,
-                "detalles": evento.detalle_evento,
-            })
+            historial.append(
+                {
+                    "id_auditoria": evento.id_auditoria,
+                    "fecha": evento.fecha_evento,
+                    "accion": evento.accion,
+                    "usuario": nombre_usuario,
+                    "detalles": evento.detalle_evento,
+                }
+            )
 
         return Response(
             historial,
             status=status.HTTP_200_OK,
         )
+
 
 class IniciarReparacionView(APIView):
     permission_classes = [PuedeGestionarOrdenesTrabajo]
@@ -169,9 +151,7 @@ class IniciarReparacionView(APIView):
         validar_entrada(OperacionOTSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para gestionar órdenes de trabajo."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para gestionar órdenes de trabajo.")
 
         orden = iniciar_reparacion(
             id_orden=pk,
@@ -179,15 +159,12 @@ class IniciarReparacionView(APIView):
             ip_origen=direccion_ip_cliente(request),
         )
 
-        orden = OrdenTrabajo.objects.select_related(
-            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
-        ).get(pk=orden.id_orden)
+        orden = OrdenTrabajo.objects.select_related("id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable").get(pk=orden.id_orden)
 
         return Response(
             serializar_orden(orden),
             status=status.HTTP_200_OK,
         )
-
 
 
 class PausarOrdenTrabajoView(APIView):
@@ -198,9 +175,7 @@ class PausarOrdenTrabajoView(APIView):
         datos = validar_entrada(PausarOrdenTrabajoSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para gestionar órdenes de trabajo."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para gestionar órdenes de trabajo.")
         justificacion = datos["justificacion"]
 
         orden = pausar_orden_trabajo(
@@ -220,7 +195,6 @@ class PausarOrdenTrabajoView(APIView):
             serializar_orden(orden),
             status=status.HTTP_200_OK,
         )
-
 
 
 class ListarTecnicosOTView(APIView):
@@ -251,16 +225,15 @@ class ListarTecnicosOTView(APIView):
                 continue
 
             ids_incluidos.add(usuario.id_usuario)
-            tecnicos.append({
-                "id_usuario": usuario.id_usuario,
-                "nombre": (
-                    f"{usuario.nombres} {usuario.apellidos}"
-                ).strip(),
-                "correo": usuario.correo,
-            })
+            tecnicos.append(
+                {
+                    "id_usuario": usuario.id_usuario,
+                    "nombre": (f"{usuario.nombres} {usuario.apellidos}").strip(),
+                    "correo": usuario.correo,
+                }
+            )
 
         return Response(tecnicos, status=status.HTTP_200_OK)
-
 
 
 class ReasignarOrdenTrabajoView(APIView):
@@ -271,9 +244,7 @@ class ReasignarOrdenTrabajoView(APIView):
         datos = validar_entrada(ReasignarOrdenTrabajoSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para gestionar órdenes de trabajo."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para gestionar órdenes de trabajo.")
         id_nuevo_tecnico = datos["id_tecnico_responsable"]
         observaciones = datos["observaciones"]
 
@@ -285,11 +256,7 @@ class ReasignarOrdenTrabajoView(APIView):
         ).first()
 
         if nuevo_tecnico is None:
-            raise exceptions.ValidationError({
-                "id_tecnico_responsable": [
-                    "El técnico no existe o está inactivo."
-                ]
-            })
+            raise exceptions.ValidationError({"id_tecnico_responsable": ["El técnico no existe o está inactivo."]})
 
         orden = reasignar_orden_trabajo(
             id_orden=pk,
@@ -299,9 +266,7 @@ class ReasignarOrdenTrabajoView(APIView):
             ip_origen=direccion_ip_cliente(request),
         )
 
-        orden = OrdenTrabajo.objects.select_related(
-            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
-        ).get(pk=orden.id_orden)
+        orden = OrdenTrabajo.objects.select_related("id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable").get(pk=orden.id_orden)
 
         return Response(serializar_orden(orden), status=status.HTTP_200_OK)
 
@@ -314,9 +279,7 @@ class ReanudarOrdenTrabajoView(APIView):
         validar_entrada(OperacionOTSerializer, request.data)
         tecnico = _obtener_usuario_siget(request)
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para gestionar órdenes de trabajo."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para gestionar órdenes de trabajo.")
 
         orden = reanudar_orden_trabajo(
             id_orden=pk,
@@ -324,9 +287,7 @@ class ReanudarOrdenTrabajoView(APIView):
             ip_origen=direccion_ip_cliente(request),
         )
 
-        orden = OrdenTrabajo.objects.select_related(
-            "id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable"
-        ).get(pk=orden.id_orden)
+        orden = OrdenTrabajo.objects.select_related("id_ticket__id_activo", "id_estado_ot", "id_tecnico_responsable").get(pk=orden.id_orden)
 
         return Response(serializar_orden(orden), status=status.HTTP_200_OK)
 
@@ -347,9 +308,7 @@ class AsignarRepuestoOrdenView(APIView):
         tecnico = _obtener_usuario_siget(request)
 
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para asignar repuestos."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para asignar repuestos.")
 
         resultado = asignar_repuesto_orden(
             id_orden=pk,
@@ -367,18 +326,13 @@ class AsignarRepuestoOrdenView(APIView):
     def get(self, request, pk):
         pk = validar_id_orden(pk)
 
-        orden = OrdenTrabajo.objects.filter(pk=pk).first()
+        orden = OrdenTrabajo.objects.select_related("id_estado_ot").filter(pk=pk).first()
 
         if orden is None:
-            raise exceptions.NotFound(
-                "La orden de trabajo no existe."
-            )
+            raise exceptions.NotFound("La orden de trabajo no existe.")
 
-        asignaciones = (
-            OrdenRepuesto.objects
-            .filter(id_orden_id=pk)
-            .select_related("id_repuesto")
-            .order_by("-fecha_imputacion", "-id_orden_repuesto")
+        asignaciones = list(
+            OrdenRepuesto.objects.filter(id_orden_id=pk).select_related("id_repuesto").order_by("-fecha_imputacion", "-id_orden_repuesto")
         )
 
         repuestos = []
@@ -386,33 +340,36 @@ class AsignarRepuestoOrdenView(APIView):
         for asignacion in asignaciones:
             repuesto = asignacion.id_repuesto
 
-            costo_total = (
-                asignacion.cantidad * asignacion.costo_unitario
+            costo_total = asignacion.cantidad * asignacion.costo_unitario
+
+            repuestos.append(
+                {
+                    "id_orden_repuesto": asignacion.pk,
+                    "id_repuesto": repuesto.pk,
+                    "codigo_repuesto": repuesto.codigo_repuesto,
+                    "nombre_repuesto": repuesto.nombre,
+                    "cantidad": asignacion.cantidad,
+                    "costo_unitario": str(asignacion.costo_unitario),
+                    "costo_total": str(costo_total),
+                    "fecha_imputacion": asignacion.fecha_imputacion,
+                    "anulado": asignacion.anulado,
+                    "fecha_anulacion": asignacion.fecha_anulacion,
+                    "motivo_anulacion": asignacion.motivo_anulacion,
+                }
             )
 
-            repuestos.append({
-                "id_orden_repuesto": asignacion.pk,
-                "id_repuesto": repuesto.pk,
-                "codigo_repuesto": repuesto.codigo_repuesto,
-                "nombre_repuesto": repuesto.nombre,
-                "cantidad": asignacion.cantidad,
-                "costo_unitario": str(asignacion.costo_unitario),
-                "costo_total": str(costo_total),
-                "fecha_imputacion": asignacion.fecha_imputacion,
-                "anulado": asignacion.anulado,
-                "fecha_anulacion": asignacion.fecha_anulacion,
-                "motivo_anulacion": asignacion.motivo_anulacion,
-            })
+        resumen = calcular_costo_repuestos_orden(orden, asignaciones)
 
-        resumen = calcular_costo_repuestos_orden(pk)
-
-        return Response({
-            "id_orden": orden.pk,
-            "codigo_ot": orden.codigo_ot,
-            "repuestos": repuestos,
-            "resumen": resumen,
-        }, status=status.HTTP_200_OK)
-
+        return Response(
+            {
+                "id_orden": orden.pk,
+                "codigo_ot": orden.codigo_ot,
+                "estado_ot": orden.id_estado_ot.nombre,
+                "repuestos": repuestos,
+                "resumen": resumen,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AnularAsignacionRepuestoOrdenView(APIView):
@@ -436,9 +393,7 @@ class AnularAsignacionRepuestoOrdenView(APIView):
         tecnico = _obtener_usuario_siget(request)
 
         if tecnico is None:
-            raise exceptions.NotAuthenticated(
-                "Debe iniciar sesión para anular asignaciones."
-            )
+            raise exceptions.NotAuthenticated("Debe iniciar sesión para anular asignaciones.")
 
         resultado = anular_asignacion_repuesto(
             id_orden=pk,
@@ -452,20 +407,3 @@ class AnularAsignacionRepuestoOrdenView(APIView):
             resultado,
             status=status.HTTP_200_OK,
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

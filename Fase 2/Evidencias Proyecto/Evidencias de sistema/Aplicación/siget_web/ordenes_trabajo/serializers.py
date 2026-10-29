@@ -1,19 +1,21 @@
 """Validación de entrada OT; las reglas de negocio permanecen en los servicios."""
+
 from collections.abc import Mapping
 from typing import Any
-
-from repuestos.models import Repuesto
 
 from django.db import connection
 from rest_framework import serializers
 
+from repuestos.models import Repuesto
 from tickets.models import Ticket
 from usuarios.models import Usuario
 
 from .models import OrdenRepuesto, OrdenTrabajo
 
+
 class IdentificadorOTField(serializers.Field):
     """Acepta enteros o cadenas ASCII de dígitos, sin coerción de bool/float."""
+
     def __init__(self, *, modelo, mensaje, **kwargs):
         self.limite = connection.ops.integer_field_range(modelo._meta.pk.get_internal_type())[1]
         super().__init__(error_messages={clave: mensaje for clave in ("required", "null", "invalid")}, **kwargs)
@@ -55,7 +57,8 @@ class BooleanoOTField(serializers.Field):
 
 
 class OperacionOTSerializer(serializers.Serializer):
-    """Sin campos para operaciones sin cuerpo; ignora extras como las vistas anteriores."""
+    """Valida el cuerpo JSON de las operaciones sobre órdenes de trabajo."""
+
     def to_internal_value(self, data):
         if not isinstance(data, Mapping):
             raise serializers.ValidationError({"non_field_errors": ["Debe enviar un objeto JSON."]})
@@ -80,6 +83,7 @@ class ReasignarOrdenTrabajoSerializer(OperacionOTSerializer):
 
 class RutaOrdenTrabajoSerializer(OperacionOTSerializer):
     id_orden = IdentificadorOTField(modelo=OrdenTrabajo, mensaje="Debe indicar un ID de orden válido.")
+
 
 class AsignarRepuestoOTSerializer(OperacionOTSerializer):
     """Valida los datos necesarios para asignar un repuesto a una OT."""

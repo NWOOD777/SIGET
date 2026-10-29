@@ -14,65 +14,34 @@ def registrar_ingreso_repuesto(datos, usuario):
     cantidad = datos["cantidad"]
     costo = datos["costo_unitario"]
 
-    # Evita que dos ingresos calculen el mismo codigo simultaneamente.
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "LOCK TABLE repuesto IN SHARE ROW EXCLUSIVE MODE"
-        )
-
     if id_repuesto is not None:
         # Ingreso de stock para un repuesto existente.
-        repuesto = (
-            Repuesto.objects.select_for_update()
-            .filter(id_repuesto=id_repuesto)
-            .first()
-        )
+        repuesto = Repuesto.objects.select_for_update().filter(id_repuesto=id_repuesto).first()
 
         if repuesto is None:
             raise NotFound("El repuesto seleccionado no existe.")
 
         # Impedir ingresos de compras a repuestos inactivos.
         if not repuesto.activo:
-            raise ValidationError({
-                "id_repuesto": (
-                    "El repuesto está dado de baja. "
-                    "Debe reactivarlo antes de registrar un ingreso."
-                )
-            })
-
-        stock_anterior = repuesto.stock_actual
-
-        if not repuesto.activo:
-            raise ValidationError({
-                "id_repuesto": "El repuesto está dado de baja. Debe reactivarlo antes de registrar ingresos."
-            })
+            raise ValidationError({"id_repuesto": ("El repuesto está dado de baja. Debe reactivarlo antes de registrar un ingreso.")})
 
         stock_anterior = repuesto.stock_actual
         costo_anterior = repuesto.precio_unitario
         nuevo_stock = stock_anterior + cantidad
 
-        nuevo_costo_promedio = (
-            (stock_anterior * costo_anterior)
-            + (cantidad * costo)
-        ) / Decimal(nuevo_stock)
+        nuevo_costo_promedio = ((stock_anterior * costo_anterior) + (cantidad * costo)) / Decimal(nuevo_stock)
 
         repuesto.stock_actual = nuevo_stock
-        repuesto.precio_unitario = nuevo_costo_promedio.quantize(
-            Decimal("0.01")
-        )
+        repuesto.precio_unitario = nuevo_costo_promedio.quantize(Decimal("0.01"))
 
-        repuesto.save(
-            update_fields=["stock_actual", "precio_unitario"]
-        )
+        repuesto.save(update_fields=["stock_actual", "precio_unitario"])
 
         creado = False
 
     else:
         # Obtener el siguiente ID de PostgreSQL antes de insertar.
         with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT nextval(pg_get_serial_sequence('repuesto', 'id_repuesto'))"
-            )
+            cursor.execute("SELECT nextval(pg_get_serial_sequence('repuesto', 'id_repuesto'))")
             nuevo_id = cursor.fetchone()[0]
 
         # Generar un codigo unico automaticamente.
@@ -127,26 +96,16 @@ def registrar_ingreso_repuesto(datos, usuario):
     }
 
 
-
 @transaction.atomic
 def actualizar_stock_minimo_repuesto(id_repuesto, nuevo_minimo, usuario):
-    repuesto = (
-        Repuesto.objects.select_for_update()
-        .filter(id_repuesto=id_repuesto)
-        .first()
-    )
+    repuesto = Repuesto.objects.select_for_update().filter(id_repuesto=id_repuesto).first()
 
     if repuesto is None:
         raise NotFound("El repuesto seleccionado no existe.")
 
     # Impedir modificar repuestos dados de baja.
     if not repuesto.activo:
-        raise ValidationError({
-            "id_repuesto": (
-                "El repuesto está dado de baja. "
-                "Debe reactivarlo antes de modificar su stock mínimo."
-            )
-        })
+        raise ValidationError({"id_repuesto": ("El repuesto está dado de baja. Debe reactivarlo antes de modificar su stock mínimo.")})
 
     minimo_anterior = repuesto.stock_minimo
 
@@ -177,40 +136,25 @@ def actualizar_stock_minimo_repuesto(id_repuesto, nuevo_minimo, usuario):
         "stock_actual": repuesto.stock_actual,
         "stock_minimo": repuesto.stock_minimo,
         "estado": "Stock Crítico" if es_critico else "Normal",
-        "cantidad_sugerida": (
-            max(0, repuesto.stock_minimo - repuesto.stock_actual + 1)
-            if es_critico else 0
-        ),
+        "cantidad_sugerida": (max(0, repuesto.stock_minimo - repuesto.stock_actual + 1) if es_critico else 0),
     }
-
 
 
 @transaction.atomic
 def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
-    repuesto = (
-        Repuesto.objects.select_for_update()
-        .filter(id_repuesto=id_repuesto)
-        .first()
-    )
+    repuesto = Repuesto.objects.select_for_update().filter(id_repuesto=id_repuesto).first()
 
     if repuesto is None:
         raise NotFound("El repuesto seleccionado no existe.")
 
     # Impedir ajustes sobre repuestos dados de baja.
     if not repuesto.activo:
-        raise ValidationError({
-            "id_repuesto": (
-                "El repuesto está dado de baja. "
-                "Debe reactivarlo antes de ajustar su stock."
-            )
-        })
+        raise ValidationError({"id_repuesto": ("El repuesto está dado de baja. Debe reactivarlo antes de ajustar su stock.")})
 
     stock_anterior = repuesto.stock_actual
 
     if nuevo_stock == stock_anterior:
-        raise ValidationError({
-            "nuevo_stock": "El nuevo stock debe ser diferente al actual."
-        })
+        raise ValidationError({"nuevo_stock": "El nuevo stock debe ser diferente al actual."})
 
     diferencia = nuevo_stock - stock_anterior
     cantidad_movimiento = abs(diferencia)
@@ -219,10 +163,7 @@ def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
     repuesto.stock_actual = nuevo_stock
     repuesto.save(update_fields=["stock_actual"])
 
-    detalle = (
-        f"{tipo_ajuste}. Stock anterior: {stock_anterior}. "
-        f"Nuevo stock: {nuevo_stock}. Motivo: {motivo}"
-    )
+    detalle = f"{tipo_ajuste}. Stock anterior: {stock_anterior}. Nuevo stock: {nuevo_stock}. Motivo: {motivo}"
 
     movimiento = MovimientoRepuesto.objects.create(
         repuesto=repuesto,
@@ -239,10 +180,7 @@ def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
         accion="AJUSTAR_STOCK",
         entidad_afectada="repuesto",
         id_registro_afectado=repuesto.id_repuesto,
-        detalle_evento=(
-            f"Ajuste de stock de {repuesto.codigo_repuesto}. "
-            f"{detalle}. Movimiento: {movimiento.id_movimiento}."
-        ),
+        detalle_evento=(f"Ajuste de stock de {repuesto.codigo_repuesto}. {detalle}. Movimiento: {movimiento.id_movimiento}."),
     )
 
     es_critico = repuesto.stock_actual <= repuesto.stock_minimo
@@ -259,36 +197,21 @@ def ajustar_stock_repuesto(id_repuesto, nuevo_stock, motivo, usuario):
     }
 
 
-
 @transaction.atomic
 def cambiar_estado_repuesto(id_repuesto, activo, motivo, usuario):
-    repuesto = (
-        Repuesto.objects.select_for_update()
-        .filter(id_repuesto=id_repuesto)
-        .first()
-    )
+    repuesto = Repuesto.objects.select_for_update().filter(id_repuesto=id_repuesto).first()
 
     if repuesto is None:
         raise NotFound("El repuesto seleccionado no existe.")
 
     if repuesto.activo == activo:
-        raise ValidationError({
-            "activo": (
-                "El repuesto ya se encuentra activo."
-                if activo
-                else "El repuesto ya se encuentra dado de baja."
-            )
-        })
+        raise ValidationError({"activo": ("El repuesto ya se encuentra activo." if activo else "El repuesto ya se encuentra dado de baja.")})
 
     estado_anterior = repuesto.activo
     repuesto.activo = activo
     repuesto.save(update_fields=["activo"])
 
-    accion = (
-        "REACTIVAR_REPUESTO"
-        if activo
-        else "DAR_BAJA_REPUESTO"
-    )
+    accion = "REACTIVAR_REPUESTO" if activo else "DAR_BAJA_REPUESTO"
 
     registrar_auditoria(
         usuario=usuario,
