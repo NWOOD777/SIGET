@@ -986,16 +986,18 @@ class ReportesView(QWidget):
         self.btn_excel.setEnabled(permitido)
 
     def exportar_pdf(self):
-
         if self._datos_reportes is None or not self._tiene_permiso():
-
             return
 
-        fecha_inicio = self.fecha_inicio.date().toString("yyyy-MM-dd")
+        fecha_inicio = self.fecha_inicio.date().toString("dd/MM/yyyy")
+        fecha_fin = self.fecha_fin.date().toString("dd/MM/yyyy")
 
-        fecha_fin = self.fecha_fin.date().toString("yyyy-MM-dd")
+        fecha_inicio_archivo = self.fecha_inicio.date().toString("dd-MM-yyyy")
+        fecha_fin_archivo = self.fecha_fin.date().toString("dd-MM-yyyy")
 
-        nombre_archivo = f"SIGET_Reporte_{fecha_inicio}_al_{fecha_fin}.pdf"
+        nombre_archivo = (
+            f"SIGET_Reporte_{fecha_inicio_archivo}_al_{fecha_fin_archivo}.pdf"
+        )
 
         ruta, _ = QFileDialog.getSaveFileName(
             self,
@@ -1005,15 +1007,12 @@ class ReportesView(QWidget):
         )
 
         if not ruta:
-
             return
 
         if not ruta.lower().endswith(".pdf"):
-
             ruta += ".pdf"
 
         try:
-
             guardar_pdf_reportes(
                 ruta,
                 self._datos_reportes,
@@ -1024,11 +1023,10 @@ class ReportesView(QWidget):
             QMessageBox.information(
                 self,
                 "Exportación completada",
-                "El informe PDF se guardó " f"correctamente:\n{ruta}",
+                f"El informe PDF se guardó correctamente:\n{ruta}",
             )
 
         except (OSError, ValueError) as error:
-
             QMessageBox.critical(
                 self,
                 "Error al exportar PDF",
@@ -1036,16 +1034,18 @@ class ReportesView(QWidget):
             )
 
     def exportar_excel(self):
-
         if self._datos_reportes is None or not self._tiene_permiso():
-
             return
 
-        fecha_inicio = self.fecha_inicio.date().toString("yyyy-MM-dd")
+        fecha_inicio = self.fecha_inicio.date().toString("dd/MM/yyyy")
+        fecha_fin = self.fecha_fin.date().toString("dd/MM/yyyy")
 
-        fecha_fin = self.fecha_fin.date().toString("yyyy-MM-dd")
+        fecha_inicio_archivo = self.fecha_inicio.date().toString("dd-MM-yyyy")
+        fecha_fin_archivo = self.fecha_fin.date().toString("dd-MM-yyyy")
 
-        nombre_archivo = f"SIGET_Reporte_{fecha_inicio}_al_{fecha_fin}.xlsx"
+        nombre_archivo = (
+            f"SIGET_Reporte_{fecha_inicio_archivo}_al_{fecha_fin_archivo}.xlsx"
+        )
 
         ruta, _ = QFileDialog.getSaveFileName(
             self,
@@ -1055,15 +1055,12 @@ class ReportesView(QWidget):
         )
 
         if not ruta:
-
             return
 
         if not ruta.lower().endswith(".xlsx"):
-
             ruta += ".xlsx"
 
         try:
-
             guardar_excel_reportes(
                 ruta,
                 self._datos_reportes,
@@ -1074,11 +1071,10 @@ class ReportesView(QWidget):
             QMessageBox.information(
                 self,
                 "Exportación completada",
-                "El informe Excel se guardó " f"correctamente:\n{ruta}",
+                f"El informe Excel se guardó correctamente:\n{ruta}",
             )
 
         except (OSError, ValueError) as error:
-
             QMessageBox.critical(
                 self,
                 "Error al exportar Excel",
