@@ -1,5 +1,5 @@
 """Cierre técnico por API; las reglas definitivas se validan en el servidor."""
-from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget, QMessageBox
+from PySide6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from siget_desktop.api.services import completar_orden_trabajo
 from siget_desktop.auth.session import current_session

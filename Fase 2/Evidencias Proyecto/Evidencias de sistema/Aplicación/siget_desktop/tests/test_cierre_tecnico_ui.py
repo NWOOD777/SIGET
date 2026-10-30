@@ -1,8 +1,9 @@
 """Cierre técnico de escritorio: UI y HTTP simulado, nunca backend real."""
+
 import ast
-from pathlib import Path
 import time
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from PySide6.QtTest import QTest
@@ -12,7 +13,7 @@ from siget_desktop.api import services
 from siget_desktop.api.client import ApiError
 from siget_desktop.auth.session import current_session
 from siget_desktop.tests.qt_helpers import limpiar_widgets
-from siget_desktop.ui.dialogs.cierre_tecnico_dialog import CierreTecnicoDialog, ESPACIOS_CIERRE, puede_cerrar_tecnicamente
+from siget_desktop.ui.dialogs.cierre_tecnico_dialog import ESPACIOS_CIERRE, CierreTecnicoDialog, puede_cerrar_tecnicamente
 from siget_desktop.ui.dialogs.gestionar_repuestos_ot_dialog import GestionarRepuestosOTDialog
 from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
 from siget_desktop.ui.workers import ApiWorker
@@ -20,17 +21,26 @@ from siget_desktop.ui.workers import ApiWorker
 APP = QApplication.instance() or QApplication([])
 MODULO = "siget_desktop.ui.dialogs.cierre_tecnico_dialog"
 ORDEN = {"id_orden": 1, "codigo_ot": "OT-0001", "estado": "En Reparación", "id_tecnico_responsable": 99}
-RESULTADO = {"id_orden": 1, "estado": "Completada", "resultado": "NO_REPARABLE", "id_cierre_tecnico": 3,
-             "fecha_cierre": "2026-10-29T14:00:00Z", "id_activo": 2, "estado_activo": "Dado de baja",
-             "id_ticket": 4, "estado_ticket": "Resuelto"}
+RESULTADO = {
+    "id_orden": 1,
+    "estado": "Completada",
+    "resultado": "NO_REPARABLE",
+    "id_cierre_tecnico": 3,
+    "fecha_cierre": "2026-10-29T14:00:00Z",
+    "id_activo": 2,
+    "estado_activo": "Dado de baja",
+    "id_ticket": 4,
+    "estado_ticket": "Resuelto",
+}
 
 
 class CierreTecnicoUITests(unittest.TestCase):
     def setUp(self):
         current_session.clear()
         current_session.set_tokens("token-pruebas", 3600)
-        current_session.update_user_info({"id_usuario": 2, "roles": ["Técnico de soporte"],
-            "permisos": ["OT_GESTIONAR", "TICKET_ATENDER"], "acceso_escritorio": True})
+        current_session.update_user_info(
+            {"id_usuario": 2, "roles": ["Técnico de soporte"], "permisos": ["OT_GESTIONAR", "TICKET_ATENDER"], "acceso_escritorio": True}
+        )
         self.iniciar = patch.object(ApiWorker, "start")
         self.start = self.iniciar.start()
         self.addCleanup(self.iniciar.stop)
@@ -43,7 +53,8 @@ class CierreTecnicoUITests(unittest.TestCase):
             ventana.deleteLater()
         limpiar_widgets()
         for worker in list(ApiWorker._activos):
-            if not worker.isRunning(): worker._liberar()
+            if not worker.isRunning():
+                worker._liberar()
 
     def dialogo(self, estado="En Reparación"):
         d = CierreTecnicoDialog({**ORDEN, "estado": estado})
@@ -88,12 +99,16 @@ class CierreTecnicoUITests(unittest.TestCase):
     def test_politica_unicode_coincide_con_backend(self):
         archivo = Path(__file__).resolve().parents[2] / "siget_web/ordenes_trabajo/validaciones_cierre.py"
         arbol = ast.parse(archivo.read_text(encoding="utf-8"))
-        valor = next(ast.literal_eval(n.value) for n in arbol.body if isinstance(n, ast.Assign)
-                     and any(isinstance(t, ast.Name) and t.id == "ESPACIOS_CIERRE" for t in n.targets))
+        valor = next(
+            ast.literal_eval(n.value)
+            for n in arbol.body
+            if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "ESPACIOS_CIERRE" for t in n.targets)
+        )
         self.assertEqual(ESPACIOS_CIERRE, valor)
 
     def test_confirmacion_cancelada_conserva_datos(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         with patch(MODULO + ".confirmar_operacion", return_value=False) as confirmar:
             d.guardar()
         resumen = confirmar.call_args.args[2]
@@ -102,36 +117,46 @@ class CierreTecnicoUITests(unittest.TestCase):
             self.assertIn(texto, resumen)
         self.assertIsNone(d._worker)
         self.assertEqual(d.informe.toPlainText(), "Placa irreparable")
-        d.reject(); self.assertTrue(d._closed)
+        d.reject()
+        self.assertTrue(d._closed)
 
     def test_doble_clic_payload_y_operacion_en_curso(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         with patch(MODULO + ".confirmar_operacion", return_value=True) as confirmar:
-            d.guardar(); worker = d._worker; d.guardar()
+            d.guardar()
+            worker = d._worker
+            d.guardar()
         confirmar.assert_called_once()
         self.assertEqual(worker.kwargs, {"resultado": "NO_REPARABLE", "informe_descarte": "Placa irreparable"})
         self.assertEqual(worker.args, (1,))
         self.assertFalse(d.btn_guardar.isEnabled())
         self.assertIn("Procesando", d.lbl_estado.text())
-        d.reject(); self.assertFalse(d._closed)
+        d.reject()
+        self.assertFalse(d._closed)
 
     def test_payload_exito_no_incluye_informe_anterior(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         d.combo_resultado.setCurrentIndex(1)
         d.solucion.setPlainText("Solución")
         d.pruebas.setPlainText("Pruebas")
-        with patch(MODULO + ".confirmar_operacion", return_value=True): d.guardar()
+        with patch(MODULO + ".confirmar_operacion", return_value=True):
+            d.guardar()
         self.assertEqual(d._worker.kwargs, {"resultado": "REPARACION_EXITOSA", "solucion_aplicada": "Solución", "pruebas_realizadas": "Pruebas"})
 
     def test_exito_cierra_dialogo(self):
-        d = self.dialogo(); self.datos_descarte(d)
-        with patch(MODULO + ".confirmar_operacion", return_value=True): d.guardar()
+        d = self.dialogo()
+        self.datos_descarte(d)
+        with patch(MODULO + ".confirmar_operacion", return_value=True):
+            d.guardar()
         d._worker.signals.finished.emit(RESULTADO)
         self.assertEqual(d.result(), QDialog.DialogCode.Accepted)
         self.assertEqual(d.resultado_cierre, RESULTADO)
 
     def test_errores_conservan_formulario_sin_filtrar_detalles(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         for codigo in (400, 401, 403, 404, 405, 500, None):
             with self.subTest(codigo=codigo), patch(MODULO + ".confirmar_operacion", return_value=True), patch(MODULO + ".QMessageBox.warning"):
                 d.guardar()
@@ -143,8 +168,10 @@ class CierreTecnicoUITests(unittest.TestCase):
                 self.assertTrue(d.btn_guardar.isEnabled())
 
     def test_cambio_sesion_descarta_resultados_y_cierra(self):
-        d = self.dialogo(); self.datos_descarte(d)
-        with patch(MODULO + ".confirmar_operacion", return_value=True): d.guardar()
+        d = self.dialogo()
+        self.datos_descarte(d)
+        with patch(MODULO + ".confirmar_operacion", return_value=True):
+            d.guardar()
         worker = d._worker
         current_session.clear()
         worker.signals.finished.emit(RESULTADO)
@@ -153,7 +180,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         self.assertTrue(d._closed)
 
     def test_respuesta_incompleta_no_se_presenta_como_exito(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         with patch(MODULO + ".confirmar_operacion", return_value=True), patch(MODULO + ".QMessageBox.warning"):
             d.guardar()
             d._worker.signals.finished.emit({})
@@ -163,18 +191,21 @@ class CierreTecnicoUITests(unittest.TestCase):
 
     def test_permisos_locales_y_sesion(self):
         self.assertTrue(puede_cerrar_tecnicamente())
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         for campo, valor in (("roles", ["Administrador del sistema"]), ("permisos", ["TICKET_ATENDER"]), ("acceso_escritorio", False)):
             anterior = getattr(current_session, campo)
             setattr(current_session, campo, valor)
             self.assertFalse(puede_cerrar_tecnicamente())
-            d.guardar(); self.assertIsNone(d._worker)
+            d.guardar()
+            self.assertIsNone(d._worker)
             setattr(current_session, campo, anterior)
         current_session.clear()
         self.assertFalse(puede_cerrar_tecnicamente())
 
     def test_accion_visible_solo_si_corresponde(self):
-        vista = OrdenesTrabajoView(); self.ventanas.append(vista)
+        vista = OrdenesTrabajoView()
+        self.ventanas.append(vista)
         for estado in ("En Diagnóstico", "En Reparación", "Pausada", "Completada"):
             with patch.object(vista, "_orden_seleccionada", return_value={**ORDEN, "estado": estado}):
                 vista._actualizar_acciones()
@@ -184,12 +215,16 @@ class CierreTecnicoUITests(unittest.TestCase):
         self.assertTrue(vista.btn_cierre_tecnico.isHidden())
 
     def test_refresco_tras_cierre_y_repuestos_solo_consulta(self):
-        vista = OrdenesTrabajoView(); self.ventanas.append(vista)
+        vista = OrdenesTrabajoView()
+        self.ventanas.append(vista)
         orden = dict(ORDEN)
-        recibido = Mock(); vista.cierre_tecnico_completado.connect(recibido)
-        with patch.object(vista, "_orden_seleccionada", return_value=orden), patch.object(vista, "actualizar_datos") as refrescar, patch(
-            "siget_desktop.ui.views.ordenes_trabajo_view.CierreTecnicoDialog"
-        ) as dialogo:
+        recibido = Mock()
+        vista.cierre_tecnico_completado.connect(recibido)
+        with (
+            patch.object(vista, "_orden_seleccionada", return_value=orden),
+            patch.object(vista, "actualizar_datos") as refrescar,
+            patch("siget_desktop.ui.views.ordenes_trabajo_view.CierreTecnicoDialog") as dialogo,
+        ):
             dialogo.return_value.exec.return_value = QDialog.DialogCode.Accepted
             dialogo.return_value.resultado_cierre = RESULTADO
             vista._cerrar_tecnicamente()
@@ -197,12 +232,14 @@ class CierreTecnicoUITests(unittest.TestCase):
             recibido.assert_called_once_with(RESULTADO)
             self.assertEqual(orden["estado"], "Completada")
             self.assertFalse(vista.btn_cierre_tecnico.isEnabled())
-        repuestos = GestionarRepuestosOTDialog(1, "OT-0001", orden["estado"]); self.ventanas.append(repuestos)
+        repuestos = GestionarRepuestosOTDialog(1, "OT-0001", orden["estado"])
+        self.ventanas.append(repuestos)
         self.assertTrue(repuestos.formulario.isHidden())
         self.assertTrue(repuestos.btn_anular.isHidden())
 
     def test_refresco_vistas_relacionadas(self):
         from siget_desktop.ui.main_window import MainWindow
+
         ventana = Mock()
         MainWindow._refrescar_por_cierre_tecnico(ventana, RESULTADO)
         ventana.view_tickets.cargar_tickets.assert_called_once()
@@ -210,7 +247,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         ventana.view_dashboard.actualizar_datos.assert_called_once()
 
     def test_fila_y_detalle_no_quedan_con_estado_anterior(self):
-        vista = OrdenesTrabajoView(); self.ventanas.append(vista)
+        vista = OrdenesTrabajoView()
+        self.ventanas.append(vista)
         vista._ordenes_cargadas = [dict(ORDEN)]
         vista._aplicar_filtros()
         vista.tabla.selectRow(0)
@@ -225,14 +263,21 @@ class CierreTecnicoUITests(unittest.TestCase):
         self.assertFalse(vista.btn_cierre_tecnico.isEnabled())
 
     def test_worker_asincrono_con_http_simulado(self):
-        d = self.dialogo(); self.datos_descarte(d)
+        d = self.dialogo()
+        self.datos_descarte(d)
         self.iniciar.stop()
-        with patch(MODULO + ".confirmar_operacion", return_value=True), patch("siget_desktop.api.services.api_client.post", return_value=RESULTADO) as http:
+        with (
+            patch(MODULO + ".confirmar_operacion", return_value=True),
+            patch("siget_desktop.api.services.api_client.post", return_value=RESULTADO) as http,
+        ):
             d.guardar()
             limite = time.monotonic() + 3
-            while not d._closed and time.monotonic() < limite: QTest.qWait(10)
+            while not d._closed and time.monotonic() < limite:
+                QTest.qWait(10)
             self.assertTrue(d._closed)
-            http.assert_called_once_with("/api/ordenes-trabajo/1/completar/", json={"resultado": "NO_REPARABLE", "informe_descarte": "Placa irreparable"})
+            http.assert_called_once_with(
+                "/api/ordenes-trabajo/1/completar/", json={"resultado": "NO_REPARABLE", "informe_descarte": "Placa irreparable"}
+            )
 
     def test_servicio_usa_bearer_sin_campos_sensibles(self):
         respuesta = Mock(status_code=200)
@@ -245,13 +290,16 @@ class CierreTecnicoUITests(unittest.TestCase):
     def test_http_error_no_se_reintenta(self):
         for codigo in (400, 401, 403, 404, 405, 500):
             current_session.set_tokens("token-pruebas", 3600)
-            respuesta = Mock(status_code=codigo); respuesta.json.return_value = {"detail": "Error simulado"}
+            respuesta = Mock(status_code=codigo)
+            respuesta.json.return_value = {"detail": "Error simulado"}
             with patch("requests.Session.request", return_value=respuesta) as http:
-                with self.assertRaises(ApiError): services.completar_orden_trabajo(1, resultado="NO_REPARABLE", informe_descarte="Informe")
+                with self.assertRaises(ApiError):
+                    services.completar_orden_trabajo(1, resultado="NO_REPARABLE", informe_descarte="Informe")
             http.assert_called_once()
 
     def test_id_invalido_no_envia_http(self):
         with patch("siget_desktop.api.services.api_client.post") as http:
             for identificador in (0, True, "1", 2147483648):
-                with self.assertRaises(ValueError): services.completar_orden_trabajo(identificador, resultado="NO_REPARABLE")
+                with self.assertRaises(ValueError):
+                    services.completar_orden_trabajo(identificador, resultado="NO_REPARABLE")
             http.assert_not_called()

@@ -1,4 +1,5 @@
 """Contrato REST de cierre técnico con PostgreSQL aislado."""
+
 from unittest.mock import patch
 
 from django.test import override_settings
@@ -9,7 +10,7 @@ from notificaciones.models import Notificacion
 from ordenes_trabajo.models import CierreTecnico
 from ordenes_trabajo.services import iniciar_reparacion, pausar_orden_trabajo
 from tickets.tests.test_consolidacion_ot_postgresql import ConsolidacionOTFixture
-from usuarios.models import BitacoraAuditoria, RolPermiso, UsuarioRol, Rol
+from usuarios.models import BitacoraAuditoria, Rol, RolPermiso, UsuarioRol
 
 
 class CierreTecnicoAPITests(ConsolidacionOTFixture):
@@ -23,9 +24,17 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
         return self.cliente(usuario or self.segundo).post(self.url, self.datos if datos is None else datos, format="json")
 
     def foto(self):
-        self.orden.refresh_from_db(); self.ticket.refresh_from_db(); self.activo_ot.refresh_from_db()
-        return (CierreTecnico.objects.count(), BitacoraAuditoria.objects.count(), Notificacion.objects.count(),
-                self.orden.id_estado_ot_id, self.ticket.id_estado_ticket_id, self.activo_ot.id_estado_activo_id)
+        self.orden.refresh_from_db()
+        self.ticket.refresh_from_db()
+        self.activo_ot.refresh_from_db()
+        return (
+            CierreTecnico.objects.count(),
+            BitacoraAuditoria.objects.count(),
+            Notificacion.objects.count(),
+            self.orden.id_estado_ot_id,
+            self.ticket.id_estado_ticket_id,
+            self.activo_ot.id_estado_activo_id,
+        )
 
     def test_ruta_y_solo_post(self):
         self.assertEqual(self.url, f"/api/ordenes-trabajo/{self.orden.pk}/completar/")
@@ -36,8 +45,10 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
         respuesta = self.post()
         self.assertEqual(respuesta.status_code, 200, respuesta.data)
         datos = respuesta.json()
-        self.assertEqual(set(datos), {"id_orden", "estado", "resultado", "id_cierre_tecnico", "fecha_cierre",
-                                     "id_activo", "estado_activo", "id_ticket", "estado_ticket"})
+        self.assertEqual(
+            set(datos),
+            {"id_orden", "estado", "resultado", "id_cierre_tecnico", "fecha_cierre", "id_activo", "estado_activo", "id_ticket", "estado_ticket"},
+        )
         self.assertEqual(datos["id_orden"], self.orden.pk)
         self.assertEqual(datos["estado"], "Completada")
         self.assertEqual(datos["estado_activo"], "Dado de baja")
@@ -60,10 +71,16 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
 
     def test_datos_invalidos_sin_efectos(self):
         antes = self.foto()
-        for datos in ({}, [], {"resultado": "OTRO"}, {"resultado": "X" * 33},
-                      {"resultado": "NO_REPARABLE"}, {"resultado": "NO_REPARABLE", "informe_descarte": " \t"},
-                      {"resultado": "NO_REPARABLE", "informe_descarte": 10},
-                      {"resultado": "REPARACION_EXITOSA", "solucion_aplicada": "Solución"}):
+        for datos in (
+            {},
+            [],
+            {"resultado": "OTRO"},
+            {"resultado": "X" * 33},
+            {"resultado": "NO_REPARABLE"},
+            {"resultado": "NO_REPARABLE", "informe_descarte": " \t"},
+            {"resultado": "NO_REPARABLE", "informe_descarte": 10},
+            {"resultado": "REPARACION_EXITOSA", "solucion_aplicada": "Solución"},
+        ):
             with self.subTest(datos=datos):
                 self.assertEqual(self.post(datos).status_code, 400)
                 self.assertEqual(self.foto(), antes)
@@ -84,6 +101,7 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
 
     def test_permisos_efectivos(self):
         from django.db import transaction
+
         for codigo in ("OT_GESTIONAR", "TICKET_ATENDER"):
             with self.subTest(codigo=codigo), transaction.atomic():
                 RolPermiso.objects.filter(permiso__codigo=codigo).delete()
@@ -92,13 +110,15 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
                 transaction.set_rollback(True)
 
     def test_tecnico_inactivo(self):
-        self.segundo.activo = False; self.segundo.save(update_fields=["activo"])
+        self.segundo.activo = False
+        self.segundo.save(update_fields=["activo"])
         self.assertEqual(self.post().status_code, 403)
         self.assertFalse(CierreTecnico.objects.exists())
 
     def test_bearer_valido_sin_csrf(self):
-        with patch("usuarios.authentication.validar_access_token", return_value={"sub": "tecnico-prueba"}), patch(
-            "usuarios.authentication.resolver_usuario_access_token", return_value=self.segundo
+        with (
+            patch("usuarios.authentication.validar_access_token", return_value={"sub": "tecnico-prueba"}),
+            patch("usuarios.authentication.resolver_usuario_access_token", return_value=self.segundo),
         ):
             respuesta = self.cliente(csrf=True).post(self.url, self.datos, format="json", HTTP_AUTHORIZATION="Bearer credencial-de-prueba")
         self.assertEqual(respuesta.status_code, 200, respuesta.data)
@@ -144,6 +164,7 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
 
     def test_no_omite_validacion_estado_del_activo(self):
         from activos.models import EstadoActivo
+
         self.activo_ot.id_estado_activo = EstadoActivo.objects.get(nombre="Disponible")
         self.activo_ot.save(update_fields=["id_estado_activo"])
         antes = self.foto()
@@ -153,7 +174,8 @@ class CierreTecnicoAPITests(ConsolidacionOTFixture):
     def test_rollback_error_interno(self):
         antes = self.foto()
         with patch("ordenes_trabajo.cierre.registrar_notificacion", side_effect=RuntimeError("Fallo instrumental")):
-            with self.assertRaises(RuntimeError): self.post()
+            with self.assertRaises(RuntimeError):
+                self.post()
         self.assertEqual(self.foto(), antes)
 
     @override_settings(DEBUG=False)

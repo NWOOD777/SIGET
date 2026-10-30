@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "tickets",
     "ordenes_trabajo",
     "notificaciones",
+    "reportes",
 ]
 
 MIDDLEWARE = [

@@ -28,6 +28,7 @@ from siget_desktop.ui.views.activos_view import ActivosView
 from siget_desktop.ui.views.auditoria_view import AuditoriaView
 from siget_desktop.ui.views.dashboard_view import DashboardView
 from siget_desktop.ui.views.ordenes_trabajo_view import OrdenesTrabajoView
+from siget_desktop.ui.views.reportes_view import ReportesView
 from siget_desktop.ui.views.repuestos_view import RepuestosView
 from siget_desktop.ui.views.solicitudes_view import SolicitudesView
 from siget_desktop.ui.views.tickets_view import TicketsView
@@ -42,7 +43,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico")
+        self.setWindowTitle(
+            "SIGET - Sistema Integral de Gestión de Equipos y Soporte Tecnológico"
+        )
         self.resize(1280, 800)
         self.setMinimumSize(1000, 650)
         self._init_ui()
@@ -74,7 +77,10 @@ class MainWindow(QMainWindow):
         self.view_usuarios = UsuariosView()
         self.view_auditoria = AuditoriaView()
         self.view_repuestos = RepuestosView()
-        self.view_ordenes_trabajo.cierre_tecnico_completado.connect(self._refrescar_por_cierre_tecnico)
+        self.view_reportes = ReportesView()
+        self.view_ordenes_trabajo.cierre_tecnico_completado.connect(
+            self._refrescar_por_cierre_tecnico
+        )
 
         for view in (
             self.view_dashboard,
@@ -83,12 +89,16 @@ class MainWindow(QMainWindow):
             self.view_tickets,
             self.view_ordenes_trabajo,
             self.view_usuarios,
-            self.view_auditoria,
             self.view_repuestos,
+            self.view_reportes,
+            self.view_auditoria,
         ):
             self.stacked_views.addWidget(view)
+
         self.view_dashboard.modulo_seleccionado.connect(self.sidebar.setCurrentRow)
-        self.view_dashboard.ver_repuestos_criticos.connect(self._abrir_repuestos_criticos)
+        self.view_dashboard.ver_repuestos_criticos.connect(
+            self._abrir_repuestos_criticos
+        )
         area_trabajo.addWidget(self.stacked_views, 1)
         layout_principal.addLayout(area_trabajo, 1)
 
@@ -175,10 +185,18 @@ class MainWindow(QMainWindow):
             ("Mesa de Ayuda", True),
             ("Órdenes de Trabajo", current_session.is_tecnico()),
             ("Usuarios y Roles", current_session.is_admin()),
-            ("Auditoría Interna", current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")),
             ("Inventario de Repuestos", current_session.is_admin()),
+            (
+                "Reportes de Gestión",
+                current_session.is_admin()
+                and current_session.has_permission("REPORTES_CONSULTAR"),
+            ),
+            (
+                "Auditoría Interna",
+                current_session.is_admin()
+                and current_session.has_permission("AUDITORIA_CONSULTAR"),
+            ),
         ]
-
 
         for texto, habilitado in items:
             item = QListWidgetItem(texto)
@@ -201,7 +219,9 @@ class MainWindow(QMainWindow):
     def actualizar_sesion(self):
         """Actualiza la interfaz con los datos y permisos de la sesión vigente."""
         self._sesion_activa = current_session.is_authenticated()
-        self.lbl_usuario_nombre.setText(current_session.nombre_completo or current_session.correo)
+        self.lbl_usuario_nombre.setText(
+            current_session.nombre_completo or current_session.correo
+        )
 
         # Limpiar badges de roles del header
         while self.layout_header_roles.count():
@@ -230,23 +250,56 @@ class MainWindow(QMainWindow):
             es_admin = current_session.is_admin()
             item_usuarios.setHidden(not es_admin)
             if es_admin:
-                item_usuarios.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                item_usuarios.setFlags(
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                )
                 item_usuarios.setToolTip("Administración de usuarios y catálogo RBAC")
             else:
                 item_usuarios.setFlags(Qt.ItemFlag.NoItemFlags)
-                item_usuarios.setToolTip("Módulo restringido a Administrador del sistema")
+                item_usuarios.setToolTip(
+                    "Módulo restringido a Administrador del sistema"
+                )
 
         # La consulta exige rol y permiso también en la navegación.
-        item_auditoria = self.sidebar.item(6)
+        item_auditoria = self.sidebar.item(8)
         if item_auditoria:
-            es_admin = current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")
+            es_admin = current_session.is_admin() and current_session.has_permission(
+                "AUDITORIA_CONSULTAR"
+            )
             item_auditoria.setHidden(not es_admin)
             if es_admin:
-                item_auditoria.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-                item_auditoria.setToolTip("Bitácora de auditoría y trazabilidad del sistema")
+                item_auditoria.setFlags(
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                )
+                item_auditoria.setToolTip(
+                    "Bitácora de auditoría y trazabilidad del sistema"
+                )
             else:
                 item_auditoria.setFlags(Qt.ItemFlag.NoItemFlags)
-                item_auditoria.setToolTip("Módulo restringido a Administrador del sistema")
+                item_auditoria.setToolTip(
+                    "Módulo restringido a Administrador del sistema"
+                )
+
+        # Reportes de gestión: exclusivo Administrador con permiso específico.
+        item_reportes = self.sidebar.item(7)
+        if item_reportes:
+            es_admin_reportes = (
+                current_session.is_admin()
+                and current_session.has_permission("REPORTES_CONSULTAR")
+            )
+
+            item_reportes.setHidden(not es_admin_reportes)
+
+            if es_admin_reportes:
+                item_reportes.setFlags(
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                )
+                item_reportes.setToolTip("Indicadores, SLA y reportes de gestión")
+            else:
+                item_reportes.setFlags(Qt.ItemFlag.NoItemFlags)
+                item_reportes.setToolTip(
+                    "Módulo restringido a Administrador con permiso de consulta"
+                )
 
         self.view_dashboard.actualizar_datos()
         if self._sesion_activa:
@@ -275,27 +328,22 @@ class MainWindow(QMainWindow):
                 item_ordenes.setToolTip("Exclusivo para Técnico de soporte")
 
         # Mostrar item de repuestos solo a Administrador
-        item_repuestos = self.sidebar.item(7)
+        item_repuestos = self.sidebar.item(6)
         if item_repuestos:
             es_admin = current_session.is_admin()
             item_repuestos.setHidden(not es_admin)
             item_repuestos.setFlags(
                 Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-                if es_admin else Qt.ItemFlag.NoItemFlags
+                if es_admin
+                else Qt.ItemFlag.NoItemFlags
             )
 
-
     def _cambiar_vista(self, index: int):
-
-        if index == 7 and not current_session.is_admin():
-            self.sidebar.setCurrentRow(0)
-            return
-
 
         if index < 0 or index >= self.stacked_views.count():
             return
 
-        # Restricciones adicionales de navegación por rol.
+        # Restricciones de navegación por rol y permisos RBAC.
         if index == 4 and not current_session.is_tecnico():
             self.sidebar.setCurrentRow(0)
             return
@@ -304,45 +352,69 @@ class MainWindow(QMainWindow):
             self.sidebar.setCurrentRow(0)
             return
 
-        if index == 6 and not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")):
+        if index == 6 and not current_session.is_admin():
+            self.sidebar.setCurrentRow(0)
+            return
+
+        if index == 7 and not (
+            current_session.is_admin()
+            and current_session.has_permission("REPORTES_CONSULTAR")
+        ):
+            self.sidebar.setCurrentRow(0)
+            return
+
+        if index == 8 and not (
+            current_session.is_admin()
+            and current_session.has_permission("AUDITORIA_CONSULTAR")
+        ):
             self.sidebar.setCurrentRow(0)
             return
 
         self.stacked_views.setCurrentIndex(index)
+
         if index == 0 and current_session.is_admin():
             self.view_dashboard.actualizar_alertas()
 
-        if index == 7:
+        # Inventario de repuestos.
+        if index == 6:
             self.view_repuestos.cargar_repuestos()
+
+        # Reportes de gestión.
+        if index == 7:
+            self.view_reportes.actualizar_permisos_ui()
 
         # Carga automática bajo demanda.
         if index == 1 and self.view_activos.tabla.rowCount() == 0:
             self.view_activos.cargar_activos()
+
         elif index == 2 and self.view_solicitudes.tabla.rowCount() == 0:
             self.view_solicitudes.cargar_solicitudes()
+
         elif index == 3 and self.view_tickets.tabla.rowCount() == 0:
             self.view_tickets.cargar_tickets()
+
         elif index == 4:
             self.view_ordenes_trabajo.actualizar_datos()
+
         elif (
             index == 5
             and current_session.is_admin()
             and self.view_usuarios.tabla.rowCount() == 0
         ):
             self.view_usuarios.cargar_usuarios()
+
         elif (
-            index == 6
+            index == 8
             and current_session.is_admin()
             and current_session.has_permission("AUDITORIA_CONSULTAR")
             and self.view_auditoria.tabla.rowCount() == 0
         ):
             self.view_auditoria.cargar_auditoria()
 
-
     def _abrir_repuestos_criticos(self):
         if not current_session.is_admin():
             return
-        self.sidebar.setCurrentRow(7)
+        self.sidebar.setCurrentRow(6)
         self.view_repuestos.mostrar_solo_criticos()
 
     def invalidar_consultas(self, origen: QWidget):
@@ -361,28 +433,55 @@ class MainWindow(QMainWindow):
         generation = current_session.generation
         worker = ApiWorker(obtener_perfil_actual)
         self._worker_perfil = worker
-        worker.signals.finished.connect(lambda profile: self._refrescar_perfil(profile, generation) if worker is self._worker_perfil else None)
+        worker.signals.finished.connect(
+            lambda profile: (
+                self._refrescar_perfil(profile, generation)
+                if worker is self._worker_perfil
+                else None
+            )
+        )
         worker.signals.error.connect(lambda _error: None)
         worker.start()
 
     def _refrescar_perfil(self, profile: dict, generation: int):
-        if generation != current_session.generation or not current_session.is_authenticated():
+        if (
+            generation != current_session.generation
+            or not current_session.is_authenticated()
+        ):
             return
+
         current_session.update_user_info(profile)
+
         if not current_session.acceso_escritorio:
             self._cerrar_sesion()
             return
+
         if not current_session.is_admin():
             self.view_usuarios.tabla.setRowCount(0)
             self.view_usuarios._usuarios_cargados = []
+
             if self.sidebar.currentRow() == 5:
                 self.sidebar.setCurrentRow(0)
-        if not (current_session.is_admin() and current_session.has_permission("AUDITORIA_CONSULTAR")):
-            self.view_auditoria.limpiar_sesion()
-            if self.sidebar.currentRow() == 6:
-                self.sidebar.setCurrentRow(0)
-        self.actualizar_sesion()
 
+        if not (
+            current_session.is_admin()
+            and current_session.has_permission("AUDITORIA_CONSULTAR")
+        ):
+            self.view_auditoria.limpiar_sesion()
+
+            if self.sidebar.currentRow() == 8:
+                self.sidebar.setCurrentRow(0)
+
+        if not (
+            current_session.is_admin()
+            and current_session.has_permission("REPORTES_CONSULTAR")
+        ):
+            self.view_reportes.limpiar_sesion()
+
+            if self.sidebar.currentRow() == 7:
+                self.sidebar.setCurrentRow(0)
+
+        self.actualizar_sesion()
 
     def _cerrar_sesion(self):
         """Cierra la sesión, limpia las credenciales en memoria y notifica."""
@@ -410,6 +509,7 @@ class MainWindow(QMainWindow):
         self.view_ordenes_trabajo.tabla.setRowCount(0)
         self.view_ordenes_trabajo._ordenes_cargadas = []
         self.view_auditoria.limpiar_sesion()
+        self.view_reportes.limpiar_sesion()
 
         # Actualizar la interfaz y volver al panel principal.
 
@@ -426,9 +526,11 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         from siget_desktop.auth.cache import guardar_cache
+
         guardar_cache()
         self._sesion_activa = False
         from PySide6.QtWidgets import QApplication
+
         app = QApplication.instance()
         if app is not None:
             app.quit()

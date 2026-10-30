@@ -89,3 +89,45 @@ class PuedeConsultarAuditoria(BasePermission):
             )
 
         return True
+
+
+class PuedeConsultarReportes(BasePermission):
+    """
+    Permite consultar y exportar reportes únicamente a usuarios
+    activos con rol Administrador del sistema y permiso
+    REPORTES_CONSULTAR.
+    """
+
+    def has_permission(self, request: Request, view):
+        from django.http import HttpRequest
+
+        django_request = getattr(request, "_request", request)
+
+        if not isinstance(django_request, HttpRequest):
+            raise NotAuthenticated(
+                "Debe iniciar sesión para consultar reportes."
+            )
+
+        usuario = obtener_usuario_actual(django_request)
+
+        if not usuario:
+            raise NotAuthenticated(
+                "Debe iniciar sesión para consultar reportes."
+            )
+
+        if not usuario.activo:
+            raise PermissionDenied(
+                "La cuenta de usuario se encuentra inactiva."
+            )
+
+        if not es_administrador(usuario):
+            raise PermissionDenied(
+                "Se requiere el rol Administrador del sistema."
+            )
+
+        if not usuario_tiene_permiso(usuario, "REPORTES_CONSULTAR"):
+            raise PermissionDenied(
+                "Se requiere el permiso REPORTES_CONSULTAR."
+            )
+
+        return True

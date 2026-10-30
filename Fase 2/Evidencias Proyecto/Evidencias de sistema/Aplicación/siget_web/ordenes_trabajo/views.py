@@ -8,11 +8,10 @@ from siget.http import direccion_ip_cliente
 from tickets.permissions import _obtener_usuario_siget
 from usuarios.models import BitacoraAuditoria
 
-from .models import Diagnostico, OrdenRepuesto, OrdenTrabajo
 from .cierre import cerrar_orden_trabajo
 from .cierre_serializers import CierreTecnicoEntradaSerializer
-from .permissions import PuedeCompletarOrdenTrabajo
-from .permissions import PuedeGestionarOrdenesTrabajo
+from .models import Diagnostico, OrdenRepuesto, OrdenTrabajo
+from .permissions import PuedeCompletarOrdenTrabajo, PuedeGestionarOrdenesTrabajo
 from .repuestos import anular_asignacion_repuesto, asignar_repuesto_orden, calcular_costo_repuestos_orden
 from .serializers import (
     AnularAsignacionRepuestoOTSerializer,

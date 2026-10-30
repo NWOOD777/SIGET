@@ -1,9 +1,9 @@
 from django.urls import path
 
 from .views import (
-    CompletarOrdenTrabajoView,
     AnularAsignacionRepuestoOrdenView,
     AsignarRepuestoOrdenView,
+    CompletarOrdenTrabajoView,
     HistorialOrdenTrabajoView,
     IniciarReparacionView,
     ListarTecnicosOTView,

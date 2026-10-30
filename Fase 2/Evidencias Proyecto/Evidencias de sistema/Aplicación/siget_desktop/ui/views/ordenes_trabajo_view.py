@@ -36,11 +36,11 @@ from siget_desktop.api.services import (
     reasignar_orden_trabajo,
 )
 from siget_desktop.auth.session import current_session
-from siget_desktop.ui.dialogs.cierre_tecnico_dialog import CierreTecnicoDialog, puede_cerrar_tecnicamente
 from siget_desktop.ui.dialogs.acciones_orden_trabajo_dialogs import (
     PausarOTDialog,
     ReasignarOTDialog,
 )
+from siget_desktop.ui.dialogs.cierre_tecnico_dialog import CierreTecnicoDialog, puede_cerrar_tecnicamente
 from siget_desktop.ui.dialogs.gestionar_repuestos_ot_dialog import (
     GestionarRepuestosOTDialog,
 )
