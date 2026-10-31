@@ -1,5 +1,6 @@
 """Pruebas sin PostgreSQL; no ejecutan el SQL de instalación pendiente."""
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 from django.conf import settings
@@ -28,7 +29,7 @@ class CierreTecnicoContenidoTests(SimpleTestCase):
     def test_obligatorios_vacios(self):
         for campo in ("solucion_aplicada", "pruebas_realizadas"):
             for valor in (None, "", " \t\n"):
-                datos = dict(resultado="REPARACION_EXITOSA", solucion_aplicada="Solución", pruebas_realizadas="Pruebas")
+                datos: dict[str, Any] = dict(resultado="REPARACION_EXITOSA", solucion_aplicada="Solución", pruebas_realizadas="Pruebas")
                 datos[campo] = valor
                 with self.subTest(campo=campo, valor=valor), self.assertRaises(ValidationError):
                     validar_contenido_cierre(**datos)
@@ -60,9 +61,13 @@ class CierreTecnicoModeloTests(SimpleTestCase):
         self.assertEqual(CierreTecnico._meta.db_table, "cierre_tecnico")
         for nombre, destino in (("id_orden", OrdenTrabajo), ("id_tecnico", Usuario)):
             campo = CierreTecnico._meta.get_field(nombre)
+            assert isinstance(campo, models.ForeignKey)
+            assert campo.remote_field is not None
             self.assertIs(campo.remote_field.model, destino)
             self.assertIs(campo.remote_field.on_delete, models.PROTECT)
-        self.assertTrue(CierreTecnico._meta.get_field("id_orden").unique)
+        campo_orden = CierreTecnico._meta.get_field("id_orden")
+        assert isinstance(campo_orden, models.Field)
+        self.assertTrue(campo_orden.unique)
 
     def test_fecha_servidor_no_editable(self):
         self.assertIsNotNone(CierreTecnico().fecha_cierre)
@@ -85,11 +90,15 @@ class CierreTecnicoModeloTests(SimpleTestCase):
             with self.subTest(campo=campo), patch.object(destino._base_manager, "using") as consulta:
                 consulta.return_value.filter.return_value.complex_filter.return_value.exists.return_value = False
                 with self.assertRaises(ValidationError):
-                    CierreTecnico._meta.get_field(campo).validate(999, CierreTecnico())
+                    f = CierreTecnico._meta.get_field(campo)
+                    assert isinstance(f, models.Field)
+                    f.validate(999, CierreTecnico())
 
     def test_longitud_resultado(self):
         with self.assertRaises(ValidationError):
-            CierreTecnico._meta.get_field("resultado").clean("X" * 33, CierreTecnico())
+            f = CierreTecnico._meta.get_field("resultado")
+            assert isinstance(f, models.Field)
+            f.clean("X" * 33, CierreTecnico())
 
     def test_sql_aditivo_y_referencia_coinciden(self):
         aditivo = (settings.BASE_DIR / "ordenes_trabajo/sql/e6_h17_cierre_tecnico.sql").read_text(encoding="utf-8")

@@ -48,7 +48,8 @@ class EquivalenciaUnicodePostgreSQLTests(ConsolidacionOTFixture):
                             CierreTecnico.objects.create(id_orden=self.orden, id_tecnico=self.tecnico, **datos)
                         sql_valido = True
                     except IntegrityError as error:
-                        self.assertEqual(error.__cause__.diag.constraint_name, "ck_cierre_tecnico_contenido")
+                        diag = getattr(error.__cause__, "diag", None)
+                        self.assertEqual(getattr(diag, "constraint_name", None), "ck_cierre_tecnico_contenido")
                         sql_valido = False
                     self.assertEqual(sql_valido, esperado)
                     transaction.set_rollback(True)

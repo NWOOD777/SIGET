@@ -113,6 +113,10 @@ class Ticket(models.Model):
 
 
 class ComentarioTicket(models.Model):
+    if TYPE_CHECKING:
+        id_ticket_id: int
+        id_usuario_id: int
+
     id_comentario = models.AutoField(primary_key=True)
     id_ticket = models.ForeignKey(
         Ticket,

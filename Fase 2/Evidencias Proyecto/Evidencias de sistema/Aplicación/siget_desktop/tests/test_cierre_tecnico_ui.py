@@ -4,6 +4,7 @@ import ast
 import time
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, patch
 
 from PySide6.QtTest import QTest
@@ -128,6 +129,8 @@ class CierreTecnicoUITests(unittest.TestCase):
             worker = d._worker
             d.guardar()
         confirmar.assert_called_once()
+        self.assertIsNotNone(worker)
+        assert worker is not None
         self.assertEqual(worker.kwargs, {"resultado": "NO_REPARABLE", "informe_descarte": "Placa irreparable"})
         self.assertEqual(worker.args, (1,))
         self.assertFalse(d.btn_guardar.isEnabled())
@@ -143,6 +146,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         d.pruebas.setPlainText("Pruebas")
         with patch(MODULO + ".confirmar_operacion", return_value=True):
             d.guardar()
+        self.assertIsNotNone(d._worker)
+        assert d._worker is not None
         self.assertEqual(d._worker.kwargs, {"resultado": "REPARACION_EXITOSA", "solucion_aplicada": "Solución", "pruebas_realizadas": "Pruebas"})
 
     def test_exito_cierra_dialogo(self):
@@ -150,6 +155,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         self.datos_descarte(d)
         with patch(MODULO + ".confirmar_operacion", return_value=True):
             d.guardar()
+        self.assertIsNotNone(d._worker)
+        assert d._worker is not None
         d._worker.signals.finished.emit(RESULTADO)
         self.assertEqual(d.result(), QDialog.DialogCode.Accepted)
         self.assertEqual(d.resultado_cierre, RESULTADO)
@@ -160,6 +167,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         for codigo in (400, 401, 403, 404, 405, 500, None):
             with self.subTest(codigo=codigo), patch(MODULO + ".confirmar_operacion", return_value=True), patch(MODULO + ".QMessageBox.warning"):
                 d.guardar()
+                self.assertIsNotNone(d._worker)
+                assert d._worker is not None
                 d._worker.signals.error.emit(ApiError("SQL_PRIVADO", status_code=codigo))
                 self.assertFalse(d._closed)
                 self.assertIsNone(d.resultado_cierre)
@@ -173,6 +182,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         with patch(MODULO + ".confirmar_operacion", return_value=True):
             d.guardar()
         worker = d._worker
+        self.assertIsNotNone(worker)
+        assert worker is not None
         current_session.clear()
         worker.signals.finished.emit(RESULTADO)
         self.assertIsNone(d.resultado_cierre)
@@ -184,6 +195,8 @@ class CierreTecnicoUITests(unittest.TestCase):
         self.datos_descarte(d)
         with patch(MODULO + ".confirmar_operacion", return_value=True), patch(MODULO + ".QMessageBox.warning"):
             d.guardar()
+            self.assertIsNotNone(d._worker)
+            assert d._worker is not None
             d._worker.signals.finished.emit({})
         self.assertFalse(d._closed)
         self.assertIsNone(d.resultado_cierre)
@@ -256,9 +269,15 @@ class CierreTecnicoUITests(unittest.TestCase):
             dialogo.return_value.exec.return_value = QDialog.DialogCode.Accepted
             dialogo.return_value.resultado_cierre = RESULTADO
             vista._cerrar_tecnicamente()
-        self.assertEqual(vista._orden_seleccionada()["estado"], "Completada")
+        orden_sel = vista._orden_seleccionada()
+        self.assertIsNotNone(orden_sel)
+        assert orden_sel is not None
+        self.assertEqual(orden_sel["estado"], "Completada")
         self.assertEqual(vista._ordenes_cargadas[0]["estado"], "Completada")
-        self.assertEqual(vista.tabla.item(0, 4).text(), "Completada")
+        item_estado = vista.tabla.item(0, 4)
+        self.assertIsNotNone(item_estado)
+        assert item_estado is not None
+        self.assertEqual(item_estado.text(), "Completada")
         self.assertFalse(vista.btn_pausar.isEnabled())
         self.assertFalse(vista.btn_cierre_tecnico.isEnabled())
 
@@ -299,7 +318,8 @@ class CierreTecnicoUITests(unittest.TestCase):
 
     def test_id_invalido_no_envia_http(self):
         with patch("siget_desktop.api.services.api_client.post") as http:
-            for identificador in (0, True, "1", 2147483648):
+            identificadores: tuple[Any, ...] = (0, True, "1", 2147483648)
+            for identificador in identificadores:
                 with self.assertRaises(ValueError):
                     services.completar_orden_trabajo(identificador, resultado="NO_REPARABLE")
             http.assert_not_called()

@@ -124,8 +124,10 @@ class CierreTecnicoDialog(SessionDialog):
             405: "El servidor no admite esta operación. Contacte al administrador.",
             500: "No fue posible completar el cierre. Contacte al administrador.",
         }
-        mensaje = mensajes.get(getattr(error, "status_code", None),
-            "No se pudo confirmar el resultado. Consulte la OT antes de volver a intentar el cierre.")
+        codigo = getattr(error, "status_code", None)
+        mensaje = mensajes.get(codigo) if isinstance(codigo, int) else None
+        if not mensaje:
+            mensaje = "No se pudo confirmar el resultado. Consulte la OT antes de volver a intentar el cierre."
         self.lbl_estado.setText(mensaje)
         self._actualizar_controles()
         QMessageBox.warning(self, "Cierre no confirmado", mensaje)

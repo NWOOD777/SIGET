@@ -20,6 +20,7 @@ class EstadoOrdenTrabajo(models.Model):
 class OrdenTrabajo(models.Model):
     id_ticket_id: int
     id_tecnico_responsable_id: int
+    id_estado_ot_id: int
 
     id_orden = models.AutoField(primary_key=True)
     codigo_ot = models.CharField(max_length=50, unique=True)
@@ -54,6 +55,9 @@ class OrdenTrabajo(models.Model):
 
 class CierreTecnico(models.Model):
     """Resultado definitivo; su creación transaccional se implementará después."""
+
+    id_orden_id: int
+    id_tecnico_id: int
 
     id_cierre_tecnico = models.AutoField(primary_key=True)
     id_orden = models.OneToOneField(

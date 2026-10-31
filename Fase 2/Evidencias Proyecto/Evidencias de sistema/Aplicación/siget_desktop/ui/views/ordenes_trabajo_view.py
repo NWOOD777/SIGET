@@ -1026,11 +1026,15 @@ class OrdenesTrabajoView(QWidget):
                     guardada.update(estado=resultado["estado"], fecha_termino=resultado["fecha_cierre"])
             for fila in range(self.tabla.rowCount()):
                 item = self.tabla.item(fila, 0)
-                datos = item.data(Qt.ItemDataRole.UserRole) if item else None
+                if not item:
+                    continue
+                datos = item.data(Qt.ItemDataRole.UserRole)
                 if isinstance(datos, dict) and datos.get("id_orden") == resultado["id_orden"]:
                     datos.update(estado=resultado["estado"], fecha_termino=resultado["fecha_cierre"])
                     item.setData(Qt.ItemDataRole.UserRole, datos)
-                    self.tabla.item(fila, 4).setText(resultado["estado"])
+                    item_estado = self.tabla.item(fila, 4)
+                    if item_estado:
+                        item_estado.setText(resultado["estado"])
             self._actualizar_acciones()
             self.cierre_tecnico_completado.emit(resultado)
             self.actualizar_datos()

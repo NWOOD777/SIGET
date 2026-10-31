@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 
@@ -79,6 +81,11 @@ class EstadoActivo(models.Model):
 
 
 class Activo(models.Model):
+    if TYPE_CHECKING:
+        id_modelo_id: int
+        id_ubicacion_id: int
+        id_estado_activo_id: int
+
     id_activo = models.AutoField(primary_key=True)
     codigo_inventario = models.CharField(max_length=50, unique=True)
     numero_serie = models.CharField(max_length=100, unique=True)

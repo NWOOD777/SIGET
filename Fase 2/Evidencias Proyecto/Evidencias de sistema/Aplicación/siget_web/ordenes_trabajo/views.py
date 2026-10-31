@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import exceptions, status
 from rest_framework.response import Response
@@ -44,7 +44,8 @@ class CompletarOrdenTrabajoView(APIView):
     def post(self, request, pk):
         pk = validar_id_orden(pk)
         datos = validar_entrada(CierreTecnicoEntradaSerializer, request.data)
-        adicionales = set(request.data) - set(CierreTecnicoEntradaSerializer().fields)
+        campos_permitidos = cast(CierreTecnicoEntradaSerializer, CierreTecnicoEntradaSerializer()).fields
+        adicionales = set(request.data) - set(campos_permitidos)
         if adicionales:
             raise exceptions.ValidationError({"non_field_errors": ["El cuerpo contiene campos no permitidos."]})
         if not OrdenTrabajo.objects.filter(pk=pk).exists():
