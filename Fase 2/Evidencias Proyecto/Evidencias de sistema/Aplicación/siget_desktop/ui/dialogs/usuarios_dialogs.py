@@ -321,7 +321,7 @@ class GestionarRolesUsuarioDialog(SessionDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(14)
 
-        lbl_titulo = QLabel("Asignación de roles RBAC")
+        lbl_titulo = QLabel("Asignación de roles")
         lbl_titulo.setObjectName("sectionTitle")
         layout.addWidget(lbl_titulo)
 
@@ -416,7 +416,7 @@ class CatalogoRolesPermisosDialog(SessionDialog):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Catálogo de roles y permisos RBAC")
+        self.setWindowTitle("Catálogo de roles y permisos")
         self.resize(750, 520)
         self._roles: list[dict[str, Any]] = []
         self._worker: ApiWorker | None = None

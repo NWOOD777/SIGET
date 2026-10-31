@@ -143,9 +143,7 @@ def guardar_excel_reportes(
 
     libro = Workbook()
 
-    # ============================================================
     # HOJA 1: RESUMEN
-    # ============================================================
 
     resumen = libro.active
     if not isinstance(resumen, Worksheet):
@@ -223,9 +221,7 @@ def guardar_excel_reportes(
 
     _ajustar_columnas(resumen)
 
-    # ============================================================
     # HOJA 2: FALLAS RECURRENTES
-    # ============================================================
 
     fallas = datos.get("fallas_recurrentes", []) or []
 
@@ -243,9 +239,7 @@ def guardar_excel_reportes(
         ],
     )
 
-    # ============================================================
     # HOJA 3: COMPONENTES REEMPLAZADOS
-    # ============================================================
 
     componentes = datos.get("componentes_reemplazados", []) or []
 
@@ -263,9 +257,7 @@ def guardar_excel_reportes(
         ],
     )
 
-    # ============================================================
     # HOJA 4: TASAS POR CATEGORÍA
-    # ============================================================
 
     tasas = datos.get("tasas_fallas_por_categoria", []) or []
 
@@ -294,9 +286,7 @@ def guardar_excel_reportes(
     for hoja in libro.worksheets:
         hoja.auto_filter.ref = None
 
-    # ============================================================
     # GUARDADO SEGURO
-    # ============================================================
 
     archivo = Path(ruta)
     archivo.parent.mkdir(

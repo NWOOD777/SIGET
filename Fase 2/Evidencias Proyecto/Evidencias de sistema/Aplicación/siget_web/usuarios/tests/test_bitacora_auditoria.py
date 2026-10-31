@@ -108,9 +108,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
             session.save()
         return c
 
-    # =========================================================================
     # Administrador autorizado, orden cronológico y datos del evento
-    # =========================================================================
 
     def test_01_administrador_autorizado_puede_consultar_bitacora_y_recibe_orden_cronologico(self):
         ahora = timezone.now()
@@ -262,9 +260,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
         self.assertIsNone(data["id_registro_afectado"])
         self.assertEqual(data["recurso"], "sistema")
 
-    # =========================================================================
     # Búsqueda por identificador de usuario y activo
-    # =========================================================================
 
     def test_06_filtro_por_usuario(self):
         e_admin = registrar_auditoria(
@@ -594,9 +590,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
         self.assertIn(e1.pk, ids)
         self.assertNotIn(e2.pk, ids)
 
-    # =========================================================================
     # Búsqueda sin coincidencias y validaciones de entrada
-    # =========================================================================
 
     def test_11_busqueda_sin_coincidencias_retorna_resultado_vacio(self):
         cliente = self._cliente(self.admin)
@@ -655,9 +649,7 @@ class BitacoraAuditoriaPostgreSQLE2ETests(TransactionTestCase):
         self.assertEqual(resp_uid.status_code, 400)
         self.assertIn("id_usuario", resp_uid.json())
 
-    # =========================================================================
     # La API rechaza los métodos de modificación y eliminación.
-    # =========================================================================
 
     def test_13_metodos_escritura_rechazados_e_inmutabilidad_en_postgresql(self):
         evento = registrar_auditoria(

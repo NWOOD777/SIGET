@@ -56,7 +56,7 @@ class PuedeConsultarAuditoria(BasePermission):
     """
     Permiso DRF que restringe la consulta de la bitácora de auditoría
     exclusivamente a usuarios activos con rol 'Administrador del sistema'
-    y permiso 'AUDITORIA_CONSULTAR', verificados autoritativamente contra PostgreSQL.
+    y permiso 'AUDITORIA_CONSULTAR', verificados en PostgreSQL.
     Rechaza solicitudes anónimas, usuarios inactivos y roles no autorizados (Técnico, Solicitante).
     """
 

@@ -13,9 +13,7 @@ from PySide6.QtGui import (
     QPen,
 )
 
-# ================================================================
 # CONFIGURACIÓN GENERAL
-# ================================================================
 
 # El PDF utiliza puntos tipográficos: 72 puntos = 1 pulgada.
 MM = 72.0 / 25.4
@@ -45,9 +43,7 @@ ALTURA_ENCABEZADO = 27.0
 INTERLINEADO_EXTRA = 2.0
 
 
-# ================================================================
 # FUENTES
-# ================================================================
 
 
 def _fuente(tamano: int = 9, negrita: bool = False) -> QFont:
@@ -57,9 +53,7 @@ def _fuente(tamano: int = 9, negrita: bool = False) -> QFont:
     return fuente
 
 
-# ================================================================
 # DIBUJO DE TEXTO
-# ================================================================
 
 
 def _dibujar_texto(
@@ -211,9 +205,7 @@ def _dibujar_lineas(
         )
 
 
-# ================================================================
 # CONTROL DE PÁGINAS
-# ================================================================
 
 
 class _DocumentoPDF:
@@ -340,9 +332,7 @@ class _DocumentoPDF:
         self._dibujar_pie()
 
 
-# ================================================================
 # SECCIONES
-# ================================================================
 
 
 def _titulo_seccion(
@@ -395,9 +385,7 @@ def _dibujar_mensaje_vacio(
     documento.y += 32
 
 
-# ================================================================
 # TABLAS
-# ================================================================
 
 
 def _dibujar_tabla(
@@ -563,9 +551,7 @@ def _dibujar_tabla(
     documento.y += 14
 
 
-# ================================================================
 # GENERACIÓN DEL PDF
-# ================================================================
 
 
 def guardar_pdf_reportes(
@@ -614,9 +600,7 @@ def guardar_pdf_reportes(
             raise OSError("No se pudo iniciar el documento PDF.")
 
         try:
-            # IMPORTANTE:
-            # No aplicar painter.scale().
-            # Las coordenadas ya están expresadas en puntos.
+            # Las coordenadas están en puntos y no requieren escalado.
 
             documento = _DocumentoPDF(
                 painter,
@@ -625,9 +609,7 @@ def guardar_pdf_reportes(
                 fecha_fin,
             )
 
-            # --------------------------------------------------------
             # RESUMEN GENERAL
-            # --------------------------------------------------------
 
             _titulo_seccion(
                 documento,
@@ -672,9 +654,7 @@ def guardar_pdf_reportes(
                 proporciones=[0.73, 0.27],
             )
 
-            # --------------------------------------------------------
             # FALLAS RECURRENTES
-            # --------------------------------------------------------
 
             _titulo_seccion(
                 documento,
@@ -705,9 +685,7 @@ def guardar_pdf_reportes(
             else:
                 _dibujar_mensaje_vacio(documento)
 
-            # --------------------------------------------------------
             # COMPONENTES REEMPLAZADOS
-            # --------------------------------------------------------
 
             _titulo_seccion(
                 documento,
@@ -735,9 +713,7 @@ def guardar_pdf_reportes(
             else:
                 _dibujar_mensaje_vacio(documento)
 
-            # --------------------------------------------------------
             # TASAS DE FALLAS POR CATEGORÍA
-            # --------------------------------------------------------
 
             _titulo_seccion(
                 documento,

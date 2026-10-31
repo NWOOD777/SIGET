@@ -44,9 +44,7 @@ class AprovisionamientoTests(RbacTestBase):
             "rol": ROL_TECNICO,
         }
 
-    # =========================================================================
     # 1. Validación de RUT chileno (Módulo 11)
-    # =========================================================================
 
     def test_01_rut_valido_normaliza_correctamente(self):
         """
@@ -74,9 +72,7 @@ class AprovisionamientoTests(RbacTestBase):
         with self.assertRaises(ValueError):
             validar_rut_chileno("")
 
-    # =========================================================================
     # 2. Control de Acceso RBAC en Aprovisionamiento
-    # =========================================================================
 
     def test_03_aprovisionamiento_falla_si_ejecutor_no_es_administrador(self):
         """
@@ -101,9 +97,7 @@ class AprovisionamientoTests(RbacTestBase):
         with self.assertRaises(AccesoDenegadoError):
             aprovisionar_usuario(None, self.datos_validos)
 
-    # =========================================================================
     # 3. Validación de Campos Obligatorios y Roles
-    # =========================================================================
 
     def test_05_aprovisionamiento_falla_si_faltan_campos_obligatorios(self):
         """
@@ -141,9 +135,7 @@ class AprovisionamientoTests(RbacTestBase):
                 aprovisionar_usuario(self.admin_user, datos_rol_invalido)
             self.assertIn("no es un rol oficial válido", str(ctx.exception))
 
-    # =========================================================================
     # 4. Detección de Duplicados en PostgreSQL
-    # =========================================================================
 
     def test_08_aprovisionamiento_falla_si_correo_duplicado_en_postgresql(self):
         """
@@ -188,9 +180,7 @@ class AprovisionamientoTests(RbacTestBase):
             )
             mock_auth0.assert_not_called()
 
-    # =========================================================================
     # 5. Flujo Exitoso (Happy Path) y Auditoría
-    # =========================================================================
 
     def test_10_aprovisionamiento_exitoso_crea_identidad_en_auth0_y_postgresql(self):
         """
@@ -281,9 +271,7 @@ class AprovisionamientoTests(RbacTestBase):
             # Verifica disparo de invitación inicial al correo del usuario
             mock_invitacion.assert_called_once_with("n.madariaga@duocuc.cl")
 
-    # =========================================================================
     # 6. Manejo de Fallos y Transacción Compensatoria
-    # =========================================================================
 
     def test_11_error_en_auth0_aborta_sin_persistir_en_postgresql(self):
         """
@@ -344,9 +332,7 @@ class AprovisionamientoTests(RbacTestBase):
             # Comprueba que la operación compensatoria fue invocada con el ID externo
             mock_compensacion.assert_called_once_with("auth0|test_comp_123")
 
-    # =========================================================================
     # 7. Credenciales Iniciales e Invitación de Primer Acceso
-    # =========================================================================
 
     def test_13_password_transitoria_aleatoria_segura_no_persistida_ni_expuesta(self):
         """

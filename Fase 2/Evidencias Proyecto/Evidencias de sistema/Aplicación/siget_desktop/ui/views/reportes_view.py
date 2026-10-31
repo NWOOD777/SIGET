@@ -53,11 +53,9 @@ class ReportesView(QWidget):
 
         self.actualizar_permisos_ui()
 
-    # ================================================================
 
     # CONSTRUCCIÓN DE INTERFAZ
 
-    # ================================================================
 
     def _construir_ui(self):
 
@@ -84,11 +82,9 @@ class ReportesView(QWidget):
 
         principal.addWidget(descripcion)
 
-        # ------------------------------------------------------------
 
         # PANEL DE BLOQUEO
 
-        # ------------------------------------------------------------
 
         self.panel_bloqueo = QLabel(
             "No tienes autorización para consultar los reportes "
@@ -111,11 +107,9 @@ class ReportesView(QWidget):
 
         principal.addWidget(self.panel_bloqueo)
 
-        # ------------------------------------------------------------
 
         # ÁREA DESPLAZABLE
 
-        # ------------------------------------------------------------
 
         self.scroll_reportes = QScrollArea()
 
@@ -139,11 +133,9 @@ class ReportesView(QWidget):
 
         contenido.setSpacing(18)
 
-        # ------------------------------------------------------------
 
         # FILTROS
 
-        # ------------------------------------------------------------
 
         grupo_filtros = QGroupBox("Filtros de consulta")
 
@@ -217,11 +209,9 @@ class ReportesView(QWidget):
 
         contenido.addWidget(grupo_filtros)
 
-        # ------------------------------------------------------------
 
         # INDICADORES DE GESTIÓN
 
-        # ------------------------------------------------------------
 
         grupo_metricas = QGroupBox("Indicadores de gestión")
 
@@ -262,11 +252,9 @@ class ReportesView(QWidget):
 
         contenido.addWidget(grupo_metricas)
 
-        # ------------------------------------------------------------
 
         # TABLAS
 
-        # ------------------------------------------------------------
 
         self.tabla_fallas = self._crear_tabla(
             "Fallas recurrentes",
@@ -291,11 +279,9 @@ class ReportesView(QWidget):
             contenido,
         )
 
-        # ------------------------------------------------------------
 
         # BOTONES DE EXPORTACIÓN - ALINEADOS A LA DERECHA
 
-        # ------------------------------------------------------------
 
         contenedor_exportacion = QWidget()
 
@@ -327,11 +313,9 @@ class ReportesView(QWidget):
 
         contenido.addWidget(contenedor_exportacion)
 
-        # ------------------------------------------------------------
 
         # ESTADO DE OPERACIONES
 
-        # ------------------------------------------------------------
 
         self.progreso = QProgressBar()
 
@@ -371,11 +355,9 @@ class ReportesView(QWidget):
 
         self._habilitar_exportaciones(False)
 
-    # ================================================================
 
     # INDICADORES
 
-    # ================================================================
 
     def _crear_indicador(
         self,
@@ -407,11 +389,9 @@ class ReportesView(QWidget):
 
         return etiqueta
 
-    # ================================================================
 
     # CREACIÓN DE TABLAS
 
-    # ================================================================
 
     def _crear_tabla(
         self,
@@ -511,11 +491,9 @@ class ReportesView(QWidget):
 
         return tabla
 
-    # ================================================================
 
     # PERMISOS Y SESIÓN
 
-    # ================================================================
 
     def _tiene_permiso(self) -> bool:
 
@@ -604,11 +582,9 @@ class ReportesView(QWidget):
 
             etiqueta.setText("—")
 
-    # ================================================================
 
     # GESTIÓN DE WORKERS
 
-    # ================================================================
 
     def _iniciar_worker(
         self,
@@ -724,11 +700,9 @@ class ReportesView(QWidget):
             "error",
         )
 
-    # ================================================================
 
     # CATEGORÍAS
 
-    # ================================================================
 
     def cargar_categorias(self):
 
@@ -766,11 +740,9 @@ class ReportesView(QWidget):
                 int(id_categoria),
             )
 
-    # ================================================================
 
     # CONSULTA DE REPORTES
 
-    # ================================================================
 
     def consultar_reportes(self):
 
@@ -851,11 +823,9 @@ class ReportesView(QWidget):
                 "success",
             )
 
-    # ================================================================
 
     # ACTUALIZACIÓN DE INDICADORES
 
-    # ================================================================
 
     def _actualizar_indicadores(
         self,
@@ -876,11 +846,9 @@ class ReportesView(QWidget):
 
         self.lbl_sin_sla.setText(str(datos.get("tickets_sin_sla", 0)))
 
-    # ================================================================
 
     # ACTUALIZACIÓN DE TABLAS
 
-    # ================================================================
 
     def _actualizar_tablas(
         self,
@@ -960,11 +928,9 @@ class ReportesView(QWidget):
 
         tabla.viewport().update()
 
-    # ================================================================
 
     # EXPORTACIONES
 
-    # ================================================================
 
     def _habilitar_exportaciones(
         self,
@@ -1073,11 +1039,9 @@ class ReportesView(QWidget):
                 str(error),
             )
 
-    # ================================================================
 
     # MENSAJES
 
-    # ================================================================
 
     def _mostrar_mensaje(
         self,

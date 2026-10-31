@@ -59,15 +59,8 @@ def crear_solicitud_asignacion(
     motivo: str,
     ip_origen: str | None = None,
 ) -> SolicitudAsignacion:
-    """
-    Registra una nueva solicitud de asignación por tipo o categoría de equipo.
-    Reglas de negocio:
-    1. Motivo obligatorio.
-    2. Existencia de la categoría solicitada.
-    3. Validación de disponibilidad: debe existir al menos un activo 'Disponible' en esa categoría.
-    4. Prevención de solicitudes duplicadas activas (Pendiente o Aprobada) del mismo usuario para esa categoría.
-    5. Estado inicial: 'Pendiente'.
-    6. Registro atómico y auditoría en bitacora_auditoria.
+    """Registra una solicitud por categoría con disponibilidad.
+    Exige un motivo e impide solicitudes activas duplicadas del mismo usuario.
     """
     bloquear_operacion(70401, usuario.pk)
     motivo_limpio = motivo.strip() if motivo else ""
@@ -139,15 +132,8 @@ def aprobar_solicitud_asignacion(
     administrador: Usuario,
     ip_origen: str | None = None,
 ) -> SolicitudAsignacion:
-    """
-    Aprueba una solicitud de asignación pendiente.
-    Reglas de negocio:
-    1. La solicitud debe encontrarse en estado 'Pendiente'.
-    2. Si ya fue aprobada, rechazada o atendida, se rechaza la operación informando que ya fue gestionada.
-    3. Verifica que aún exista disponibilidad para la categoría solicitada.
-    4. NO se selecciona un activo físico serializado en esta etapa (corresponde a la entrega física).
-    5. Actualiza estado a 'Aprobada', administrador resolutor y fecha de resolución.
-    6. Registro atómico y auditoría.
+    """Aprueba una solicitud pendiente si aún existe disponibilidad.
+    Guarda el administrador y la fecha; el equipo se identifica durante la entrega.
     """
     bloquear_operacion(70402, solicitud.pk)
     solicitud.refresh_from_db()
@@ -261,18 +247,8 @@ def registrar_entrega_asignacion(
     fecha_devolucion_prevista=None,
     ip_origen: str | None = None,
 ) -> Asignacion:
-    """
-    Registra la entrega física de un equipo compatible con una solicitud aprobada.
-    Reglas de negocio:
-    1. La solicitud debe estar en estado 'Aprobada'.
-    2. La solicitud no debe tener una asignación ya registrada (prevención de entregas duplicadas).
-    3. El activo debe existir y encontrarse en estado 'Disponible'.
-    4. El activo debe ser compatible con la categoría de equipo de la solicitud.
-    5. Transacción atómica:
-       - Crea el registro en 'asignacion'.
-       - Cambia el estado del activo a 'Asignado'.
-       - Cambia el estado de la solicitud a 'Atendida'.
-    6. Registro en bitácora de auditoría.
+    """Entrega un activo disponible y compatible con una solicitud aprobada.
+    Guarda la asignación, los estados, el historial y la auditoría juntos.
     """
     bloquear_operacion(70402, solicitud.pk)
     bloquear_operacion(70403, id_activo)
@@ -365,21 +341,9 @@ def registrar_devolucion_asignacion(
     id_ticket_asociado: int | None = None,
     ip_origen: str | None = None,
 ) -> DevolucionActivo:
-    """
-    Registra la devolución de un equipo y la evaluación inicial de su estado.
-    Reglas de negocio:
-    1. Debe existir una asignación activa asociada.
-    2. Si la asignación ya está finalizada o ya tiene devolución registrada, se impide el registro duplicado.
-    3. La condición física es obligatoria y debe ser 'Buen estado', 'Con falla técnica' o 'Con daño físico'.
-    4. Evaluación de estado resultante:
-       - 'Buen estado' -> El activo pasa a 'Disponible'.
-       - 'Con falla técnica' o 'Con daño físico' -> El activo pasa a 'En revisión' y se genera o asocia un ticket de soporte.
-    5. Transacción atómica:
-       - Cierra la asignación activa ('Finalizada', fecha_finalizacion).
-       - Actualiza el estado operativo del activo.
-       - Crea el registro de devolución_activo.
-       - Si corresponde, crea o vincula el ticket de soporte.
-    6. Registro en bitácora de auditoría.
+    """Cierra una asignación activa y registra la condición del equipo recibido.
+    Un equipo en buen estado queda disponible; las fallas o daños requieren
+    revisión técnica y un ticket asociado.
     """
     bloquear_operacion(70404, asignacion.pk)
     bloquear_operacion(70403, getattr(asignacion, "id_activo_id"))

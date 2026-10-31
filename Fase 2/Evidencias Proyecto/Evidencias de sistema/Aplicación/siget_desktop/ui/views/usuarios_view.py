@@ -121,8 +121,7 @@ class UsuariosView(QWidget):
         lbl_bloq_titulo.setObjectName("sectionTitle")
         layout_bloqueo.addWidget(lbl_bloq_titulo)
         lbl_bloq_desc = QLabel(
-            "Este módulo está restringido exclusivamente a usuarios con rol 'Administrador del sistema'.\n"
-            "Las políticas de seguridad del backend rechazarán cualquier consulta o modificación no autorizada."
+            "La administración de usuarios requiere el rol Administrador del sistema."
         )
         lbl_bloq_desc.setObjectName("subtitulo")
         lbl_bloq_desc.setWordWrap(True)

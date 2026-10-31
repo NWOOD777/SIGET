@@ -58,9 +58,7 @@ class ApiRbacTests(RbacTestBase):
     Pruebas de los endpoints REST de administración RBAC para PySide6.
     """
 
-    # =========================================================================
     # 1. Pruebas de Autorización y Seguridad (No Autenticado, No Privilegiado)
-    # =========================================================================
 
     def test_01_acceso_no_autenticado_a_endpoints_es_rechazado_con_403(self):
         """
@@ -161,9 +159,7 @@ class ApiRbacTests(RbacTestBase):
 
         self.assertEqual(resp.status_code, 403)
 
-    # =========================================================================
     # 2. ESCENARIO 1 — Aprovisionamiento de Usuario (API)
-    # =========================================================================
 
     def test_05_administrador_aprovisiona_usuario_exitosamente_retorna_201(self):
         """
@@ -329,9 +325,7 @@ class ApiRbacTests(RbacTestBase):
         data = obtener_data_dict(resp)
         self.assertIn("error", data)
 
-    # =========================================================================
     # 3. ESCENARIO 4 — Consulta de Usuarios, Roles y Permisos Efectivos
-    # =========================================================================
 
     def test_07_administrador_lista_usuarios_del_sistema(self):
         """
@@ -410,9 +404,7 @@ class ApiRbacTests(RbacTestBase):
         self.assertEqual(len(data["roles"]), 1)
         self.assertEqual(len(data["permisos_efectivos"]), 2)
 
-    # =========================================================================
     # 4. ESCENARIO 2 — Asignación y Retiro de Roles
-    # =========================================================================
 
     def test_09_administrador_modifica_roles_de_usuario_correctamente(self):
         """
@@ -529,9 +521,7 @@ class ApiRbacTests(RbacTestBase):
         data = obtener_data_dict(resp)
         self.assertIn("error", data)
 
-    # =========================================================================
     # 5. ESCENARIO 3 — Gestión de Permisos de Rol (API)
-    # =========================================================================
 
     def test_12_administrador_consulta_catalogo_de_roles_con_permisos(self):
         """

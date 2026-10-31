@@ -32,7 +32,7 @@ from siget_desktop.ui.workers import ApiWorker
 
 
 class ParqueTIView(QWidget):
-    """Reporte consolidado del parque tecnológico E9-H28."""
+    """Reporte del inventario y sus costos."""
 
     def __init__(self, parent=None):
         super().__init__(parent)

@@ -212,9 +212,7 @@ class AuditoriaView(QWidget):
         layout_admin.addLayout(barra_paginacion)
         layout.addWidget(self.contenedor_admin, 1)
 
-    # =========================================================================
     # Control de visibilidad y sesión
-    # =========================================================================
 
     def actualizar_permisos_ui(self):
         """Verifica los permisos en la sesión local para ajustar la visualización."""
@@ -255,9 +253,7 @@ class AuditoriaView(QWidget):
         self.btn_siguiente.setEnabled(False)
         self.lbl_pagina.setText("Página 1 de 1 (0 eventos)")
 
-    # =========================================================================
     # Navegación y filtros
-    # =========================================================================
 
     def _elegir_filtro(self, tipo: str):
         self.actualizar_permisos_ui()
@@ -314,9 +310,7 @@ class AuditoriaView(QWidget):
         dialogo = DetalleAuditoriaDialog(evento, self)
         dialogo.exec()
 
-    # =========================================================================
     # Carga de datos asíncrona
-    # =========================================================================
 
     def cargar_auditoria(self):
         """Ejecuta la consulta asíncrona mediante ApiWorker, invalidando consultas previas."""

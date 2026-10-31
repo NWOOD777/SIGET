@@ -52,7 +52,6 @@ DROP TABLE IF EXISTS usuario CASCADE;
 -- 1. MÓDULO CONTROL DE ACCESO (RBAC) Y USUARIOS (5 TABLAS)
 -- ============================================================================
 
--- Tabla 1
 CREATE TABLE rol (
     id_rol SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -62,7 +61,6 @@ CREATE TABLE rol (
 COMMENT ON TABLE rol IS 'Catálogo de roles oficiales para control de acceso RBAC.';
 COMMENT ON COLUMN rol.nombre IS 'Roles canónicos: Usuario solicitante, Técnico de soporte, Administrador del sistema.';
 
--- Tabla 2
 CREATE TABLE permiso (
     id_permiso SERIAL PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
@@ -71,7 +69,6 @@ CREATE TABLE permiso (
 
 COMMENT ON TABLE permiso IS 'Catálogo de permisos granulares sobre módulos, operaciones y endpoints de SIGET.';
 
--- Tabla 3
 CREATE TABLE usuario (
     id_usuario SERIAL PRIMARY KEY,
     identificador_externo VARCHAR(255) NOT NULL UNIQUE,
@@ -91,7 +88,6 @@ COMMENT ON COLUMN usuario.rut IS 'Identificador institucional utilizado para tra
 COMMENT ON COLUMN usuario.correo IS 'Correo del usuario; no constituye una contraseña ni una credencial almacenada por SIGET.';
 COMMENT ON COLUMN usuario.activo IS 'Indica si el perfil local está habilitado para operar en SIGET.';
 
--- Tabla 4
 CREATE TABLE usuario_rol (
     id_usuario_rol SERIAL PRIMARY KEY,
     id_usuario INT NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
@@ -102,7 +98,6 @@ CREATE TABLE usuario_rol (
 
 COMMENT ON TABLE usuario_rol IS 'Relación N:M entre usuarios y roles RBAC.';
 
--- Tabla 5
 CREATE TABLE rol_permiso (
     id_rol_permiso SERIAL PRIMARY KEY,
     id_rol INT NOT NULL REFERENCES rol(id_rol) ON DELETE CASCADE,
@@ -116,7 +111,6 @@ COMMENT ON TABLE rol_permiso IS 'Relación N:M entre roles y permisos.';
 -- 2. MÓDULO GESTIÓN DE ACTIVOS TECNOLÓGICOS (7 TABLAS)
 -- ============================================================================
 
--- Tabla 6
 CREATE TABLE categoria_activo (
     id_categoria SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
@@ -125,7 +119,6 @@ CREATE TABLE categoria_activo (
 
 COMMENT ON TABLE categoria_activo IS 'Catálogo de tipos o familias de activos tecnológicos.';
 
--- Tabla 7
 CREATE TABLE marca (
     id_marca SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE
@@ -133,7 +126,6 @@ CREATE TABLE marca (
 
 COMMENT ON TABLE marca IS 'Catálogo de fabricantes y marcas de activos tecnológicos.';
 
--- Tabla 8
 CREATE TABLE modelo_activo (
     id_modelo SERIAL PRIMARY KEY,
     id_marca INT NOT NULL REFERENCES marca(id_marca) ON DELETE RESTRICT,
@@ -146,7 +138,6 @@ CREATE TABLE modelo_activo (
 COMMENT ON TABLE modelo_activo IS 'Modelos de activos vinculados a una marca y una categoría.';
 COMMENT ON COLUMN modelo_activo.id_categoria IS 'La categoría se define a nivel de modelo y no se duplica en activo.';
 
--- Tabla 9
 CREATE TABLE ubicacion (
     id_ubicacion SERIAL PRIMARY KEY,
     nombre_area VARCHAR(100) NOT NULL,
@@ -156,7 +147,6 @@ CREATE TABLE ubicacion (
 
 COMMENT ON TABLE ubicacion IS 'Ubicaciones físicas, áreas, dependencias o bodegas donde se encuentran activos.';
 
--- Tabla 10
 CREATE TABLE estado_activo (
     id_estado_activo SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -165,7 +155,6 @@ CREATE TABLE estado_activo (
 
 COMMENT ON TABLE estado_activo IS 'Estados canónicos del activo: Disponible, Asignado, En revisión, En reparación y Dado de baja.';
 
--- Tabla 11
 CREATE TABLE activo (
     id_activo SERIAL PRIMARY KEY,
     codigo_inventario VARCHAR(50) NOT NULL UNIQUE,
@@ -185,7 +174,6 @@ COMMENT ON TABLE activo IS 'Inventario individual de activos tecnológicos.';
 COMMENT ON COLUMN activo.id_modelo IS 'El modelo determina también la categoría del activo.';
 COMMENT ON COLUMN activo.id_estado_activo IS 'Estado físico/operativo actual del activo.';
 
--- Tabla 12
 CREATE TABLE historial_estado_activo (
     id_historial_estado SERIAL PRIMARY KEY,
     id_activo INT NOT NULL REFERENCES activo(id_activo) ON DELETE CASCADE,
@@ -202,7 +190,6 @@ COMMENT ON COLUMN historial_estado_activo.id_usuario IS 'Usuario responsable del
 -- 3. MÓDULO SOLICITUDES, ASIGNACIONES Y DEVOLUCIONES (5 TABLAS)
 -- ============================================================================
 
--- Tabla 13
 CREATE TABLE estado_solicitud_asignacion (
     id_estado_solicitud SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -211,7 +198,6 @@ CREATE TABLE estado_solicitud_asignacion (
 
 COMMENT ON TABLE estado_solicitud_asignacion IS 'Estados exclusivos del ciclo de solicitud de asignación.';
 
--- Tabla 14
 CREATE TABLE solicitud_asignacion (
     id_solicitud SERIAL PRIMARY KEY,
     id_usuario INT NOT NULL REFERENCES usuario(id_usuario) ON DELETE RESTRICT,
@@ -232,7 +218,6 @@ COMMENT ON COLUMN solicitud_asignacion.id_categoria IS 'Tipo/categoría requerid
 COMMENT ON COLUMN solicitud_asignacion.id_administrador_resolutor IS 'Administrador del sistema que aprueba o rechaza la solicitud.';
 COMMENT ON COLUMN solicitud_asignacion.motivo_rechazo IS 'Justificación de rechazo cuando corresponda.';
 
--- Tabla 15
 CREATE TABLE estado_asignacion (
     id_estado_asignacion SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -241,7 +226,6 @@ CREATE TABLE estado_asignacion (
 
 COMMENT ON TABLE estado_asignacion IS 'Estados exclusivos de una asignación ya materializada físicamente.';
 
--- Tabla 16
 CREATE TABLE asignacion (
     id_asignacion SERIAL PRIMARY KEY,
     id_solicitud INT NOT NULL UNIQUE
@@ -267,7 +251,6 @@ COMMENT ON COLUMN asignacion.id_tecnico_entrega IS 'Técnico de soporte que regi
 COMMENT ON COLUMN asignacion.fecha_devolucion_prevista IS 'Fecha prevista opcional; no es obligatoria para materializar la entrega.';
 COMMENT ON COLUMN asignacion.fecha_finalizacion IS 'Fecha en que la asignación se cierra mediante devolución.';
 
--- Tabla 17
 CREATE TABLE devolucion_activo (
     id_devolucion SERIAL PRIMARY KEY,
     id_asignacion INT NOT NULL UNIQUE
@@ -292,7 +275,6 @@ COMMENT ON COLUMN devolucion_activo.id_tecnico_receptor IS 'Técnico de soporte 
 -- 4. MÓDULO SERVICE DESK, TICKETS Y SLA (7 TABLAS)
 -- ============================================================================
 
--- Tabla 18
 CREATE TABLE prioridad_ticket (
     id_prioridad SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -302,7 +284,6 @@ CREATE TABLE prioridad_ticket (
 
 COMMENT ON TABLE prioridad_ticket IS 'Catálogo de prioridades de tickets y su orden de urgencia.';
 
--- Tabla 19
 CREATE TABLE sla (
     id_sla SERIAL PRIMARY KEY,
     id_prioridad INT NOT NULL UNIQUE REFERENCES prioridad_ticket(id_prioridad) ON DELETE RESTRICT,
@@ -316,7 +297,6 @@ CREATE TABLE sla (
 COMMENT ON TABLE sla IS 'Política SLA única por prioridad.';
 COMMENT ON COLUMN sla.id_prioridad IS 'UNIQUE: cada prioridad referencia una única política SLA vigente en este modelo.';
 
--- Tabla 20
 CREATE TABLE estado_ticket (
     id_estado_ticket SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -325,7 +305,6 @@ CREATE TABLE estado_ticket (
 
 COMMENT ON TABLE estado_ticket IS 'Estados de ciclo de vida del ticket de soporte.';
 
--- Tabla 21
 CREATE TABLE ticket (
     id_ticket SERIAL PRIMARY KEY,
     codigo_ticket VARCHAR(50) NOT NULL UNIQUE,
@@ -347,7 +326,6 @@ COMMENT ON COLUMN ticket.id_prioridad IS 'El SLA aplicable se obtiene a través 
 COMMENT ON COLUMN ticket.id_tecnico_asignado IS 'Técnico de soporte asignado por el Administrador del sistema.';
 COMMENT ON COLUMN ticket.id_activo IS 'Activo relacionado cuando el ticket corresponde a una falla o intervención física.';
 
--- Tabla 22
 CREATE TABLE comentario_ticket (
     id_comentario SERIAL PRIMARY KEY,
     id_ticket INT NOT NULL REFERENCES ticket(id_ticket) ON DELETE CASCADE,
@@ -358,7 +336,6 @@ CREATE TABLE comentario_ticket (
 
 COMMENT ON TABLE comentario_ticket IS 'Historial conversacional y de seguimiento de un ticket.';
 
--- Tabla 23
 CREATE TABLE adjunto_ticket (
     id_adjunto SERIAL PRIMARY KEY,
     id_ticket INT NOT NULL REFERENCES ticket(id_ticket) ON DELETE CASCADE,
@@ -371,7 +348,6 @@ CREATE TABLE adjunto_ticket (
 
 COMMENT ON TABLE adjunto_ticket IS 'Archivos de evidencia asociados a tickets de soporte.';
 
--- Tabla 24
 CREATE TABLE evaluacion_csat (
     id_evaluacion SERIAL PRIMARY KEY,
     id_ticket INT NOT NULL UNIQUE REFERENCES ticket(id_ticket) ON DELETE CASCADE,
@@ -384,10 +360,9 @@ CREATE TABLE evaluacion_csat (
 COMMENT ON TABLE evaluacion_csat IS 'Evaluación CSAT registrada por el Usuario solicitante tras el cierre del ticket.';
 
 -- ============================================================================
--- 5. MÓDULO CONSOLA DE TALLER, DIAGNÓSTICOS Y REPARACIÓN (4 TABLAS)
+-- 5. MÓDULO CONSOLA DE TALLER, DIAGNÓSTICOS Y REPARACIÓN (5 TABLAS)
 -- ============================================================================
 
--- Tabla 25
 CREATE TABLE estado_orden_trabajo (
     id_estado_ot SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -396,7 +371,6 @@ CREATE TABLE estado_orden_trabajo (
 
 COMMENT ON TABLE estado_orden_trabajo IS 'Estados del ciclo de una orden de trabajo: En diagnóstico, En reparación, Pausada y Completada.';
 
--- Tabla 26
 CREATE TABLE orden_trabajo (
     id_orden SERIAL PRIMARY KEY,
     codigo_ot VARCHAR(50) NOT NULL UNIQUE,
@@ -419,7 +393,6 @@ COMMENT ON TABLE orden_trabajo IS 'Orden de trabajo asociada a un ticket que ref
 COMMENT ON COLUMN orden_trabajo.id_ticket IS 'UNIQUE: una orden de trabajo se vincula a un ticket; el activo se obtiene desde ticket.id_activo.';
 COMMENT ON COLUMN orden_trabajo.id_tecnico_responsable IS 'Técnico de soporte responsable; la reasignación actualiza esta referencia y se audita.';
 
--- Tabla 27
 CREATE TABLE diagnostico (
     id_diagnostico SERIAL PRIMARY KEY,
     id_orden INT NOT NULL REFERENCES orden_trabajo(id_orden) ON DELETE CASCADE,
@@ -432,7 +405,6 @@ CREATE TABLE diagnostico (
 
 COMMENT ON TABLE diagnostico IS 'Diagnósticos técnicos registrados dentro de una orden de trabajo.';
 
--- Tabla 28
 CREATE TABLE intervencion (
     id_intervencion SERIAL PRIMARY KEY,
     id_orden INT NOT NULL REFERENCES orden_trabajo(id_orden) ON DELETE CASCADE,
@@ -444,7 +416,7 @@ CREATE TABLE intervencion (
 
 COMMENT ON TABLE intervencion IS 'Intervenciones y pruebas técnicas realizadas sobre una orden de trabajo.';
 
--- E6-H17: resultado definitivo de reparaci?n (tabla adicional).
+-- Resultado final de la reparación y responsable del cierre.
 CREATE TABLE cierre_tecnico (
     id_cierre_tecnico SERIAL PRIMARY KEY,
     id_orden INT NOT NULL CONSTRAINT uq_cierre_tecnico_orden UNIQUE
@@ -472,7 +444,6 @@ COMMENT ON TABLE cierre_tecnico IS 'Resultado final único por OT, conservando e
 -- 6. MÓDULO INVENTARIO DE REPUESTOS E INSUMOS TÉCNICOS (3 TABLAS)
 -- ============================================================================
 
--- Tabla 29
 CREATE TABLE repuesto (
     id_repuesto SERIAL PRIMARY KEY,
     codigo_repuesto VARCHAR(50) NOT NULL UNIQUE,
@@ -488,7 +459,6 @@ CREATE TABLE repuesto (
 
 COMMENT ON TABLE repuesto IS 'Catálogo e inventario de repuestos, componentes e insumos técnicos.';
 
--- Tabla 30
 CREATE TABLE orden_repuesto (
     id_orden_repuesto SERIAL PRIMARY KEY,
     id_orden INT NOT NULL REFERENCES orden_trabajo(id_orden) ON DELETE CASCADE,
@@ -513,7 +483,6 @@ COMMENT ON COLUMN orden_repuesto.fecha_anulacion IS 'Fecha y hora del reintegro 
 COMMENT ON COLUMN orden_repuesto.motivo_anulacion IS 'Justificación obligatoria de la anulación.';
 COMMENT ON COLUMN orden_repuesto.id_usuario_anulacion IS 'Usuario que registró la anulación de la imputación.';
 
--- Tabla 31
 CREATE TABLE movimiento_repuesto (
     id_movimiento SERIAL PRIMARY KEY,
     id_repuesto INT NOT NULL REFERENCES repuesto(id_repuesto) ON DELETE RESTRICT,
@@ -539,7 +508,6 @@ COMMENT ON COLUMN movimiento_repuesto.id_usuario IS 'Administrador del sistema o
 -- 7. MÓDULO IDENTIFICACIÓN QR, NOTIFICACIONES Y AUDITORÍA (3 TABLAS)
 -- ============================================================================
 
--- Tabla 32
 CREATE TABLE codigo_qr (
     id_qr SERIAL PRIMARY KEY,
     id_activo INT NOT NULL UNIQUE REFERENCES activo(id_activo) ON DELETE CASCADE,
@@ -554,7 +522,6 @@ COMMENT ON COLUMN codigo_qr.payload_qr IS 'Contenido o identificador codificado 
 COMMENT ON COLUMN codigo_qr.fecha_generacion IS 'Fecha y hora en que SIGET obtuvo el código desde la integración externa.';
 COMMENT ON COLUMN codigo_qr.veces_reimpreso IS 'Cantidad de reimpresiones de la etiqueta física.';
 
--- Tabla 33
 CREATE TABLE notificacion (
     id_notificacion SERIAL PRIMARY KEY,
     id_usuario INT NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
@@ -592,7 +559,6 @@ COMMENT ON COLUMN notificacion.estado_envio IS 'Estado del envío externo. Para 
 COMMENT ON COLUMN notificacion.ultimo_error IS 'Detalle del último error de integración, sin revertir la transacción principal.';
 COMMENT ON COLUMN notificacion.fecha_envio IS 'Fecha del envío exitoso; NULL mientras no haya sido enviado.';
 
--- Tabla 34
 CREATE TABLE bitacora_auditoria (
     id_auditoria SERIAL PRIMARY KEY,
     id_usuario INT REFERENCES usuario(id_usuario) ON DELETE SET NULL,

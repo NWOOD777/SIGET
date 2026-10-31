@@ -138,18 +138,8 @@ def get_oauth():
 
 
 def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
-    """
-    Vincula o recupera un Usuario local de SIGET a partir de los claims de Auth0.
-
-    Algoritmo:
-    1. Validar presencia de claims mínimos obligatorios: sub y email.
-    2. Comprobar email_verified si está presente.
-    3. PASO A: Buscar Usuario por identificador_externo == sub.
-    4. PASO B: Si no existe por identificador_externo, buscar por correo.
-    5. PASO C: Si existe por correo y el correo fue verificado por Auth0:
-       actualizar únicamente identificador_externo = sub y proveedor_identidad = 'Auth0'.
-    6. PASO D: Si no existe en SIGET, rechazar el acceso (NO crear usuarios automáticamente).
-    7. Validar usuario.activo: si es False, rechazar acceso sin crear sesión.
+    """Vincula una cuenta existente con Auth0 mediante su identidad o correo verificado.
+    No crea usuarios y rechaza las cuentas inactivas.
     """
     if not claims or not isinstance(claims, dict):
         raise ClaimInvalidoError(
@@ -176,7 +166,7 @@ def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
             "El correo electrónico no ha sido verificado en el proveedor de identidad."
         )
 
-    # PASO A: Buscar por identificador_externo
+    # Buscar la identidad vinculada.
     usuario = Usuario.objects.filter(identificador_externo=sub).first()
     if usuario:
         if not usuario.activo:
@@ -185,10 +175,10 @@ def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
             )
         return usuario
 
-    # PASO B: Buscar por correo
+    # Buscar una cuenta por correo.
     usuario = Usuario.objects.filter(correo__iexact=email).first()
 
-    # PASO C: Vinculación si existe correo y fue verificado por Auth0
+    # Vincular únicamente un correo verificado por Auth0.
     if usuario:
         if not usuario.activo:
             raise UsuarioInactivoError("Su cuenta de usuario se encuentra inactiva. Contacte al administrador.")
@@ -217,21 +207,15 @@ def vincular_o_obtener_usuario(claims: dict[str, Any]) -> Usuario:
             )
         return usuario
 
-    # PASO D: No crear automáticamente nuevos usuarios
+    # El acceso requiere una cuenta previamente registrada.
     raise UsuarioNoEncontradoError(
         "Usuario no registrado en SIGET. Contacte al administrador del sistema para solicitar su alta."
     )
 
 
 def resolver_usuario_access_token(claims: dict[str, Any], access_token: str) -> Usuario:
-    """
-    Obtiene el Usuario SIGET correspondiente a un access token ya validado.
-
-    1. Busca por identificador_externo == sub (claim firmado por Auth0).
-    2. Si no existe vínculo, obtiene correo y verificación desde /userinfo de
-       Auth0 (nunca desde el cliente) y aplica las mismas reglas de
-       vincular_o_obtener_usuario que el portal Web: sin alta automática,
-       correo verificado obligatorio para vincular y cuenta activa.
+    """Resuelve la cuenta local de un token validado. Si falta el vínculo, consulta
+    el correo verificado en Auth0 y busca una cuenta existente.
     """
     from usuarios.tokens import obtener_perfil_userinfo
 
@@ -348,9 +332,7 @@ def solicitar_recuperacion_acceso(correo: str) -> bool:
     return True
 
 
-# ============================================================================
-# Constantes Oficiales y Lógica de Autorización RBAC
-# ============================================================================
+# Roles y permisos de acceso.
 
 ROL_USUARIO_SOLICITANTE = "Usuario solicitante"
 ROL_TECNICO = "Técnico de soporte"
@@ -499,9 +481,7 @@ def consultar_acceso_usuario_actual(usuario: Usuario) -> dict[str, Any]:
     }
 
 
-# ============================================================================
 # Bitácora de Auditoría (Trazabilidad)
-# ============================================================================
 
 
 def registrar_auditoria(
@@ -533,14 +513,8 @@ def asignar_roles_usuario(
     admin_usuario: Usuario | None = None,
     direccion_ip: str | None = None,
 ) -> list[Rol]:
-    """
-    Asigna una colección de roles a un usuario mediante la tabla relacional UsuarioRol.
-    Ejecuta la operación de forma atómica:
-    - Valida que todos los roles pertenezcan al catálogo oficial existente.
-    - Elimina asociaciones que ya no aplican.
-    - Crea las nuevas asociaciones respetando unique_together=(('usuario', 'rol'),).
-    - No modifica atributos en el modelo Usuario.
-    - Registra evento en bitácora de auditoría si se proporciona admin_usuario.
+    """Actualiza los roles del usuario y registra la operación en auditoría.
+    Las asociaciones se guardan juntas, sin duplicar roles.
     """
     if not usuario or not isinstance(usuario, Usuario):
         raise ValueError("Se requiere una instancia válida de Usuario.")
@@ -751,9 +725,7 @@ def retirar_permiso_de_rol(
     return filas_eliminadas > 0
 
 
-# ============================================================================
 # Consultas de Directorio y Acceso RBAC (PySide6 y backend)
-# ============================================================================
 
 
 def listar_usuarios_sistema() -> list[Usuario]:
@@ -926,9 +898,7 @@ def requiere_permiso(codigo_permiso: str):
     return decorator
 
 
-# ============================================================================
 # Validación de Identificación (RUT Chileno)
-# ============================================================================
 
 
 def validar_rut_chileno(rut: str) -> str:
@@ -982,9 +952,7 @@ def validar_rut_chileno(rut: str) -> str:
     return f"{cuerpo}-{dv}"
 
 
-# ============================================================================
 # Integración Auth0 Management API (backend)
-# ============================================================================
 
 _mgmt_token_cache: dict[str, Any] = {}
 
@@ -1190,9 +1158,7 @@ def eliminar_usuario_auth0(auth0_user_id: str) -> bool:
     return True
 
 
-# ============================================================================
 # Aprovisionamiento Administrativo de Usuarios
-# ============================================================================
 
 
 def aprovisionar_usuario(
@@ -1200,17 +1166,9 @@ def aprovisionar_usuario(
     datos: dict[str, Any],
     direccion_ip: str | None = None,
 ) -> Usuario:
-    """
-    Aprovisiona un nuevo usuario en Auth0 y lo vincula en PostgreSQL con su rol inicial.
-
-    Flujo y Reglas de Negocio:
-    1. Validar autorización administrativa en PostgreSQL (fuente autoritativa).
-    2. Validar campos obligatorios y formatos (nombres, apellidos, correo, RUT, rol).
-    3. Validar no duplicidad de correo o RUT en PostgreSQL.
-    4. Crear la identidad externa en Auth0 vía Management API (no guarda contraseñas locales).
-    5. Persistir el Usuario y UsuarioRol en PostgreSQL.
-    6. Operación Compensatoria: Si PostgreSQL falla, revierte la identidad creada en Auth0.
-    7. Registrar la operación en bitacora_auditoria.
+    """Crea la identidad en Auth0 y registra la cuenta con su rol inicial.
+    Valida los datos y el acceso administrativo; si falla el registro local,
+    revierte la creación externa.
     """
     if not admin_usuario or not es_administrador(admin_usuario):
         raise AccesoDenegadoError(
@@ -1343,9 +1301,7 @@ def aprovisionar_usuario(
     return nuevo_usuario
 
 
-# ============================================================================
 # Bootstrap Inicial del Primer Administrador de SIGET
-# ============================================================================
 
 
 def bootstrap_primer_admin(

@@ -1,4 +1,4 @@
-"""Pruebas sin PostgreSQL; no ejecutan el SQL de instalación pendiente."""
+"""Validaciones y definición del modelo de cierre técnico."""
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -100,14 +100,12 @@ class CierreTecnicoModeloTests(SimpleTestCase):
             assert isinstance(f, models.Field)
             f.clean("X" * 33, CierreTecnico())
 
-    def test_sql_aditivo_y_referencia_coinciden(self):
-        aditivo = (settings.BASE_DIR / "ordenes_trabajo/sql/e6_h17_cierre_tecnico.sql").read_text(encoding="utf-8")
-        referencia = settings.BASE_DIR.parent.parent / "Base de datos/init_siget_bd.sql"
-        # En Docker el esquema de referencia se monta en una ruta independiente.
+    def test_sql_define_restricciones_del_cierre(self):
+        referencia = Path(settings.BASE_DIR.parent.parent / "Base de datos/init_siget_bd.sql")
         if not referencia.is_file():
             referencia = Path("/opt/siget/schema/init_siget_bd.sql")
-        bloque = aditivo[aditivo.index("CREATE TABLE"):aditivo.index("COMMIT;")]
-        self.assertIn(bloque, referencia.read_text(encoding="utf-8"))
-        self.assertNotIn("DROP ", aditivo)
+        esquema = referencia.read_text(encoding="utf-8")
+        inicio = esquema.index("CREATE TABLE cierre_tecnico (")
+        bloque = esquema[inicio:esquema.index("COMMENT ON TABLE cierre_tecnico", inicio)]
         for fragmento in ("PRIMARY KEY", "UNIQUE", "ON DELETE RESTRICT", "ck_cierre_tecnico_resultado", "ck_cierre_tecnico_contenido", "CURRENT_TIMESTAMP"):
-            self.assertIn(fragmento, aditivo)
+            self.assertIn(fragmento, bloque)

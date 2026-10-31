@@ -17,7 +17,7 @@ from usuarios.permissions import PuedeConsultarReportes
 
 class DashboardReportesView(APIView):
     """
-    Dashboard de reportes E9-H21.
+    Indicadores de soporte.
     Acceso exclusivo para Administradores autorizados.
     """
 
@@ -93,7 +93,7 @@ class DashboardReportesView(APIView):
 
 class ReporteParqueTIView(APIView):
     """
-    Reporte consolidado del parque TI — E9-H28.
+    Reporte del inventario y sus costos.
     Acceso exclusivo para administradores autorizados.
     """
 

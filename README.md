@@ -2,7 +2,7 @@
 
 ## Sistema Integral de Gestión de Equipos y Soporte Tecnológico
 
-**SIGET** es una solución orientada a centralizar la gestión de activos tecnológicos y los procesos de soporte TI de una organización.
+**SIGET** es una solución que centraliza la gestión de activos tecnológicos y los procesos de soporte TI de una organización.
 
 El sistema permite administrar el ciclo de vida de los equipos tecnológicos, desde su registro y asignación hasta su devolución, mantenimiento y soporte, integrando además una **Mesa de Ayuda (Service Desk)** para la gestión y seguimiento de incidentes.
 
@@ -115,7 +115,8 @@ SIGET/
 └── README.md
 ```
 
-> La estructura anterior es una representación resumida del repositorio. Las carpetas de fases contienen el código y las evidencias académicas. Los archivos `ruff.toml` y `pyrightconfig.json` de la raíz configuran la revisión compartida del backend y del cliente de escritorio, descrita en [Revisión estática de la aplicación](#revisión-estática-de-la-aplicación).
+La estructura muestra las carpetas principales. Las instrucciones de ejecución
+y pruebas están en el README de la aplicación.
 
 ---
 
@@ -133,14 +134,9 @@ SIGET/
 
 ### Revisión estática de la aplicación
 
-La aplicación utiliza Ruff y Pyright para revisar el código Python del backend Django/DRF y del cliente de escritorio PySide6. Sus configuraciones se mantienen en la raíz para aplicar los mismos criterios a ambos componentes y facilitar su revisión desde el repositorio completo.
-
-| Archivo | Función |
-|---|---|
-| [ruff.toml](ruff.toml) | Orden de imports, imports y variables sin usar, nombres indefinidos y errores básicos. Utiliza reglas estables y una configuración moderada. |
-| [pyrightconfig.json](pyrightconfig.json) | Análisis básico de tipos, uso de valores opcionales y resolución de imports en el backend y el escritorio, incluidas sus pruebas. |
-
-Los controles consideran Python 3.12 y excluyen las migraciones generadas por Django. Ruff conserva una excepción puntual para el arranque directo del escritorio, que ajusta su ruta antes de importar el paquete. Los imports y las variables sin usar siguen revisándose en ese archivo.
+Ruff revisa errores básicos y el orden de las importaciones. Pyright comprueba
+los tipos del código Python. Sus configuraciones están en [ruff.toml](ruff.toml)
+y [pyrightconfig.json](pyrightconfig.json) y se aplican al backend y al escritorio.
 
 Después de [instalar las dependencias compartidas](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/README.md#dependencias-locales), ejecutar desde la raíz de SIGET con `.venv` activo:
 

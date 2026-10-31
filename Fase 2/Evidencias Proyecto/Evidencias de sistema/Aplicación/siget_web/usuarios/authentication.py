@@ -40,16 +40,11 @@ class ServicioIdentidadNoDisponible(exceptions.APIException):
 
 
 class SigetAccessTokenAuthentication(BaseAuthentication):
-    """
-    Autentica peticiones con ``Authorization: Bearer <access_token>`` emitido por Auth0
-    para la audiencia de la API de SIGET (aplicación de Escritorio).
+    """Valida los tokens Bearer de Auth0 y resuelve la cuenta local.
 
-    - Sin encabezado Bearer retorna None y DRF continúa con la sesión Web.
-    - Un Bearer inválido o vencido responde 401 (no se intenta la sesión).
-    - Una identidad válida sin cuenta SIGET activa o vinculada responde 403.
-    - El usuario resuelto queda disponible para obtener_usuario_actual(), de modo
-      que los permisos y servicios existentes lo reconocen igual que a la sesión.
-    - No usa cookies, por lo que no requiere CSRF.
+    Sin Bearer permite continuar con la sesión web. Un token inválido devuelve
+    401; una identidad sin acceso local devuelve 403. Los permisos se consultan
+    en PostgreSQL.
     """
 
     keyword = b"bearer"

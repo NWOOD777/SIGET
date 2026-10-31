@@ -38,9 +38,7 @@ class PrimerAdminCommandTests(RbacTestBase):
             apellidos="Admin",
         )
 
-    # =========================================================================
     # 1. Creación exitosa y orquestación integral (Puntos 1, 2, 3, 4, 7, 15)
-    # =========================================================================
 
     def test_01_creacion_exitosa_primer_admin(self):
         """
@@ -130,9 +128,7 @@ class PrimerAdminCommandTests(RbacTestBase):
             self.assertIn(ROL_ADMINISTRADOR, output)
             self.assertIn("Se solicitó el envío del correo", output)
 
-    # =========================================================================
     # 2. Seguridad de Credenciales (Puntos 5 y 6)
-    # =========================================================================
 
     def test_02_no_se_persiste_contrasena_localmente(self):
         """
@@ -178,9 +174,7 @@ class PrimerAdminCommandTests(RbacTestBase):
             self.assertNotIn("token", full_output.lower())
             self.assertNotIn("Siget_", full_output)
 
-    # =========================================================================
     # 3. Validaciones Previas (Puntos 8, 9, 10, 11)
-    # =========================================================================
 
     def test_04_correo_invalido_es_rechazado(self):
         """
@@ -300,9 +294,7 @@ class PrimerAdminCommandTests(RbacTestBase):
                 str(ctx.exception),
             )
 
-    # =========================================================================
     # 4. Fallos y Consistencia Distribuida (Puntos 12, 13, 14)
-    # =========================================================================
 
     def test_10_fallo_auth0_no_muta_postgresql(self):
         """

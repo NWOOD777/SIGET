@@ -1,10 +1,13 @@
-# Correo transaccional con Resend
+# Notificaciones por correo con Resend
 
-SIGET registra las notificaciones en PostgreSQL y utiliza el servicio Docker `correo` para enviarlas mediante la API REST de Resend. El proceso recibe una señal de PostgreSQL al confirmarse un aviso nuevo y comienza su envío sin esperar al siguiente ciclo. Conserva un barrido cada 60 segundos para recuperar pendientes, revisar reintentos y generar recordatorios de devolución.
+SIGET utiliza Resend para enviar avisos y recordatorios. Los mensajes se guardan
+en PostgreSQL y el servicio Docker `correo` los procesa al recibir un aviso nuevo.
+También revisa los pendientes cada 60 segundos.
 
 ## Configuración
 
-Verificar un dominio de envío en Resend y crear una clave con permiso **Sending access** restringida a ese dominio. Configurar el archivo `.env` de la aplicación:
+Verificar un dominio en Resend y crear una clave **Sending access** restringida
+a ese dominio. Completar `.env`:
 
 ```dotenv
 RESEND_API_KEY=REEMPLAZAR_CON_TU_API_KEY_DE_RESEND
@@ -14,86 +17,58 @@ RESEND_MAX_ATTEMPTS=5
 RESEND_RETRY_SECONDS=60
 ```
 
-Reemplazar el remitente de ejemplo por una dirección del dominio verificado. La clave se utiliza únicamente en el backend y no debe incorporarse al repositorio.
-
-`SIGET_PUBLIC_URL` define la dirección del portal incluida en los enlaces de los mensajes. El dominio de envío y la dirección de la aplicación se configuran de forma independiente.
-
-## Inicio
-
-Para una instalación nueva:
-
-```bash
-docker compose up -d --build
-```
-
-El esquema de notificaciones está definido en `init_siget_bd.sql`, junto con
-el resto de las tablas. El servicio de correo procesa esa estructura existente;
-no crea ni modifica tablas al arrancar.
+El remitente debe pertenecer al dominio verificado. La clave permanece en el
+backend y no se incorpora al repositorio. `SIGET_PUBLIC_URL` define la dirección
+del portal que se incluye en los enlaces; puede usar un dominio distinto del remitente.
 
 ## Funcionamiento
 
-Las decisiones de aprobación o rechazo de solicitudes y las actualizaciones de tickets registran una única fila con canal `AMBOS` (visible en el [centro de notificaciones en plataforma](../../acceso_y_usuarios/web/notificaciones.md) y despachada por correo). Los eventos de entrega y devolución de equipos registran avisos internos con canal `PLATAFORMA`. El proceso programado genera recordatorios con canal `CORREO_API` para asignaciones activas cuya devolución prevista está dentro de las próximas 24 horas. Antes de enviar un recordatorio, comprueba nuevamente la vigencia de la asignación y su fecha.
+| Evento | Canal |
+|---|---|
+| Aprobación o rechazo de solicitudes y actualizaciones de tickets | Portal y correo. |
+| Entregas y devoluciones | Portal. |
+| Recordatorio de devolución dentro de las próximas 24 horas | Correo. |
+| Descarte de un equipo en el cierre técnico | Correo a administradores activos. |
 
-Los avisos se guardan junto con el evento de negocio. Al confirmar la transacción, una señal interna despierta al servicio `correo`, que realiza el envío en un proceso separado. La respuesta de la operación no espera a Resend. Si se revierte la transacción, no se emite la señal ni se conserva el aviso. Las señales no contienen correos ni mensajes; PostgreSQL mantiene la cola persistente como fuente de verdad.
+El envío comienza después de guardar la operación y no bloquea la respuesta de
+la aplicación. Los fallos temporales se reintentan. Reiniciar el servicio recupera
+los avisos pendientes. Marcar un aviso como leído no cambia su envío por correo.
 
-El servicio escucha antes de revisar la cola al iniciar o reconectarse. Si estuvo detenido o una señal no llegó, el arranque y el barrido periódico recuperan los avisos pendientes. `--intervalo` configura ese respaldo y la generación de recordatorios; no retrasa los avisos nuevos. Reiniciar `correo` al actualizar este proceso (`docker compose restart correo`). La recepción final depende también de Resend y del servidor del destinatario. Marcar un aviso como leído en el portal actualiza únicamente `leida`, sin reenviar, cancelar ni modificar la cola de correo. Los errores temporales de Resend se registran sin ocultar el aviso interno ni revertir el cambio de negocio, permitiendo reintentos con espera creciente hasta el límite configurado. El control de eventos e idempotencia evita envíos duplicados.
+El estado `ENVIADA` indica que Resend aceptó el mensaje; su entrega se puede
+consultar en el panel del proveedor. Los enlaces abren el detalle del registro
+en SIGET, con el acceso correspondiente.
 
-Los enlaces de solicitudes y tickets abren la vista de detalle del registro, donde el solicitante puede consultar su estado actual.
-
-El estado `ENVIADA` indica que Resend aceptó el mensaje. El identificador del proveedor permite consultar su entrega en el panel de Resend.
-
-## Operación
-
-Consultar los registros del servicio:
+## Comandos
 
 ```bash
+# Iniciar los servicios
+docker compose up -d --build
+
+# Revisar registros
 docker compose logs --tail=50 correo
-```
 
-Ejecutar manualmente un ciclo de generación y envío:
-
-```bash
+# Procesar un ciclo de pendientes
 docker compose exec web python manage.py procesar_notificaciones
-```
 
-Este comando despacha los avisos pendientes. Para reintentar una notificación después de corregir su configuración:
-
-```bash
+# Reintentar un aviso después de corregir su configuración
 docker compose exec web python manage.py reintentar_correo ID_NOTIFICACION
-```
 
-El reintento conserva el contenido, el contador de intentos y la clave de idempotencia. Si se alcanza el límite o transcurren 23 horas desde el primer intento, se requiere revisar el resultado en Resend antes de realizar un nuevo envío.
-
-## Registro de eventos desde el backend
-
-Para notificar una actualización de ticket, invocar el servicio dentro de la transacción que guarda la atención y su evento de auditoría:
-
-```python
-from notificaciones.services import notificar_actualizacion_ticket
-
-notificar_actualizacion_ticket(
-    ticket,
-    id_evento=evento.pk,
-    detalle=detalle_guardado,
-)
-```
-
-El identificador debe corresponder al evento persistido y mantenerse estable al repetir la misma operación. La función registra el aviso y solicita despertar al consumidor después del commit; el servicio de correo realiza el envío. Este comportamiento se aplica a los nuevos avisos de canal `CORREO_API` o `AMBOS`. Los avisos de canal `PLATAFORMA` no despiertan el consumidor ni generan correos.
-
-## Pruebas
-
-Enviar un mensaje de prueba a un destinatario autorizado:
-
-```bash
+# Enviar una prueba real a un destinatario autorizado
 docker compose run --rm --no-deps web python manage.py probar_correo --destinatario usuario@example.org
 ```
 
-Ejecutar las pruebas automáticas del módulo:
+Un reintento conserva la identificación del envío para evitar duplicados. Si se
+agotan los intentos o pasan 23 horas desde el primero, revisar el resultado en
+Resend antes de volver a enviar.
+
+## Pruebas
 
 ```bash
 docker compose exec -e POSTGRES_TEST_DB=test_siget_correo web python manage.py test notificaciones --noinput
 ```
 
-Las pruebas utilizan PostgreSQL y simulan las respuestas de Resend, sin enviar correos reales.
+Estas pruebas simulan Resend y no envían correos reales.
 
-[API de envío de Resend](https://resend.com/docs/api-reference/emails/send-email) · [Idempotencia](https://resend.com/docs/dashboard/emails/idempotency-keys) · [APIs externas](../README.md)
+[Documentación de Resend](https://resend.com/docs/api-reference/emails/send-email)
+· [Centro de avisos](../../acceso_y_usuarios/web/notificaciones.md)
+· [APIs externas](../README.md)

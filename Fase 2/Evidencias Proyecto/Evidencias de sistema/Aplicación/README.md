@@ -1,230 +1,170 @@
 # SIGET — Aplicación
 
-Esta carpeta contiene el backend, el portal Web y el cliente de escritorio. La descripción del proyecto, sus perfiles, tecnologías y arquitectura se encuentran en el [README principal](../../../../README.md).
-
-## Organización del código
-
-```text
-Aplicación/
-├── siget_web/
-│   ├── siget/          # Configuración de Django
-│   ├── usuarios/       # Identidad y RBAC
-│   ├── activos/        # Inventario
-│   ├── asignaciones/   # Solicitudes, entregas y devoluciones
-│   ├── notificaciones/ # Centro de avisos en plataforma, correo transaccional y proceso programado
-│   ├── tickets/        # Service Desk
-│   ├── ordenes_trabajo/ # Diagnóstico, reparación y consumo de repuestos
-│   ├── repuestos/      # Existencias, ingresos y alertas de inventario
-│   ├── templates/
-│   ├── static/
-│   └── manage.py
-├── siget_desktop/
-│   ├── auth/           # Acceso y sesión del cliente
-│   ├── api/            # Consumo del backend compartido
-│   ├── ui/             # Ventanas y vistas
-│   ├── tests/
-│   ├── config.py
-│   └── main.py
-├── api_docs/            # Contratos por API y endpoint
-├── configuracion.md     # Variables y registro de clientes
-├── .env.example
-├── requirements.txt
-└── docker-compose.yml
-```
+Esta carpeta contiene el portal web, el cliente de escritorio, el backend y la
+configuración de Docker. La descripción general del proyecto está en el
+[README principal](../../../../README.md).
 
 ## Preparación
 
-Los comandos de esta guía se ejecutan desde la carpeta `Aplicación`, salvo que se indique otra ubicación.
+Se requiere Docker con Compose v2 para el backend y PostgreSQL. El escritorio
+requiere Python 3.12 o superior y un entorno gráfico.
 
-Se requiere Docker Engine y Docker Compose v2 para levantar el backend y PostgreSQL. El escritorio requiere Python 3.12 o superior y un entorno gráfico local.
+Los comandos siguientes se ejecutan desde `Aplicación`. Crear el archivo local
+de configuración y completar sus valores según la [guía de configuración](configuracion.md):
 
-Antes de iniciar, completar la [configuración compartida](configuracion.md).
+```bash
+cp .env.example .env
+```
 
 ### Dependencias locales
 
-Web y Escritorio utilizan un único `requirements.txt`. Para ejecutar el escritorio y las herramientas de revisión, crear un entorno virtual `.venv` en la raíz de SIGET y activarlo. Desde `Aplicación`, instalar:
+Para ejecutar el escritorio, crear y activar un entorno virtual `.venv` en la
+raíz de SIGET e instalar las dependencias compartidas:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-La imagen Docker instala estas dependencias durante su construcción.
+## Iniciar el sistema
 
-## Backend y PostgreSQL con Docker
+Levantar el backend, la base de datos y el servicio de correo:
 
 ```bash
 docker compose up -d --build
 ```
 
-El portal queda disponible en `http://localhost:8000/`. Para consultar el estado, ver registros y detener los servicios:
+El portal queda disponible en `http://localhost:8000/`.
+
+| Acción | Comando |
+|---|---|
+| Consultar servicios | `docker compose ps` |
+| Ver registros | `docker compose logs -f` |
+| Detener servicios | `docker compose down` |
+
+PostgreSQL conserva los datos en su volumen. En una instalación nueva, el esquema
+se crea con [init_siget_bd.sql](../Base%20de%20datos/init_siget_bd.sql), que incluye
+roles, permisos, estados y prioridades. Los datos de operación se registran desde
+la aplicación. Este script es de inicialización y no debe ejecutarse sobre una
+base que se quiera conservar.
+
+### Abrir el escritorio
+
+Con el backend disponible, utilizar el iniciador correspondiente:
 
 ```bash
-docker compose ps
-docker compose logs -f
-docker compose down
-```
-
-La base se inicializa desde [init_siget_bd.sql](../Base%20de%20datos/init_siget_bd.sql) al crear un volumen vacío. Los datos permanecen en el volumen de PostgreSQL al detener los servicios.
-
-### Configuración inicial de catálogos
-
-La inicialización crea el esquema relacional, roles, permisos y asociaciones RBAC,
-estados del sistema, prioridades y políticas SLA. Los catálogos de categorías,
-marcas, modelos y ubicaciones comienzan vacíos.
-
-En el escritorio, el Administrador accede a **Activos TI → Administrar catálogos**
-para crear, buscar y editar estos registros. Primero se registran las categorías,
-marcas y ubicaciones; luego se crean los modelos asociando una marca y una categoría.
-Con un modelo y una ubicación disponibles se puede registrar un activo.
-
-El mantenedor también permite eliminar registros sin referencias. Los catálogos
-asociados a modelos, activos o solicitudes quedan protegidos. Las operaciones se
-registran en la bitácora de auditoría.
-
-Los formularios de registro y modificación de activos incluyen acceso al mantenedor
-y actualización de selectores sin perder los datos ingresados. La configuración de
-catálogos se realiza desde la aplicación; el arranque no carga datos de ejemplo.
-Las instalaciones existentes conservan sus registros en el volumen de PostgreSQL.
-
-## Notificaciones por correo
-
-Para configurar y utilizar el servicio de correo, consultar [configuración y uso de Resend](api_docs/externas/resend/README.md).
-
-## Servicio de generación QR
-
-En **Activos TI**, el Administrador selecciona un equipo y pulsa **Generar Etiqueta
-QR** para ver su etiqueta. **Imprimir Lote** prepara hasta 50 equipos seleccionados;
-**Guardar PDF** exporta una plantilla A4 de 24 rótulos por hoja. Para una etiqueta
-dañada, abrir la ficha del activo y pulsar **Reimprimir QR**.
-
-La imagen se obtiene desde QR Server utilizando únicamente el código de inventario.
-La asociación y las solicitudes de reimpresión quedan registradas en PostgreSQL.
-Los fallos permiten reintentar sin modificar los datos del equipo.
-Consultar el [flujo de etiquetas](api_docs/api_1_activos_asignaciones/activos/qr.md)
-y la [configuración de QR Server](api_docs/externas/qrserver/README.md).
-
-## Ejecutar el escritorio
-
-Con el backend en ejecución y las dependencias instaladas, utilizar el launcher correspondiente:
-
-**Linux**, desde una terminal:
-
-```bash
+# Linux
 ./iniciar_escritorio.sh
 ```
 
-**Windows**, mediante doble clic en `iniciar_escritorio.bat` o desde una terminal:
-
 ```bat
+rem Windows
 iniciar_escritorio.bat
 ```
 
-Ambos launchers buscan primero `.venv` en la raíz del repositorio, luego en `Aplicación` y finalmente Python en el sistema. No es necesario activar el entorno encontrado.
+Los iniciadores buscan `.venv` en la raíz de SIGET y en `Aplicación`; después
+buscan Python en el sistema. También se puede iniciar con
+`python -m siget_desktop.main` desde un entorno virtual activo.
 
-Pueden ejecutarse desde otra carpeta usando su ruta completa. Comprueban Python 3.12 o superior y las dependencias principales, y transmiten los argumentos al cliente. Para consultar la versión sin abrir la interfaz:
+El acceso se realiza con Auth0. Al reabrir el escritorio, una sesión guardada
+vigente se valida con el servidor. **Cerrar sesión** elimina ese acceso local.
+
+### Mantener dos cuentas abiertas
+
+Usar un perfil local distinto en cada instancia. En terminales separadas:
 
 ```bash
-./iniciar_escritorio.sh --version
+./iniciar_escritorio.sh --perfil admin
+./iniciar_escritorio.sh --perfil tecnico
 ```
 
-En Windows, usar `iniciar_escritorio.bat --version`.
+En Windows, utilizar `iniciar_escritorio.bat` con los mismos argumentos. El perfil
+aparece en el título de la ventana y separa las sesiones guardadas; no asigna
+roles. Completar un inicio de sesión antes de comenzar el siguiente, ya que
+comparten el puerto de retorno de Auth0.
 
-El backend se inicia por separado con Docker Compose. Los launchers no instalan paquetes ni modifican la configuración. Para iniciar manualmente, desde `Aplicación` y con el entorno virtual activo:
+## Uso por perfil
 
-```bash
-python -m siget_desktop.main
-```
+| Perfil | Funciones principales |
+|---|---|
+| Solicitante, en el portal web | Consultar sus equipos, enviar solicitudes y tickets, revisar avisos y calificar la atención. |
+| Administrador, en el escritorio | Administrar activos, catálogos y cuentas; aprobar solicitudes, asignar técnicos y consultar auditoría y reportes. |
+| Técnico, en el escritorio | Registrar entregas y devoluciones, tomar y atender tickets, gestionar órdenes de trabajo y sus repuestos. |
 
-El [flujo de autenticación](api_docs/uso_general.md#mecanismos-de-autenticación) y los permisos de cada operación se describen en la documentación de las APIs.
+La interfaz muestra las acciones permitidas para cada cuenta. El servidor
+comprueba sus permisos al realizar cada operación.
 
-### Sesión del escritorio
+### Preparar el inventario
 
-Al cerrar la ventana se conserva el token de acceso vigente en el directorio local de datos del usuario que determina el sistema operativo mediante Qt. La caché es privada al usuario y contiene únicamente el token, su vencimiento y la identificación del entorno. No guarda contraseñas, roles ni permisos. Al abrir la aplicación se consulta nuevamente la identidad y el acceso en Django. «Cerrar sesión», la expiración o el rechazo de la cuenta eliminan la caché. Una sesión vencida requiere iniciar sesión nuevamente.
+En **Activos TI → Administrar catálogos**, crear categorías, marcas y ubicaciones;
+luego registrar modelos asociados a una marca y categoría. Con esos datos se
+pueden registrar activos.
 
+Los catálogos y activos que tienen referencias no se eliminan. Los activos
+retirados conservan su historial mediante el estado de baja. Una cuenta con
+actividad puede desactivarse sin borrar sus registros.
 
-## Administración de activos y cuentas
+Los formularios solicitan confirmación antes de guardar cambios. El valor de
+adquisición admite enteros y muestra separadores de miles, por ejemplo `1.250.000`.
 
-En **Activos TI**, el Administrador puede seleccionar un registro y usar **Eliminar
-activo** cuando no tiene movimientos ni referencias asociadas. Los equipos con
-actividad conservan su ficha y su historial; su retiro se representa mediante la baja.
+### Etiquetas QR y lectura de equipos
 
-En **Usuarios y roles**, **Eliminar usuario** elimina una cuenta sin actividad tanto
-de SIGET como de Auth0. **Desactivar acceso** bloquea una cuenta conservando sus
-registros, y **Reactivar acceso** vuelve a habilitarla. La propia cuenta administrativa
-queda protegida. Estas acciones solicitan confirmación y quedan registradas en auditoría.
+En **Activos TI**, seleccionar un equipo para generar su etiqueta o dos o más
+para **Imprimir lote**, hasta un máximo de 50. En la ficha del activo, el botón
+cambia a **Reimprimir QR** cuando la etiqueta ya existe.
+
+**Guardar PDF** ajusta el tamaño de las etiquetas a la cantidad y utiliza A4.
+Una etiqueta aprovecha la hoja; los lotes grandes se reparten entre páginas.
+
+Para identificar equipos, enfocar **Código de inventario o número de serie** y
+escanear o escribir el identificador. El lector debe finalizar con Enter o Tab
+y utilizar la misma distribución de teclado que el computador.
+
+- En entrega, se comprueba la disponibilidad y la categoría de la solicitud aprobada.
+- En devolución, se compara el equipo recibido con el esperado en la asignación.
+- Al crear una orden de trabajo, se muestran los tickets elegibles del equipo identificado.
+
+Después de revisar los datos, se confirma la operación. La lectura por sí sola
+no registra movimientos. Más información en [etiquetas QR](api_docs/api_1_activos_asignaciones/activos/qr.md).
+
+### Avisos, historial y datos de usuarios
+
+El solicitante consulta sus avisos desde el centro de notificaciones del portal.
+El [servicio de correo](api_docs/externas/resend/README.md) envía las notificaciones
+y recordatorios configurados.
 
 El historial de equipos se consulta en **Solicitudes y entregas → Historial y
-Trazabilidad**, seleccionando un equipo del inventario o ingresando su código.
-Muestra asignaciones, devoluciones y cambios de estado; una ficha recién registrada
-puede no tener movimientos todavía.
+Trazabilidad**. Para una orden de trabajo, ingresar su código o ID en la pestaña
+de historial de **Órdenes de Trabajo** y pulsar **Buscar**.
 
-## Registro y confirmación de cambios
+El Administrador registra y corrige el RUT desde la gestión de cuentas. Se
+conserva para trazabilidad y no se muestra en las consultas habituales. Cada
+usuario puede revisar el suyo en **Mi perfil**.
 
-Los formularios del escritorio solicitan confirmación antes de crear, modificar o
-eliminar registros y ejecutar operaciones sobre equipos y órdenes de trabajo.
-La ventana permite revisar los datos; **Cancelar** conserva el formulario sin guardar.
-Los formularios de solicitudes, tickets y calificaciones del portal muestran la misma
-revisión mediante una ventana integrada al diseño de la web.
+## Código y documentación
 
-El valor de adquisición admite números enteros y se presenta con puntos de miles
-mientras se escribe (por ejemplo, `1.250.000`). Las letras, los signos y el pegado de
-importes decimales se rechazan. El formato visual conserva el valor numérico enviado
-al backend. Los montos fraccionarios ya almacenados se muestran sin redondear y se
-conservan al modificar otros datos del activo.
+| Carpeta | Contenido |
+|---|---|
+| `siget_web/` | Backend Django, APIs y portal web. |
+| `siget_desktop/` | Cliente PySide6 y sus pruebas. |
+| `api_docs/` | Rutas, permisos, datos y respuestas de las APIs. |
 
-## Pruebas
+Consultar el [índice de APIs](api_docs/README.md), la
+[configuración](configuracion.md) y las guías de cada servicio para los detalles técnicos.
 
-### Backend
+## Pruebas y revisión del código
 
 ```bash
+# Backend
 docker compose exec web python manage.py check
 docker compose exec web python manage.py test
-```
 
-La suite comprueba reglas de negocio, permisos, persistencia y endpoints sobre PostgreSQL.
-
-### Escritorio
-
-```bash
+# Escritorio, con el entorno virtual activo
 python -m unittest discover -s siget_desktop/tests -p "test_*.py"
 ```
 
-Las pruebas gráficas utilizan `QT_QPA_PLATFORM=offscreen` y pueden ejecutarse sin una pantalla interactiva.
+Las pruebas del backend utilizan una base PostgreSQL separada. Las pruebas
+gráficas del escritorio se ejecutan sin abrir ventanas mediante
+`QT_QPA_PLATFORM=offscreen`.
 
-### Revisión estática
-
-La función, configuración y comandos de Ruff y Pyright se explican en [Revisión estática de la aplicación](../../../../README.md#revisión-estática-de-la-aplicación).
-
-## Operaciones por perfil en el escritorio
-
-- **Administrador:** registra y modifica activos, administra catálogos y usuarios,
-  aprueba o rechaza solicitudes y asigna responsables a los tickets.
-- **Técnico:** consulta los activos en una ficha de solo lectura, registra entregas
-  de solicitudes aprobadas y devoluciones, toma y atiende tickets, y gestiona las OT.
-
-Las vistas compartidas muestran únicamente las acciones permitidas para cada perfil.
-En **Órdenes de Trabajo → Historial y Trazabilidad**, se ingresa el código o ID de
-una OT y se selecciona «Buscar». La consulta muestra los eventos registrados para
-esa orden; si no existen, informa que no hay movimientos. Abrir la pestaña por sí
-solo no ejecuta una búsqueda.
-
-## Documentación de las APIs
-
-El [índice de APIs](api_docs/README.md) reúne los contratos del backend y de las integraciones externas. Cada endpoint documenta sus métodos, permisos, entradas y respuestas.
-
-## Identificación de usuarios
-
-El Administrador registra el RUT institucional al aprovisionar una cuenta y puede
-consultarlo o corregirlo en **Usuarios, roles y permisos → Ver acceso**. El identificador se
-conserva para trazabilidad. Cada usuario puede revisar su propio RUT en **Mi perfil**
-y contactar al Administrador si requiere una corrección. No aparece en los listados,
-tickets, asignaciones ni consultas habituales de auditoría. El acceso a SIGET utiliza Auth0 y los roles
-registrados en PostgreSQL, sin solicitar el RUT al iniciar sesión.
-
-## Repuestos en reparaciones
-
-En **Órdenes de Trabajo → Gestionar repuestos**, el Técnico consulta las piezas
-imputadas y su costo. Una OT en reparación permite asignar unidades disponibles
-o anular una imputación con un motivo. Ambas acciones solicitan confirmación y
-actualizan las existencias y los costos. El historial conserva las imputaciones
-anuladas. Las reglas y rutas se describen en [Repuestos de una orden de trabajo](api_docs/api_2_service_desk_taller/ordenes_trabajo/repuestos.md).
+Desde la raíz de SIGET, con `.venv` activo, ejecutar `ruff check .` y `pyright`
+para revisar errores de código y tipos.

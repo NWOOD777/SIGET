@@ -253,7 +253,7 @@ class MainWindow(QMainWindow):
                 item_usuarios.setFlags(
                     Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
                 )
-                item_usuarios.setToolTip("Administración de usuarios y catálogo RBAC")
+                item_usuarios.setToolTip("Administración de usuarios, roles y permisos")
             else:
                 item_usuarios.setFlags(Qt.ItemFlag.NoItemFlags)
                 item_usuarios.setToolTip(
