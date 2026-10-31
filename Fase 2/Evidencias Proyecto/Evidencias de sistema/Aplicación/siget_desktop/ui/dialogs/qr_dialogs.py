@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QComboBox, QFileDialog, QHBoxLayout, QLabel, QPlai
 
 from siget_desktop.api.qr_services import generar_etiquetas_qr
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.archivos import ruta_exportacion
 from siget_desktop.ui.components import mostrar_mensaje
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
 from siget_desktop.ui.qr_labels import dibujar_plantilla, guardar_pdf_etiquetas
@@ -165,7 +166,7 @@ class EtiquetasQRDialog(SessionDialog):
     def _guardar_pdf(self):
         if not self._permitido() or self._ocupado or not self.etiquetas:
             return
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar etiquetas", "etiquetas_inventario.pdf", "Documento PDF (*.pdf)")
+        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar etiquetas", ruta_exportacion("etiquetas_inventario.pdf"), "Documento PDF (*.pdf)")
         if not ruta or not self._permitido():
             return
         if not ruta.lower().endswith(".pdf"):

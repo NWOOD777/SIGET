@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 from siget_desktop.api.reportes_services import obtener_dashboard_reportes
 from siget_desktop.api.services import listar_categorias_activos
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.archivos import ruta_exportacion
 from siget_desktop.ui.reportes_excel import guardar_excel_reportes
 from siget_desktop.ui.reportes_pdf import guardar_pdf_reportes
 from siget_desktop.ui.views.parque_ti_view import ParqueTIView
@@ -960,7 +961,7 @@ class ReportesView(QWidget):
         ruta, _ = QFileDialog.getSaveFileName(
             self,
             "Guardar informe PDF",
-            nombre_archivo,
+            ruta_exportacion(nombre_archivo),
             "Documentos PDF (*.pdf)",
         )
 
@@ -1008,7 +1009,7 @@ class ReportesView(QWidget):
         ruta, _ = QFileDialog.getSaveFileName(
             self,
             "Guardar informe Excel",
-            nombre_archivo,
+            ruta_exportacion(nombre_archivo),
             "Archivos Excel (*.xlsx)",
         )
 

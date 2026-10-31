@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from siget_desktop.api.parque_ti_services import obtener_reporte_parque_ti
 from siget_desktop.api.services import listar_ubicaciones_activos
 from siget_desktop.auth.session import current_session
+from siget_desktop.ui.archivos import ruta_exportacion
 from siget_desktop.ui.parque_ti_excel import guardar_excel_parque_ti
 from siget_desktop.ui.parque_ti_pdf import guardar_pdf_parque_ti
 from siget_desktop.ui.workers import ApiWorker
@@ -483,7 +484,7 @@ class ParqueTIView(QWidget):
         ruta, _ = QFileDialog.getSaveFileName(
             self,
             f"Guardar reporte {formato.upper()}",
-            nombre,
+            ruta_exportacion(nombre),
             (
                 "Documentos PDF (*.pdf)"
                 if formato == "pdf"
