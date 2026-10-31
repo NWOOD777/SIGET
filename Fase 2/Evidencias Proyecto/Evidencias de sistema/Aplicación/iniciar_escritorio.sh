@@ -2,6 +2,10 @@
 # Inicia el cliente local desde cualquier directorio.
 set -eu
 
+# Evita avisos de foco del método de entrada Wayland; conserva los errores de Qt.
+QT_LOGGING_RULES="${QT_LOGGING_RULES:+$QT_LOGGING_RULES;}qt.qpa.wayland.textinput.warning=false"
+export QT_LOGGING_RULES
+
 APP_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 cd "$APP_DIR"
 

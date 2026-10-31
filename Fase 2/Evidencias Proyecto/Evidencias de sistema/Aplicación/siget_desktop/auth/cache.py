@@ -13,11 +13,12 @@ from PySide6.QtCore import QStandardPaths
 
 from siget_desktop.auth.session import current_session
 from siget_desktop.config import config
+from siget_desktop.perfiles import carpeta_perfil
 
 
 def ruta_cache() -> Path:
     base = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
-    return Path(base) / "sesion" / "acceso.json"
+    return Path(base) / "sesion" / carpeta_perfil() / "acceso.json"
 
 
 def entorno() -> str:

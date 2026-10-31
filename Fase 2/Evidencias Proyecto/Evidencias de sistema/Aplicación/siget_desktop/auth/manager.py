@@ -6,6 +6,7 @@ y la sincronización de la sesión con el backend Django (/api/usuarios/me/).
 
 from __future__ import annotations
 
+import errno
 import logging
 import time
 import urllib.parse
@@ -49,6 +50,7 @@ class AuthManager:
         """Construye la URL para iniciar el flujo en Auth0."""
         params = {
             "response_type": "code",
+            "prompt": "login",
             "client_id": config.auth0_client_id,
             "redirect_uri": config.auth0_redirect_uri,
             "scope": "openid profile email",
@@ -87,13 +89,20 @@ class AuthManager:
                 on_browser_opened()
 
         # Esperar retorno en el loopback
-        callback_res: CallbackResult = esperar_retorno_oauth(
-            port=config.auth0_callback_port,
-            timeout_segundos=timeout_segundos,
-            on_ready=abrir_navegador,
-            cancel_event=cancel_event,
-            expected_state=pkce.state,
-        )
+        try:
+            callback_res: CallbackResult = esperar_retorno_oauth(
+                port=config.auth0_callback_port,
+                timeout_segundos=timeout_segundos,
+                on_ready=abrir_navegador,
+                cancel_event=cancel_event,
+                expected_state=pkce.state,
+            )
+        except OSError as exc:
+            if exc.errno == errno.EADDRINUSE or getattr(exc, "winerror", None) == 10048:
+                raise AuthProviderError(
+                    "Hay otro inicio de sesión en curso. Termine o cancele ese acceso antes de iniciar el siguiente."
+                ) from exc
+            raise AuthProviderError("No fue posible abrir el retorno local de autenticación.") from exc
 
         if callback_res.error:
             raise AuthProviderError(

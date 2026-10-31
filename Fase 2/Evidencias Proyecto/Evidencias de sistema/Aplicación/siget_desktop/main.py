@@ -4,6 +4,7 @@ Punto de entrada principal para la Aplicación de Escritorio SIGET (PySide6).
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import QApplication
 
 from siget_desktop.auth.manager import auth_manager
 from siget_desktop.config import config
+from siget_desktop.perfiles import configurar_perfil, titulo_con_perfil, validar_perfil
 from siget_desktop.ui.login_window import LoginWindow
 from siget_desktop.ui.main_window import MainWindow
 from siget_desktop.ui.theme import aplicar_tema
@@ -36,6 +38,8 @@ class SigetDesktopApp:
 
         self.login_window = LoginWindow()
         self.main_window = MainWindow()
+        self.login_window.setWindowTitle(titulo_con_perfil(self.login_window.windowTitle()))
+        self.main_window.setWindowTitle(titulo_con_perfil(self.main_window.windowTitle()))
 
         # Enlazar transiciones de estado
         self.login_window.login_exitoso.connect(self._on_login_exitoso)
@@ -79,9 +83,11 @@ class SigetDesktopApp:
 
 
 def main():
-    if "--version" in sys.argv:
-        print(f"{config.app_name} - Versión {config.app_version}")
-        return 0
+    parser = argparse.ArgumentParser(description="Cliente de escritorio SIGET")
+    parser.add_argument("--version", action="version", version=f"{config.app_name} - Versión {config.app_version}")
+    parser.add_argument("--perfil", type=validar_perfil, help="Nombre del perfil local con sesión independiente.")
+    args = parser.parse_args()
+    configurar_perfil(args.perfil or "")
 
     aplicacion = SigetDesktopApp()
     return aplicacion.run()
