@@ -28,9 +28,7 @@ def _lista(value: Any) -> list[dict[str, Any]]:
     return value
 
 
-# ============================================================================
 # USUARIOS, IDENTIDAD Y RBAC
-# ============================================================================
 
 def obtener_perfil_actual() -> dict[str, Any]:
     """Consulta la identidad, roles y permisos efectivos del usuario actual."""
@@ -120,9 +118,7 @@ def retirar_permiso_rol(id_rol: int, id_permiso: int) -> dict[str, Any]:
     return _objeto(resultado)
 
 
-# ============================================================================
 # ACTIVOS TI
-# ============================================================================
 
 def listar_activos(
     search: str | None = None,
@@ -142,6 +138,19 @@ def listar_activos(
         params["estado"] = estado
     resultado = api_client.get("/api/activos/", params=params)
     return _lista(resultado)
+
+
+def identificar_activo(identificador: str, *, id_solicitud: int | None = None, id_asignacion: int | None = None) -> dict[str, Any]:
+    """Resuelve una referencia exacta y valida el contexto de la operación."""
+    params: dict[str, Any] = {"identificador": identificador}
+    if id_solicitud is not None:
+        params["id_solicitud"] = id_solicitud
+    if id_asignacion is not None:
+        params["id_asignacion"] = id_asignacion
+    resultado = _objeto(api_client.get("/api/activos/identificar/", params=params))
+    if type(resultado.get("id_activo")) is not int or not isinstance(resultado.get("codigo_inventario"), str):
+        raise ServerApiError("El servidor devolvió una ficha de equipo incompleta.")
+    return resultado
 
 
 def obtener_activo(id_activo: int) -> dict[str, Any]:
@@ -330,9 +339,7 @@ def listar_estados_activos() -> list[dict[str, Any]]:
     return _lista(resultado)
 
 
-# ============================================================================
 # SOLICITUDES DE ASIGNACIÓN
-# ============================================================================
 
 def listar_solicitudes(
     estado: str | None = None,
@@ -376,9 +383,7 @@ def listar_estados_solicitudes() -> list[dict[str, Any]]:
     return _lista(resultado)
 
 
-# ============================================================================
 # ASIGNACIONES, ENTREGAS Y DEVOLUCIONES
-# ============================================================================
 
 def listar_asignaciones(
     estado: str | None = None,
@@ -450,9 +455,7 @@ def listar_estados_asignaciones() -> list[dict[str, Any]]:
     return _lista(resultado)
 
 
-# ============================================================================
 # TICKETS Y SERVICE DESK
-# ============================================================================
 
 def listar_tickets(
     estado: str | None = None,
@@ -671,9 +674,7 @@ def anular_asignacion_repuesto_orden(
 
 
 
-# ============================================================================
 # AUDITORÍA INTERNA
-# ============================================================================
 
 def consultar_bitacora_auditoria(
     usuario: str | None = None,
@@ -733,9 +734,7 @@ def asignar_ticket(id_ticket: int, id_tecnico_asignado: int, motivo: str) -> dic
 
 
 
-# ============================================================================
 # REPUESTOS 
-# ============================================================================
 
 def registrar_ingreso_repuesto(datos: dict[str, Any]) -> dict[str, Any]:
     """Registra una compra de repuestos (exclusivo Administrador)."""

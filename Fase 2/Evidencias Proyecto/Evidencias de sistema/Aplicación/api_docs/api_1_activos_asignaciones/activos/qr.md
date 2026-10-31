@@ -66,13 +66,20 @@ pendientes** solicita únicamente las que fallaron. Cerrar la ventana detiene la
 solicitudes pendientes; una solicitud que ya está en curso puede terminar.
 
 Para una etiqueta dañada, abrir la ficha del activo y pulsar **Reimprimir QR**.
-El botón se habilita cuando el activo ya tiene una asociación registrada.
+La ficha presenta una sola acción: **Generar etiqueta QR** si todavía no existe
+una asociación y **Reimprimir QR** cuando ya está registrada. Después de generar
+la primera etiqueta, el botón cambia a reimpresión sin cerrar la ficha.
 
-El PDF usa A4 vertical, tres columnas y ocho filas de etiquetas de 63,5 × 33,9 mm,
-con separación horizontal de 2,5 mm y márgenes de 7,25 mm a los lados y 12,9 mm
-arriba y abajo. Conserva el QR como vector. El código de inventario se muestra
-completo; serie y modelo se abrevian si exceden el espacio de la etiqueta.
-Imprimir al 100 %, sin ajuste a página, sobre una hoja de rótulos con estas medidas.
+El PDF usa A4 vertical con márgenes de 8 mm y una cuadrícula calculada según la
+cantidad de etiquetas. Una etiqueta ocupa el área útil de la hoja; varias se
+distribuyen buscando el mayor tamaño posible del QR, conservando su forma
+cuadrada. Las filas incompletas se centran.
+
+Cuando no caben todos los códigos con un lado mínimo de 25 mm, el lote se reparte
+en páginas equilibradas. El QR permanece vectorial. El código de inventario se
+muestra completo; la serie y el modelo se abrevian si exceden el espacio.
+La distribución es para papel A4 común y no requiere hojas de rótulos de medidas
+fijas.
 
 La impresión directa utiliza el diálogo de impresoras del sistema. El PDF también
 permite imprimir desde otro equipo. La preparación de la etiqueta se confirma

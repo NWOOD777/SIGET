@@ -7,7 +7,9 @@ from threading import Event
 from typing import Any
 from unittest.mock import patch
 
-from PySide6.QtCore import QItemSelectionModel
+from PySide6.QtCore import QItemSelectionModel, QRectF, QSize
+from PySide6.QtGui import QImage
+from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import QApplication
 
 from siget_desktop.api.client import ConnectionApiError, ForbiddenApiError, ServerApiError
@@ -16,7 +18,7 @@ from siget_desktop.auth.session import current_session
 from siget_desktop.tests.qt_helpers import limpiar_widgets
 from siget_desktop.ui.dialogs.activos_dialogs import DetalleModificarActivoDialog
 from siget_desktop.ui.dialogs.qr_dialogs import EtiquetasQRDialog
-from siget_desktop.ui.qr_labels import guardar_pdf_etiquetas
+from siget_desktop.ui.qr_labels import MARGEN, QR_MINIMO, _medidas, _paginas, guardar_pdf_etiquetas
 from siget_desktop.ui.views.activos_view import ActivosView
 
 APP = QApplication.instance() or QApplication([])
@@ -71,6 +73,13 @@ class EtiquetasDesktopTests(unittest.TestCase):
 
     def test_seleccion_lote_deshabilita_acciones_individuales_y_envia_ids(self):
         vista = self.vista()
+        self.assertFalse(vista.btn_imprimir_lote.isEnabled())
+        with (
+            patch("siget_desktop.ui.views.activos_view.confirmar_operacion", return_value=True),
+            patch("siget_desktop.ui.views.activos_view.EtiquetasQRDialog") as dialogo,
+        ):
+            vista._abrir_etiquetas(True)
+            dialogo.assert_not_called()
         seleccion = vista.tabla.selectionModel()
         seleccion.select(vista.tabla.model().index(1, 0), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         self.assertTrue(vista.btn_imprimir_lote.isEnabled())
@@ -84,6 +93,10 @@ class EtiquetasDesktopTests(unittest.TestCase):
             dialogo.return_value.etiquetas = []
             vista._abrir_etiquetas(True)
             self.assertEqual(dialogo.call_args.args[0], [1, 2])
+        vista.tabla.clearSelection()
+        vista.tabla.selectRow(0)
+        self.assertFalse(vista.btn_imprimir_lote.isEnabled())
+        self.assertTrue(vista.btn_generar_qr.isEnabled())
 
     def test_acciones_individuales_usan_la_fila_seleccionada_aunque_el_foco_este_en_otra(self):
         vista = self.vista()
@@ -104,19 +117,33 @@ class EtiquetasDesktopTests(unittest.TestCase):
             vista._abrir_etiquetas(False)
             dialogo.assert_not_called()
 
-    def test_ficha_habilita_reimpresion_solo_si_existe_asociacion(self):
+    def test_ficha_cambia_accion_qr_segun_asociacion_y_generacion(self):
         with patch("siget_desktop.ui.dialogs.activos_dialogs.ApiWorker"):
             dialogo = DetalleModificarActivoDialog(1)
+        self.assertFalse(dialogo.btn_qr.isEnabled())
         dialogo._on_datos_cargados({"activo": etiqueta(), "qr": {"generado": False}})
-        self.assertFalse(dialogo.btn_reimprimir_qr.isEnabled())
-        dialogo._on_datos_cargados({"activo": etiqueta(), "qr": {"generado": True}})
-        self.assertTrue(dialogo.btn_reimprimir_qr.isEnabled())
+        self.assertTrue(dialogo.btn_qr.isEnabled())
+        self.assertEqual(dialogo.btn_qr.text(), "Generar etiqueta QR")
         with (
             patch("siget_desktop.ui.dialogs.activos_dialogs.confirmar_operacion", return_value=True),
             patch("siget_desktop.ui.dialogs.activos_dialogs.EtiquetasQRDialog") as qr,
         ):
-            dialogo._abrir_qr(True)
+            qr.return_value.etiquetas = []
+            dialogo.btn_qr.click()
+            self.assertFalse(qr.call_args.kwargs["reimprimir"])
+            self.assertEqual(dialogo.btn_qr.text(), "Generar etiqueta QR")
+            qr.return_value.etiquetas = [etiqueta()]
+            dialogo.btn_qr.click()
+            self.assertFalse(qr.call_args.kwargs["reimprimir"])
+            self.assertEqual(dialogo.btn_qr.text(), "Reimprimir QR")
+            dialogo.btn_qr.click()
             self.assertTrue(qr.call_args.kwargs["reimprimir"])
+        dialogo._on_datos_cargados({"activo": etiqueta(), "qr": {"generado": True}})
+        self.assertEqual(dialogo.btn_qr.text(), "Reimprimir QR")
+        current_session.roles = ["Técnico de soporte"]
+        dialogo._on_datos_cargados({"activo": etiqueta(), "qr": {"generado": True}})
+        self.assertTrue(dialogo.btn_qr.isHidden())
+        self.assertFalse(dialogo.btn_qr.isEnabled())
 
     def test_generacion_api_envia_opcion_y_timeout_por_operacion(self):
         with patch("siget_desktop.api.qr_services.api_client.request", return_value=etiqueta()) as request:
@@ -211,3 +238,44 @@ class EtiquetasDesktopTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 guardar_pdf_etiquetas(str(Path(tmp) / "vacio.pdf"), [])
             self.assertFalse((Path(tmp) / "vacio.pdf").exists())
+
+
+    def test_un_solo_qr_aprovecha_la_hoja_a4(self):
+        with TemporaryDirectory() as tmp:
+            salida = Path(tmp) / "individual.pdf"
+            guardar_pdf_etiquetas(str(salida), [etiqueta()])
+            documento = QPdfDocument()
+            documento.load(str(salida))
+            self.assertEqual(documento.pageCount(), 1)
+            self.assertAlmostEqual(documento.pagePointSize(0).width(), 595, delta=1)
+            imagen = documento.render(0, QSize(595, 842)).convertToFormat(QImage.Format.Format_Grayscale8)
+            self.assertFalse(imagen.isNull())
+            oscuros = sum(pixel < 100 for pixel in imagen.constBits())
+            self.assertGreater(oscuros / (imagen.width() * imagen.height()), 0.25)
+            documento.close()
+
+    def test_lote_paginado_conserva_todos_los_codigos_una_sola_vez(self):
+        with TemporaryDirectory() as tmp:
+            salida = Path(tmp) / "lote.pdf"
+            guardar_pdf_etiquetas(str(salida), [etiqueta(pk) for pk in range(1, 51)])
+            documento = QPdfDocument()
+            documento.load(str(salida))
+            self.assertGreater(documento.pageCount(), 1)
+            texto = "\n".join(documento.getAllText(pagina).text() for pagina in range(documento.pageCount()))
+            for pk in range(1, 51):
+                self.assertEqual(texto.count(f"ACT-{pk:04d}"), 1)
+            documento.close()
+
+    def test_distribucion_no_superpone_etiquetas_y_conserva_tamano_legible(self):
+        area = QRectF(MARGEN, MARGEN, 595 - 2 * MARGEN, 842 - 2 * MARGEN)
+        for cantidad in (1, 2, 3, 6, 12, 24, 25, 50):
+            with self.subTest(cantidad=cantidad):
+                paginas = _paginas(cantidad, area)
+                self.assertEqual(sum(len(pagina) for pagina in paginas), cantidad)
+                self.assertLessEqual(max(map(len, paginas)) - min(map(len, paginas)), 1)
+                for pagina in paginas:
+                    for indice, rect in enumerate(pagina):
+                        self.assertTrue(area.adjusted(-0.01, -0.01, 0.01, 0.01).contains(rect))
+                        self.assertGreaterEqual(_medidas(rect)[0], QR_MINIMO)
+                        for otro in pagina[indice + 1:]:
+                            self.assertFalse(rect.intersects(otro))

@@ -28,6 +28,7 @@ from siget_desktop.api.services import (
     listar_tickets,
 )
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
+from siget_desktop.ui.identificar_activo import IdentificarActivoWidget
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -87,7 +88,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         self.lbl_titulo.setStyleSheet("font-size: 20px; font-weight: 700;")
         layout.addWidget(self.lbl_titulo)
 
-        self.lbl_paso = QLabel("Paso 1 de 2 · Seleccionar ticket de soporte")
+        self.lbl_paso = QLabel("Paso 1 de 2 · Identificar equipo y seleccionar ticket")
         self.lbl_paso.setStyleSheet("color: #64748b; font-weight: 600;")
         layout.addWidget(self.lbl_paso)
 
@@ -100,27 +101,34 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         seleccion_layout.setContentsMargins(0, 0, 0, 0)
         seleccion_layout.setSpacing(10)
 
-        subtitulo = QLabel("Nuevo registro")
+        subtitulo = QLabel("Identifique el equipo que ingresará a diagnóstico")
         subtitulo.setStyleSheet("font-size: 15px; font-weight: 600;")
         seleccion_layout.addWidget(subtitulo)
 
+        self.lector_activo = IdentificarActivoWidget(self)
+        self.lector_activo.identificado.connect(self._buscar_por_equipo)
+        self.lector_activo.invalidado.connect(self._invalidar_equipo)
+        seleccion_layout.addWidget(self.lector_activo)
+
         self.input_busqueda = QLineEdit()
-        self.input_busqueda.setPlaceholderText("Buscar por código, ID, asunto o activo...")
-        self.input_busqueda.textChanged.connect(self._programar_busqueda)
-        seleccion_layout.addWidget(QLabel("Buscar ticket"))
+        self.input_busqueda.setPlaceholderText("Filtrar por código o asunto del ticket...")
+        self.input_busqueda.setEnabled(False)
+        self.input_busqueda.textEdited.connect(self._programar_busqueda)
+        seleccion_layout.addWidget(QLabel("Tickets del equipo identificado"))
         seleccion_layout.addWidget(self.input_busqueda)
 
-        self.lbl_resultados = QLabel("Cargando tickets...")
+        self.lbl_resultados = QLabel("Equipo pendiente de identificación")
         self.lbl_resultados.setStyleSheet("font-weight: 600;")
         seleccion_layout.addWidget(self.lbl_resultados)
 
         self.lista_tickets = QListWidget()
+        self.lista_tickets.setEnabled(False)
         self.lista_tickets.setMinimumHeight(240)
         self.lista_tickets.setSpacing(4)
         self.lista_tickets.currentItemChanged.connect(self._seleccion_lista_cambiada)
         seleccion_layout.addWidget(self.lista_tickets, 1)
 
-        self.lbl_ayuda = QLabel("Selecciona un resultado para revisar y confirmar el ticket.")
+        self.lbl_ayuda = QLabel("Escanee la etiqueta o ingrese el código del equipo para ver sus tickets.")
         self.lbl_ayuda.setWordWrap(True)
         self.lbl_ayuda.setStyleSheet("color: #64748b;")
         seleccion_layout.addWidget(self.lbl_ayuda)
@@ -165,7 +173,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         diagnostico_layout.addStretch(1)
         self.pasos.addWidget(pagina_diagnostico)
 
-        self.lbl_estado = QLabel("Consultando tickets desde la API...")
+        self.lbl_estado = QLabel("Cargando tickets...")
         self.lbl_estado.setWordWrap(True)
         layout.addWidget(self.lbl_estado)
 
@@ -189,7 +197,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
     def _cargar_tickets(self):
         self._cargando_tickets = True
         self.btn_continuar.setEnabled(False)
-        self.lbl_estado.setText("Consultando tickets desde la API...")
+        self.lbl_estado.setText("Cargando tickets...")
         worker = ApiWorker(_cargar_datos_selector)
         self._worker = worker
         self.conectar_worker(worker, self._on_tickets_cargados, self._on_error_carga_tickets)
@@ -235,16 +243,10 @@ class CrearOrdenTrabajoDialog(SessionDialog):
             key=lambda t: str(t.get("fecha_creacion") or ""),
             reverse=True,
         )
-        self._filtrar_tickets()
-        self.lbl_estado.setText(
-            f"Se encontraron {len(self._tickets)} tickets elegibles "
-            "(sin OT y con activo en revisión)."
-        )
-        if not self._tickets:
-            self.lbl_estado.setText(
-                "No hay tickets elegibles. Deben tener un activo en revisión "
-                "y no contar con una orden de trabajo previa."
-            )
+        if self.lector_activo.activo is not None:
+            self._buscar_por_equipo(self.lector_activo.activo)
+        else:
+            self._filtrar_tickets()
 
     def _on_error_carga_tickets(self, exc: Exception):
         self._cargando_tickets = False
@@ -253,6 +255,26 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         self.lbl_resultados.setText("No se pudieron cargar los tickets.")
         self.lbl_estado.setText("No fue posible consultar los tickets.")
         QMessageBox.warning(self, "Error al consultar tickets", str(exc))
+
+    def _invalidar_equipo(self):
+        if self._ticket_confirmado is not None:
+            self._volver_seleccion()
+        self.input_busqueda.clear()
+        self._filtrar_tickets()
+
+    def _buscar_por_equipo(self, _activo: dict[str, Any]):
+        self.input_busqueda.clear()
+        self._filtrar_tickets()
+        if not self._cargando_tickets and self.lista_tickets.count() == 1:
+            self.lista_tickets.setCurrentRow(0)
+            self.lbl_ayuda.setText("Equipo identificado. Confirme el ticket para completar el diagnóstico.")
+
+    def _ticket_del_equipo(self, ticket: Any) -> bool:
+        identificado = self.lector_activo.activo
+        if identificado is None or not isinstance(ticket, dict):
+            return False
+        activo = ticket.get("activo")
+        return isinstance(activo, dict) and _id_normalizado(activo.get("id_activo")) == str(identificado["id_activo"])
 
     def _programar_busqueda(self, *_args):
         if self._busqueda_pendiente:
@@ -265,25 +287,29 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         self._filtrar_tickets()
 
     def _filtrar_tickets(self, *_args):
+        self.lista_tickets.clear()
+        self._tickets_visibles = []
+        self.btn_continuar.setEnabled(False)
+        identificado = self.lector_activo.activo is not None
+        self.input_busqueda.setEnabled(identificado)
+        self.lista_tickets.setEnabled(identificado and not self._cargando_tickets)
+        if not identificado:
+            self.lbl_resultados.setText("Equipo pendiente de identificación")
+            self.lbl_ayuda.setText("Escanee la etiqueta o ingrese el código del equipo para ver sus tickets.")
+            self.lbl_estado.setText("Identifique el equipo antes de seleccionar un ticket.")
+            return
         if self._cargando_tickets:
+            self.lbl_resultados.setText("Cargando tickets del equipo...")
+            self.lbl_ayuda.setText("Espere mientras se consultan los tickets del equipo identificado.")
             return
 
         termino = self.input_busqueda.text().strip().casefold()
-        
-        coincidencias = []
-        for ticket in self._tickets:
-            activo = _texto_activo(ticket)
-            codigo = str(ticket.get("codigo_ticket") or "")
-            id_ticket = str(ticket.get("id_ticket") or "")
-            asunto = str(ticket.get("asunto") or "")
-            texto = f"{codigo} {id_ticket} {asunto} {activo}".casefold()
-            if termino and termino not in texto:
-                continue
-            coincidencias.append(ticket)
+        elegibles = [ticket for ticket in self._tickets if self._ticket_del_equipo(ticket)]
+        for ticket in elegibles:
+            texto = f"{ticket.get('codigo_ticket', '')} {ticket.get('id_ticket', '')} {ticket.get('asunto', '')}".casefold()
+            if not termino or termino in texto:
+                self._tickets_visibles.append(ticket)
 
-        # Sin búsqueda se muestran solamente los tres más recientes.
-        self._tickets_visibles = coincidencias if termino else coincidencias[:3]
-        self.lista_tickets.clear()
         for ticket in self._tickets_visibles:
             codigo = ticket.get("codigo_ticket") or f"Ticket {ticket.get('id_ticket')}"
             asunto = ticket.get("asunto") or "Sin asunto"
@@ -294,23 +320,30 @@ class CrearOrdenTrabajoDialog(SessionDialog):
             item.setSizeHint(item.sizeHint())
             self.lista_tickets.addItem(item)
 
-        self.lbl_resultados.setText(f"{len(self._tickets_visibles)} tickets")
+        total = len(self._tickets_visibles)
+        self.lbl_resultados.setText(f"{total} {'ticket' if total == 1 else 'tickets'} del equipo identificado")
+        self.lbl_estado.setText(
+            "Seleccione el ticket que corresponde al diagnóstico."
+            if elegibles else "Este equipo no tiene tickets elegibles: deben estar asociados a un activo en revisión y no tener una OT previa."
+        )
         self.btn_continuar.setEnabled(False)
         if not self._tickets_visibles:
-            self.lbl_ayuda.setText("No hay coincidencias. Prueba con otro término o estado.")
+            self.lbl_ayuda.setText("No hay tickets que coincidan con el filtro." if elegibles else "No hay un ticket disponible para iniciar el diagnóstico de este equipo.")
         else:
             self.lbl_ayuda.setText("Selecciona un resultado para revisar y confirmar el ticket.")
 
     def _seleccion_lista_cambiada(self, actual: QListWidgetItem | None, _anterior=None):
         self.btn_continuar.setEnabled(
-            actual is not None and isinstance(actual.data(Qt.ItemDataRole.UserRole), dict)
+            actual is not None and self._ticket_del_equipo(actual.data(Qt.ItemDataRole.UserRole))
         )
 
     def _limpiar_seleccion(self):
+        self.lector_activo.input.clear()
         self.input_busqueda.clear()
+        self._filtrar_tickets()
         self.lista_tickets.clearSelection()
         self.btn_continuar.setEnabled(False)
-        self.lbl_ayuda.setText("Selecciona un resultado para revisar y confirmar el ticket.")
+        self.lbl_ayuda.setText("Escanee la etiqueta o ingrese el código del equipo para ver sus tickets.")
 
     def _confirmar_ticket(self):
         item = self.lista_tickets.currentItem()
@@ -326,6 +359,10 @@ class CrearOrdenTrabajoDialog(SessionDialog):
                 "Ticket sin activo",
                 "Este ticket no tiene un activo asociado y no puede generar una orden de trabajo.",
             )
+            return
+
+        if not self._ticket_del_equipo(ticket):
+            QMessageBox.warning(self, "Equipo sin verificar", "Identifique el equipo y seleccione uno de sus tickets antes de continuar.")
             return
 
         codigo = ticket.get("codigo_ticket") or f"Ticket {ticket.get('id_ticket')}"
@@ -365,7 +402,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
     def _volver_seleccion(self):
         self._ticket_confirmado = None
         self.pasos.setCurrentIndex(0)
-        self.lbl_paso.setText("Paso 1 de 2 · Seleccionar ticket de soporte")
+        self.lbl_paso.setText("Paso 1 de 2 · Identificar equipo y seleccionar ticket")
         self.btn_guardar.hide()
         self.btn_continuar.show()
         self.btn_limpiar.show()
@@ -375,7 +412,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
             return
 
         ticket = self._ticket_confirmado
-        if ticket is None or not isinstance(ticket.get("activo"), dict):
+        if ticket is None or not self._ticket_del_equipo(ticket):
             QMessageBox.warning(self, "Ticket inválido", "Confirma un ticket válido con activo asociado.")
             self._volver_seleccion()
             return
@@ -409,7 +446,7 @@ class CrearOrdenTrabajoDialog(SessionDialog):
         self.btn_guardar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.btn_cambiar_ticket.setEnabled(False)
-        self.lbl_estado.setText("Registrando diagnóstico en el backend...")
+        self.lbl_estado.setText("Guardando diagnóstico...")
 
         worker = ApiWorker(
             crear_orden_trabajo,

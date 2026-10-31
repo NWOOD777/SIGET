@@ -71,9 +71,12 @@ class ContratosEscritorioTests(unittest.TestCase):
         self.assertEqual(dialog.lbl_solicitante.text(), "Camila Rojas")
 
     @patch("siget_desktop.ui.dialogs.solicitudes_dialogs.ApiWorker")
-    def test_entrega_filtra_por_nombre_real_de_categoria(self, worker):
-        self.keep(RegistrarEntregaDialog(SOLICITUD))
-        self.assertEqual(worker.call_args.kwargs["tipo"], "Notebook")
+    def test_entrega_requiere_identificacion_con_contexto_de_solicitud(self, worker):
+        dialogo = self.keep(RegistrarEntregaDialog(SOLICITUD))
+        self.assertEqual(dialogo.lector_activo.id_solicitud, SOLICITUD["id_solicitud"])
+        self.assertTrue(dialogo.equipo_identificado.isReadOnly())
+        self.assertFalse(dialogo.btn_entregar.isEnabled())
+        worker.assert_not_called()
 
     def test_asignaciones_renderiza_con_ids_enteros(self):
         view = self.keep(SolicitudesView())

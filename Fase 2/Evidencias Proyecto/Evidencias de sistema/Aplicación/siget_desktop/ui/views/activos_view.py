@@ -212,7 +212,7 @@ class ActivosView(QWidget):
         self.btn_eliminar.setEnabled(hay_seleccion and current_session.is_admin() and not self._mutacion_en_curso)
         autorizado = current_session.is_admin() and not self._mutacion_en_curso
         self.btn_generar_qr.setEnabled(hay_seleccion and autorizado)
-        self.btn_imprimir_lote.setEnabled(1 <= cantidad <= MAX_ETIQUETAS_LOTE and autorizado)
+        self.btn_imprimir_lote.setEnabled(2 <= cantidad <= MAX_ETIQUETAS_LOTE and autorizado)
         self.lbl_seleccion_qr.setText(
             f"{cantidad} seleccionado(s). Máximo {MAX_ETIQUETAS_LOTE} etiquetas por lote."
             if cantidad else "Seleccione un activo o varios con Ctrl/Mayús para preparar sus etiquetas."
@@ -236,7 +236,7 @@ class ActivosView(QWidget):
         if any(item is None or codigo is None for item, codigo in seleccion):
             return
         ids = [int(item.text()) for item, _ in seleccion if item is not None]
-        if not 1 <= len(ids) <= MAX_ETIQUETAS_LOTE or (not lote and len(ids) != 1):
+        if not 1 <= len(ids) <= MAX_ETIQUETAS_LOTE or (lote and len(ids) < 2) or (not lote and len(ids) != 1):
             return
         codigos = ", ".join(codigo.text() for _, codigo in seleccion if codigo is not None)
         if not confirmar_operacion(self, "Generar etiquetas QR", f"Activos: {codigos}\nSe solicitarán sus etiquetas y se conservará el identificador de cada equipo."):

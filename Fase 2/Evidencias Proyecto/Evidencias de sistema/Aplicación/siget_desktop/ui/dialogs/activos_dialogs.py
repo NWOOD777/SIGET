@@ -632,9 +632,7 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
         self.lbl_vacio_modelos.setVisible(len(self._modelos) == 0)
         self._limpiar_form_modelo()
 
-    # ------------------------------------------------------------------
     # Búsquedas individuales
-    # ------------------------------------------------------------------
 
     def buscar_categorias(self):
         req_id = self._iniciar_operacion()
@@ -720,9 +718,7 @@ class AdministrarCatalogosActivosDialog(SessionDialog):
         self.input_buscar_modelo.clear()
         self.buscar_modelos()
 
-    # ------------------------------------------------------------------
     # Selección y formularios
-    # ------------------------------------------------------------------
 
     def _on_seleccion_categoria(self):
         fila = self.tabla_categorias.currentRow()
@@ -1341,6 +1337,7 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.setWindowTitle(f"Detalle de activo TI #{id_activo}")
         self.resize(580, 580 if current_session.is_admin() else 420)
         self._activo_datos: dict[str, Any] = {}
+        self._qr_generado = False
         self._worker: ApiWorker | None = None
         self._catalogos_req_id: int = 0
         self._init_ui()
@@ -1406,16 +1403,12 @@ class DetalleModificarActivoDialog(SessionDialog):
 
         layout.addWidget(self.card_info)
         acciones_qr = QHBoxLayout()
-        self.btn_generar_qr = QPushButton("Generar Etiqueta QR")
-        self.btn_generar_qr.setObjectName("btnSecundario")
-        self.btn_generar_qr.clicked.connect(lambda: self._abrir_qr(False))
-        self.btn_reimprimir_qr = QPushButton("Reimprimir QR")
-        self.btn_reimprimir_qr.setObjectName("btnSecundario")
-        self.btn_reimprimir_qr.clicked.connect(lambda: self._abrir_qr(True))
-        for boton in (self.btn_generar_qr, self.btn_reimprimir_qr):
-            boton.setVisible(es_admin)
-            boton.setEnabled(False)
-            acciones_qr.addWidget(boton)
+        self.btn_qr = QPushButton("Generar etiqueta QR")
+        self.btn_qr.setObjectName("btnSecundario")
+        self.btn_qr.clicked.connect(self._abrir_qr)
+        self.btn_qr.setVisible(es_admin)
+        self.btn_qr.setEnabled(False)
+        acciones_qr.addWidget(self.btn_qr)
         layout.addLayout(acciones_qr)
 
         self.panel_edicion = QWidget()
@@ -1491,15 +1484,22 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.input_valor.setEnabled(es_admin)
         self.date_garantia.setEnabled(es_admin)
 
-    def _abrir_qr(self, reimprimir: bool):
+    def _actualizar_accion_qr(self):
+        self.btn_qr.setText("Reimprimir QR" if self._qr_generado else "Generar etiqueta QR")
+        self.btn_qr.setVisible(current_session.is_admin())
+        self.btn_qr.setEnabled(current_session.is_admin() and bool(self._activo_datos))
+
+    def _abrir_qr(self):
         if not current_session.is_admin() or not self._activo_datos:
             return
-        if not confirmar_operacion(self, "Reimprimir QR" if reimprimir else "Generar Etiqueta QR", f"Activo: {self.lbl_codigo.text()}\nSe conservará el identificador del equipo."):
+        reimprimir = self._qr_generado
+        if not confirmar_operacion(self, self.btn_qr.text(), f"Activo: {self.lbl_codigo.text()}\nSe conservará el identificador del equipo."):
             return
         dialogo = EtiquetasQRDialog([self.id_activo], self, reimprimir=reimprimir)
         dialogo.exec()
         if dialogo.etiquetas and not self._closed:
-            self.btn_reimprimir_qr.setEnabled(True)
+            self._qr_generado = True
+            self._actualizar_accion_qr()
 
     def abrir_mantenedor_catalogos(self):
         if not current_session.is_admin():
@@ -1628,8 +1628,8 @@ class DetalleModificarActivoDialog(SessionDialog):
         self.progreso.hide()
         activo = res.get("activo", {})
         self._activo_datos = activo
-        self.btn_generar_qr.setEnabled(current_session.is_admin() and bool(activo))
-        self.btn_reimprimir_qr.setEnabled(current_session.is_admin() and res.get("qr", {}).get("generado", False))
+        self._qr_generado = bool(res.get("qr", {}).get("generado", False))
+        self._actualizar_accion_qr()
 
         codigo = activo.get("codigo_inventario", "")
         self.lbl_titulo.setText(f"Activo {codigo} — {activo.get('modelo', '')}")

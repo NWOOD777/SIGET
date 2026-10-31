@@ -27,6 +27,7 @@ from siget_desktop.api.services import (
 )
 from siget_desktop.ui.components import mostrar_mensaje, texto_relacion
 from siget_desktop.ui.dialogs.common import SessionDialog
+from siget_desktop.ui.identificar_activo import IdentificarActivoWidget
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -190,6 +191,8 @@ class RegistrarDevolucionDialog(SessionDialog):
         super().__init__(parent)
         self.asignacion = asignacion
         self.id_asignacion = int(asignacion.get("id_asignacion") or 0)
+        self._lectura_iniciada = False
+        self._guardando = False
         self._worker: ApiWorker | None = None
 
         self.setWindowTitle("Registrar devolución")
@@ -231,6 +234,9 @@ class RegistrarDevolucionDialog(SessionDialog):
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(5)
 
+        esperado = QLabel("Equipo esperado según la asignación")
+        esperado.setStyleSheet("font-weight: bold;")
+        card_layout.addWidget(esperado)
         lbl_codigo = QLabel(f"Código de activo: {codigo}")
         lbl_codigo.setStyleSheet("font-weight: bold;")
         card_layout.addWidget(lbl_codigo)
@@ -248,6 +254,14 @@ class RegistrarDevolucionDialog(SessionDialog):
         estado = activo.get("estado", "Sin información")
         card_layout.addWidget(QLabel(f"Estado actual: {estado}"))
         layout.addWidget(card)
+
+        layout.addWidget(QLabel("Verificar equipo recibido"))
+        self.lector_activo = IdentificarActivoWidget(self, id_asignacion=self.id_asignacion)
+        self.lector_activo.input.setPlaceholderText("Escanee el equipo recibido o ingrese su identificador")
+        self.lector_activo.btn_buscar.setText("Verificar equipo")
+        self.lector_activo.invalidado.connect(self._invalidar_lectura)
+        self.lector_activo.identificado.connect(self._equipo_verificado)
+        layout.addWidget(self.lector_activo)
 
         form = QFormLayout()
         form.setSpacing(10)
@@ -327,6 +341,14 @@ class RegistrarDevolucionDialog(SessionDialog):
 
         self._actualizar_otro_motivo(self.combo_motivo.currentText())
 
+    def _equipo_verificado(self, _activo: dict[str, Any]):
+        mostrar_mensaje(self.lector_activo.lbl_ficha, "El equipo recibido coincide con la asignación.", "success")
+        self.btn_confirmar.setEnabled(not self._guardando)
+
+    def _invalidar_lectura(self):
+        self._lectura_iniciada = True
+        self.btn_confirmar.setEnabled(False)
+
     def _actualizar_otro_motivo(self, motivo: str):
         es_otro = motivo == "Otro"
         self.input_otro.setVisible(es_otro)
@@ -345,6 +367,9 @@ class RegistrarDevolucionDialog(SessionDialog):
             self.input_ticket.clear()
 
     def _registrar(self):
+        if self._guardando or self.lector_activo.en_consulta or (self._lectura_iniciada and self.lector_activo.activo is None):
+            mostrar_mensaje(self.lbl_mensaje, "El equipo leído debe corresponder a la asignación antes de registrar la devolución.", "error")
+            return
         condicion = self.combo_condicion.currentData()
         motivo_seleccionado = self.combo_motivo.currentText()
 
@@ -414,6 +439,8 @@ class RegistrarDevolucionDialog(SessionDialog):
         if respuesta != QMessageBox.StandardButton.Yes:
             return
 
+        self._guardando = True
+        self.lector_activo.setEnabled(False)
         self.btn_confirmar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.progreso.show()
@@ -461,6 +488,8 @@ class RegistrarDevolucionDialog(SessionDialog):
         self.accept()
 
     def _on_error(self, exc: Exception):
+        self._guardando = False
+        self.lector_activo.setEnabled(True)
         self.progreso.hide()
         self.btn_confirmar.setEnabled(True)
         self.btn_cancelar.setEnabled(True)

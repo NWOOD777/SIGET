@@ -1,12 +1,14 @@
 from django.urls import path
 
 from . import views
+from .identificacion import IdentificarActivoView
 from .qr_views import ActivoQRView
 
 app_name = "activos"
 
 
 urlpatterns = [
+    path("identificar/", IdentificarActivoView.as_view(), name="identificar_activo"),
     path("<int:pk>/qr/", ActivoQRView.as_view(), name="activo_qr"),
     path(
         "",

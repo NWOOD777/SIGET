@@ -33,7 +33,7 @@ class EtiquetasQRDialog(SessionDialog):
         titulo = QLabel("Etiquetas de inventario")
         titulo.setObjectName("sectionTitle")
         layout.addWidget(titulo)
-        instrucciones = QLabel("PDF A4: 24 etiquetas de 63,5 × 33,9 mm. Imprima al 100 %, sin ajustar a la página.")
+        instrucciones = QLabel("El tamaño de las etiquetas se ajusta automáticamente a la cantidad. Una etiqueta aprovecha la hoja A4; los lotes se distribuyen sin deformar el QR.")
         instrucciones.setWordWrap(True)
         layout.addWidget(instrucciones)
         self.lbl_mensaje = QLabel()
@@ -192,7 +192,7 @@ class EtiquetasQRDialog(SessionDialog):
         dialogo = QPrintDialog(printer, self)
         if dialogo.exec() != self.DialogCode.Accepted or not self._permitido():
             return
-        # La cuadrícula corresponde a una hoja A4 completa y sin escalado.
+        # La distribución usa el área A4 y conserva las proporciones del código QR.
         printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
         printer.setPageOrientation(QPageLayout.Orientation.Portrait)
         printer.setFullPage(True)

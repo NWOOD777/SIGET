@@ -8,12 +8,12 @@ from typing import Any
 
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QDateEdit,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -23,13 +23,13 @@ from PySide6.QtWidgets import (
 )
 
 from siget_desktop.api.services import (
-    listar_activos,
     obtener_solicitud,
     rechazar_solicitud,
     registrar_entrega_solicitud,
 )
 from siget_desktop.ui.components import mostrar_mensaje, texto_relacion
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
+from siget_desktop.ui.identificar_activo import IdentificarActivoWidget
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -237,10 +237,9 @@ class RegistrarEntregaDialog(SessionDialog):
         self.id_solicitud = int(solicitud.get("id_solicitud") or 0)
         self.setWindowTitle(f"Registrar entrega — Solicitud #{self.id_solicitud}")
         self.resize(520, 440)
-        self._activos_disponibles: list[dict[str, Any]] = []
         self._worker: ApiWorker | None = None
+        self._guardando_entrega = False
         self._init_ui()
-        self._cargar_activos_compatibles()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
@@ -258,11 +257,18 @@ class RegistrarEntregaDialog(SessionDialog):
         lbl_desc.setWordWrap(True)
         layout.addWidget(lbl_desc)
 
+        self.lector_activo = IdentificarActivoWidget(self, id_solicitud=self.id_solicitud)
+        self.lector_activo.invalidado.connect(self._invalidar_lectura)
+        self.lector_activo.identificado.connect(self._mostrar_equipo_identificado)
+        layout.addWidget(self.lector_activo)
+
         form = QFormLayout()
         form.setSpacing(10)
 
-        self.combo_activos = QComboBox()
-        form.addRow("Equipo a entregar *:", self.combo_activos)
+        self.equipo_identificado = QLineEdit()
+        self.equipo_identificado.setReadOnly(True)
+        self.equipo_identificado.setPlaceholderText("Escanee o ingrese el código del equipo para identificarlo")
+        form.addRow("Equipo identificado:", self.equipo_identificado)
 
         self.date_prevista = QDateEdit()
         self.date_prevista.setCalendarPopup(True)
@@ -275,6 +281,7 @@ class RegistrarEntregaDialog(SessionDialog):
         self.progreso.setRange(0, 0)
         self.progreso.setFixedHeight(4)
         self.progreso.setTextVisible(False)
+        self.progreso.hide()
         layout.addWidget(self.progreso)
 
         self.lbl_mensaje = QLabel("")
@@ -290,52 +297,41 @@ class RegistrarEntregaDialog(SessionDialog):
         btn_layout.addWidget(self.btn_cancelar)
 
         self.btn_entregar = QPushButton("Confirmar entrega")
+        self.btn_entregar.setEnabled(False)
         self.btn_entregar.clicked.connect(self._ejecutar_entrega)
         btn_layout.addWidget(self.btn_entregar)
 
         layout.addLayout(btn_layout)
 
-    def _cargar_activos_compatibles(self):
-        self.progreso.show()
+    def _invalidar_lectura(self):
+        self.equipo_identificado.clear()
         self.btn_entregar.setEnabled(False)
-        cat_nombre = texto_relacion(self.solicitud.get("categoria"), "")
-        self._worker = ApiWorker(listar_activos, tipo=cat_nombre or None, estado="Disponible")
-        self.conectar_worker(self._worker, self._on_activos_cargados, self._on_error_activos)
-        self._worker.start()
 
-    def _on_activos_cargados(self, activos: list[dict[str, Any]]):
-        self.progreso.hide()
-        self._activos_disponibles = activos
-        self.combo_activos.clear()
-
-        if not activos:
-            mostrar_mensaje(self.lbl_mensaje, "No existen equipos disponibles en esta categoría para entrega inmediata.", "empty")
-            return
-
-        self.btn_entregar.setEnabled(True)
-        for act in activos:
-            texto = f"{act.get('codigo_inventario')} — {act.get('modelo', '')} (S/N: {act.get('numero_serie', '')})"
-            self.combo_activos.addItem(texto, act.get("id_activo"))
-
-    def _on_error_activos(self, exc: Exception):
-        self.progreso.hide()
-        mostrar_mensaje(self.lbl_mensaje, f"Error al consultar activos disponibles: {exc}", "error")
+    def _mostrar_equipo_identificado(self, activo: dict[str, Any]):
+        self.equipo_identificado.setText(
+            f"{activo['codigo_inventario']} — {activo.get('modelo', '')} (S/N: {activo.get('numero_serie', '')})"
+        )
+        self.lbl_mensaje.hide()
+        self.btn_entregar.setEnabled(not self._guardando_entrega)
 
     def _ejecutar_entrega(self):
-        id_activo = self.combo_activos.currentData()
-        if not id_activo:
-            mostrar_mensaje(self.lbl_mensaje, "Seleccione el equipo que se entregará físicamente.", "error")
+        activo = self.lector_activo.activo
+        if self._guardando_entrega or self.lector_activo.en_consulta or activo is None:
+            mostrar_mensaje(self.lbl_mensaje, "Identifique un equipo compatible antes de confirmar la entrega.", "error")
             return
+        id_activo = activo["id_activo"]
 
         fecha_prevista = self.date_prevista.date().toString(Qt.DateFormat.ISODate) + "T23:59:59"
 
         if not confirmar_operacion(
             self, "Registrar entrega",
-            f"Solicitud #{self.id_solicitud}\nEquipo: {self.combo_activos.currentText()}\n"
+            f"Solicitud #{self.id_solicitud}\nEquipo: {self.equipo_identificado.text()}\n"
             f"Devolución prevista: {self.date_prevista.date().toString('dd/MM/yyyy')}",
         ):
             return
 
+        self._guardando_entrega = True
+        self.lector_activo.setEnabled(False)
         self.btn_entregar.setEnabled(False)
         self.btn_cancelar.setEnabled(False)
         self.progreso.show()
@@ -361,7 +357,9 @@ class RegistrarEntregaDialog(SessionDialog):
         self.accept()
 
     def _on_error_entrega(self, exc: Exception):
+        self._guardando_entrega = False
+        self.lector_activo.setEnabled(True)
         self.progreso.hide()
-        self.btn_entregar.setEnabled(True)
+        self.btn_entregar.setEnabled(self.lector_activo.activo is not None)
         self.btn_cancelar.setEnabled(True)
         mostrar_mensaje(self.lbl_mensaje, f"No se pudo completar la entrega: {exc}", "error")

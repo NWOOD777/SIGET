@@ -264,7 +264,8 @@ class DialogsTests(unittest.TestCase):
 
     def test_registrar_entrega_dialog_requiere_activo(self):
         diag = RegistrarEntregaDialog(solicitud={"id_solicitud": 2, "id_categoria": 1, "categoria": {"nombre": "Notebook"}, "id_usuario": 1, "solicitante": {"nombres": "A"}})
-        diag.combo_activos.clear()
+        self.assertTrue(diag.equipo_identificado.isReadOnly())
+        self.assertFalse(diag.btn_entregar.isEnabled())
         diag._ejecutar_entrega()
         self.assertFalse(diag.lbl_mensaje.isHidden())
 
