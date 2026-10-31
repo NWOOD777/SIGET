@@ -1,8 +1,10 @@
 """Coherencia entre el SQL de instalación, los modelos y las actualizaciones."""
 from django.apps import apps
 from django.db import connection
+from django.urls import reverse
 
 from repuestos.models import Repuesto
+from usuarios.models import RolPermiso
 from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 
 
@@ -30,3 +32,28 @@ class ContratoEsquemaSQLTests(PostgreSQLTestBase):
                 "WHERE table_schema = 'public' AND table_name = 'repuesto' AND column_name = 'activo'"
             )
             self.assertEqual(cursor.fetchone(), ("true", "NO"))
+
+
+    def test_instalacion_habilita_reportes_solo_al_administrador(self):
+        roles = set(
+            RolPermiso.objects.filter(permiso__codigo="REPORTES_CONSULTAR")
+            .values_list("rol__nombre", flat=True)
+        )
+        self.assertEqual(roles, {"Administrador del sistema"})
+
+        filtros = {"fecha_inicio": "2026-10-01", "fecha_fin": "2026-10-31"}
+        for nombre in ("dashboard-reportes", "reporte-parque-ti"):
+            for usuario, esperado in (
+                (self.admin, 200),
+                (self.tecnico, 403),
+                (self.solicitante, 403),
+            ):
+                with self.subTest(reporte=nombre, usuario=usuario.pk):
+                    respuesta = self.cliente(usuario).get(reverse(nombre), filtros)
+                    self.assertEqual(respuesta.status_code, esperado, respuesta.data)
+
+        RolPermiso.objects.filter(permiso__codigo="REPORTES_CONSULTAR").delete()
+        for nombre in ("dashboard-reportes", "reporte-parque-ti"):
+            with self.subTest(reporte=nombre, permiso_retirado=True):
+                respuesta = self.cliente(self.admin).get(reverse(nombre), filtros)
+                self.assertEqual(respuesta.status_code, 403, respuesta.data)

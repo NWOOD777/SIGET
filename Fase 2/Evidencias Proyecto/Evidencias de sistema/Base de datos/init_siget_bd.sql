@@ -693,6 +693,7 @@ INSERT INTO permiso (codigo, descripcion) VALUES
 ('TICKET_ATENDER', 'Atender tickets asignados'),
 ('OT_GESTIONAR', 'Gestionar órdenes de trabajo'),
 ('USUARIOS_ADMINISTRAR', 'Administrar usuarios, roles y permisos'),
+('REPORTES_CONSULTAR', 'Consultar y exportar reportes de soporte y parque tecnológico'),
 ('AUDITORIA_CONSULTAR', 'Consultar bitácora y reportes de auditoría');
 
 -- Asignación mínima de permisos por rol
@@ -717,6 +718,7 @@ WHERE codigo IN (
     'SOLICITUD_RESOLVER',
     'TICKET_ASIGNAR',
     'USUARIOS_ADMINISTRAR',
+    'REPORTES_CONSULTAR',
     'AUDITORIA_CONSULTAR'
 );
 
