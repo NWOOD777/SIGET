@@ -7,8 +7,8 @@ from PySide6.QtCore import QIODevice, QMarginsF, QSaveFile
 from PySide6.QtGui import QPageLayout, QPageSize, QPainter, QPdfWriter
 
 from siget_desktop.ui.reportes_pdf import (
-    _DocumentoPDF,
     _dibujar_tabla,
+    _DocumentoPDF,
     _titulo_seccion,
 )
 

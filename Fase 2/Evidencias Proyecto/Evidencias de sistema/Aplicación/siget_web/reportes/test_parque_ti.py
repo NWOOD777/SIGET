@@ -1,16 +1,13 @@
+from datetime import date
+from decimal import Decimal
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import patch
 
 from django.test import SimpleTestCase
 from django.urls import reverse
-
 from rest_framework.response import Response
 from rest_framework.test import APIClient
-
-
-from datetime import date
-from decimal import Decimal
 
 from reportes.parque_ti_services import (
     MENSAJE_SIN_ACTIVOS,
@@ -144,9 +141,9 @@ class SeguridadParqueTITests(SimpleTestCase):
 
         self.assertEqual(respuesta.status_code, 200)
 
-        self.assertIsNotNone(respuesta.data)
-
-        datos = respuesta.json()
+        datos = respuesta.data
+        self.assertIsInstance(datos, dict)
+        assert isinstance(datos, dict)
 
         self.assertEqual(
             datos["total_activos"],

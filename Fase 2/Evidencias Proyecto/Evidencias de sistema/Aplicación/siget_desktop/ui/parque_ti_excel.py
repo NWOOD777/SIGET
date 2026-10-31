@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Font
 from openpyxl.worksheet.worksheet import Worksheet
 
 from siget_desktop.ui.reportes_excel import (

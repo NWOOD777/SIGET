@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from reportes.parque_ti_services import obtener_reporte_parque_ti
 from reportes.services import (
     obtener_componentes_reemplazados,
     obtener_fallas_recurrentes,
@@ -12,7 +13,6 @@ from reportes.services import (
 )
 from tickets.models import Ticket
 from usuarios.permissions import PuedeConsultarReportes
-from reportes.parque_ti_services import obtener_reporte_parque_ti
 
 
 class DashboardReportesView(APIView):

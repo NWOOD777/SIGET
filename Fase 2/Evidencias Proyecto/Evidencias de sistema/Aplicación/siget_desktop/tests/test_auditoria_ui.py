@@ -362,11 +362,14 @@ class AuditoriaUiTests(unittest.TestCase):
             worker.assert_not_called()
         self.assertTrue(view.contenedor_admin.isHidden())
         win = MainWindow()
-        item = win.sidebar.item(6)
+        indice = win.stacked_views.indexOf(win.view_auditoria)
+        self.assertGreaterEqual(indice, 0)
+        item = win.sidebar.item(indice)
         assert item is not None
+        self.assertEqual(item.text(), "Auditoría Interna")
         self.assertTrue(item.isHidden())
         self.assertEqual(item.flags(), Qt.ItemFlag.NoItemFlags)
-        win._cambiar_vista(6)
+        win._cambiar_vista(indice)
         self.assertEqual(win.stacked_views.currentIndex(), 0)
 
     def test_revocar_permiso_limpia_datos_y_descarta_respuesta_en_vuelo(self):

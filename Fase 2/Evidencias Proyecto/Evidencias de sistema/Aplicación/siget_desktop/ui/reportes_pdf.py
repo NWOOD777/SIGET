@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QIODevice, QMarginsF, QRectF, QSaveFile, Qt, QPointF
+from PySide6.QtCore import QIODevice, QMarginsF, QPointF, QRectF, QSaveFile, Qt
 from PySide6.QtGui import (
     QColor,
     QFont,

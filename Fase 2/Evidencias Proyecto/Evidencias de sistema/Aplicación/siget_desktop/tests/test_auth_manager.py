@@ -1,7 +1,9 @@
 """Pruebas para el orquestador de autenticación OAuth 2.0 PKCE."""
 
 import unittest
+from dataclasses import replace
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlsplit
 
 from siget_desktop.auth.manager import (
     AuthCancelledError,
@@ -20,7 +22,8 @@ class AuthManagerTests(unittest.TestCase):
         current_session.clear()
         self.mock_opener = MagicMock(return_value=True)
         self.manager = AuthManager(browser_opener=self.mock_opener)
-        self.config_patch = patch("siget_desktop.auth.manager.config", __import__("dataclasses").replace(config, auth0_domain="example.auth0.com", auth0_client_id="native-test", auth0_audience="https://api.siget.local"))
+        self.config_prueba = replace(config, auth0_domain="example.auth0.com", auth0_client_id="native-test", auth0_audience="https://api.siget.local")
+        self.config_patch = patch("siget_desktop.auth.manager.config", self.config_prueba)
         self.config_patch.start()
         self.addCleanup(self.config_patch.stop)
 
@@ -42,7 +45,7 @@ class AuthManagerTests(unittest.TestCase):
         self.assertIn("code_challenge_method=S256", url)
         self.assertIn("state=state_xyz", url)
         self.assertIn("scope=openid+profile+email", url)
-        self.assertIn(f"audience={config.auth0_audience}".replace(":", "%3A").replace("/", "%2F"), url)
+        self.assertEqual(parse_qs(urlsplit(url).query)["audience"], [self.config_prueba.auth0_audience])
 
     @patch("siget_desktop.auth.manager.esperar_retorno_oauth")
     def test_cancelacion_por_el_usuario_lanza_excepcion(self, mock_esperar):

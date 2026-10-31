@@ -1,9 +1,7 @@
+from datetime import date
 from typing import Any, Callable
 
-from datetime import date
-
 from PySide6.QtCore import QDate, Qt
-
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -21,23 +19,17 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
-    QTabWidget,
 )
 
-from siget_desktop.ui.views.parque_ti_view import ParqueTIView
-
 from siget_desktop.api.reportes_services import obtener_dashboard_reportes
-
 from siget_desktop.api.services import listar_categorias_activos
-
 from siget_desktop.auth.session import current_session
-
 from siget_desktop.ui.reportes_excel import guardar_excel_reportes
-
 from siget_desktop.ui.reportes_pdf import guardar_pdf_reportes
-
+from siget_desktop.ui.views.parque_ti_view import ParqueTIView
 from siget_desktop.ui.workers import ApiWorker
 
 

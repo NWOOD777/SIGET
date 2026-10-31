@@ -1,16 +1,12 @@
 from datetime import datetime, timedelta, timezone
-
 from types import SimpleNamespace
-
-from unittest.mock import patch
 from typing import cast
+from unittest.mock import patch
 
 from django.test import SimpleTestCase
-
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework.response import Response
+from rest_framework.test import APIClient
 
 from reportes.services import obtener_metricas_reportes
 
