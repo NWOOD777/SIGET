@@ -578,10 +578,17 @@ def calcular_tiempo_pausa_ot(
         fecha_evento__lte=hasta,
     ).order_by("fecha_evento", "id_auditoria")
 
+    return calcular_intervalos_pausa(eventos, hasta)
+
+
+def calcular_intervalos_pausa(eventos, hasta) -> timedelta:
+    """Suma pausas ordenadas hasta una fecha de corte, sin consultar la base."""
     inicio_pausa = None
     tiempo_total = timedelta()
 
     for evento in eventos:
+        if evento.fecha_evento > hasta:
+            continue
         if evento.accion == "OT_PAUSADA":
             if inicio_pausa is None:
                 inicio_pausa = evento.fecha_evento

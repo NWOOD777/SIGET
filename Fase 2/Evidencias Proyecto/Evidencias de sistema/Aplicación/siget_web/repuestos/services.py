@@ -13,6 +13,8 @@ def registrar_ingreso_repuesto(datos, usuario):
     id_repuesto = datos.get("id_repuesto")
     cantidad = datos["cantidad"]
     costo = datos["costo_unitario"]
+    if type(cantidad) is not int or not 1 <= cantidad <= 2147483647:
+        raise ValidationError({"cantidad": "Debe ingresar un entero entre 1 y 2147483647."})
 
     if id_repuesto is not None:
         # Ingreso de stock para un repuesto existente.
@@ -28,6 +30,8 @@ def registrar_ingreso_repuesto(datos, usuario):
         stock_anterior = repuesto.stock_actual
         costo_anterior = repuesto.precio_unitario
         nuevo_stock = stock_anterior + cantidad
+        if nuevo_stock > 2147483647:
+            raise ValidationError({"cantidad": "El ingreso supera el stock máximo permitido."})
 
         nuevo_costo_promedio = ((stock_anterior * costo_anterior) + (cantidad * costo)) / Decimal(nuevo_stock)
 

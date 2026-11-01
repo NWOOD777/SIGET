@@ -152,6 +152,17 @@ Para corregir automáticamente el orden de imports y otros casos seguros se util
 
 El desarrollo se organiza mediante Scrum. Las evidencias de planificación, seguimiento y retrospectivas se conservan en la carpeta de metodología. Git y GitHub mantienen el historial de versiones del sistema.
 
+## Integrantes y roles
+
+| Integrante | Rol Scrum |
+|---|---|
+| Joaquín Riquelme | Product Owner y desarrollo |
+| Diego Alcaino | Scrum Master y desarrollo |
+| Ignacio Troncoso | Desarrollo |
+
+Los tres integrantes participan en implementación, pruebas y documentación. La
+distribución de responsabilidades está en la matriz RACI y la definición de roles Scrum.
+
 ## Evidencias académicas
 
 Las carpetas `Fase 1`, `Fase 2` y `Fase 3` organizan las evidencias grupales e individuales de cada etapa. La segunda fase reúne además la documentación y el sistema implementado, según la estructura del repositorio.

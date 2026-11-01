@@ -13,6 +13,7 @@ from siget_desktop.ui.reportes_excel import (
     _crear_hoja,
     _estilizar_datos,
     _estilizar_encabezados,
+    guardar_textos_literales,
 )
 
 
@@ -128,6 +129,7 @@ def guardar_excel_parque_ti(
     archivo.parent.mkdir(parents=True, exist_ok=True)
     temporal = archivo.with_name(f".{archivo.stem}.tmp.xlsx")
     try:
+        guardar_textos_literales(libro)
         libro.save(temporal)
         temporal.replace(archivo)
     finally:

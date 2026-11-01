@@ -127,6 +127,15 @@ def _crear_hoja(
     return hoja
 
 
+def guardar_textos_literales(libro: Workbook) -> None:
+    """Conserva el texto de negocio sin interpretarlo como fórmula de Excel."""
+    for hoja in libro.worksheets:
+        for fila in hoja:
+            for celda in fila:
+                if isinstance(celda.value, str):
+                    celda.data_type = "s"
+
+
 def guardar_excel_reportes(
     ruta: str,
     datos: dict[str, Any],
@@ -297,6 +306,7 @@ def guardar_excel_reportes(
     temporal = archivo.with_name(f".{archivo.stem}.tmp.xlsx")
 
     try:
+        guardar_textos_literales(libro)
         libro.save(temporal)
         temporal.replace(archivo)
     finally:

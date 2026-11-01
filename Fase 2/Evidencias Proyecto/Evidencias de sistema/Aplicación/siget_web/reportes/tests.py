@@ -25,11 +25,13 @@ class MetricasReportesTests(SimpleTestCase):
 
         tickets = [
             SimpleNamespace(
+                id_ticket=1,
                 fecha_creacion=inicio,
                 fecha_resolucion=inicio + timedelta(hours=2),
                 id_prioridad=prioridad,
             ),
             SimpleNamespace(
+                id_ticket=2,
                 fecha_creacion=inicio,
                 fecha_resolucion=inicio + timedelta(hours=6),
                 id_prioridad=prioridad,

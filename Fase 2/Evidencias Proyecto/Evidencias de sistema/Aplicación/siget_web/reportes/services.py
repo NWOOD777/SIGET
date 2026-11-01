@@ -5,8 +5,9 @@ from django.db.models import Sum
 
 from activos.models import CategoriaActivo, ModeloActivo
 from ordenes_trabajo.models import Diagnostico, OrdenRepuesto, OrdenTrabajo
-from ordenes_trabajo.services import calcular_tiempo_efectivo_sla_ot
-from tickets.models import Ticket
+from ordenes_trabajo.services import calcular_intervalos_pausa
+from tickets.models import SLA, Ticket
+from usuarios.models import BitacoraAuditoria
 
 
 def obtener_metricas_reportes(fecha_inicio, fecha_fin, id_categoria=None):
@@ -24,12 +25,26 @@ def obtener_metricas_reportes(fecha_inicio, fecha_fin, id_categoria=None):
             fecha_resolucion__date__gte=fecha_inicio,
             fecha_resolucion__date__lte=fecha_fin,
         )
-        .select_related("id_prioridad", "id_activo")
+        .select_related("id_prioridad__sla", "id_activo")
         .order_by("id_ticket")
     )
 
     if id_categoria is not None:
         tickets = tickets.filter(id_activo__id_modelo__id_categoria_id=id_categoria)
+
+    tickets = list(tickets)
+    ordenes = dict(OrdenTrabajo.objects.filter(
+        id_ticket_id__in=[ticket.id_ticket for ticket in tickets],
+    ).values_list("id_ticket_id", "id_orden")) if tickets else {}
+    eventos_por_orden = {}
+    if ordenes:
+        eventos = BitacoraAuditoria.objects.filter(
+            modulo="ORDENES_TRABAJO", entidad_afectada="orden_trabajo",
+            id_registro_afectado__in=ordenes.values(),
+            accion__in=["OT_PAUSADA", "OT_REANUDADA"],
+        ).order_by("fecha_evento", "id_auditoria")
+        for evento in eventos:
+            eventos_por_orden.setdefault(evento.id_registro_afectado, []).append(evento)
 
     total_resueltos = 0
     dentro_sla = 0
@@ -40,34 +55,21 @@ def obtener_metricas_reportes(fecha_inicio, fecha_fin, id_categoria=None):
     for ticket in tickets:
         total_resueltos += 1
 
-        orden = OrdenTrabajo.objects.filter(id_ticket=ticket).first()
-
-        if orden:
-            resultado = calcular_tiempo_efectivo_sla_ot(orden.id_orden)
-
-            tiempo_efectivo = resultado["tiempo_efectivo"]
-            cumple_sla = resultado["dentro_sla"]
-
-        else:
-            fecha_resolucion = ticket.fecha_resolucion
-
-            if fecha_resolucion is None:
-                sin_sla += 1
-                continue
-
-            tiempo_efectivo = max(
-                fecha_resolucion - ticket.fecha_creacion,
-                timedelta(),
-            )
-
-            try:
-                sla = getattr(ticket.id_prioridad, "sla")
-                limite_horas = sla.tiempo_resolucion_horas
-            except Exception:
-                sin_sla += 1
-                continue
-
-            cumple_sla = tiempo_efectivo <= timedelta(hours=limite_horas)
+        fecha_resolucion = ticket.fecha_resolucion
+        if fecha_resolucion is None:
+            sin_sla += 1
+            continue
+        try:
+            limite_horas = ticket.id_prioridad.sla.tiempo_resolucion_horas
+        except SLA.DoesNotExist:
+            sin_sla += 1
+            continue
+        orden_id = ordenes.get(ticket.id_ticket)
+        pausas = calcular_intervalos_pausa(
+            eventos_por_orden.get(orden_id, []), fecha_resolucion,
+        ) if orden_id is not None else timedelta()
+        tiempo_efectivo = max(fecha_resolucion - ticket.fecha_creacion - pausas, timedelta())
+        cumple_sla = tiempo_efectivo <= timedelta(hours=limite_horas)
 
         tiempo_total_horas += tiempo_efectivo.total_seconds() / 3600
 

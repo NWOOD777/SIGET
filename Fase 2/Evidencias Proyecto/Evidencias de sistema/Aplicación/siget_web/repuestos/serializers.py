@@ -5,6 +5,7 @@ class IngresoRepuestoSerializer(serializers.Serializer):
     id_repuesto = serializers.IntegerField(
         required=False,
         min_value=1,
+        max_value=2147483647,
     )
 
     nombre = serializers.CharField(
@@ -23,6 +24,7 @@ class IngresoRepuestoSerializer(serializers.Serializer):
 
     cantidad = serializers.IntegerField(
         min_value=1,
+        max_value=2147483647,
         error_messages={
             "min_value": "La cantidad debe ser mayor que cero.",
             "invalid": "La cantidad debe ser un número entero.",
@@ -64,6 +66,7 @@ class IngresoRepuestoSerializer(serializers.Serializer):
 class StockMinimoRepuestoSerializer(serializers.Serializer):
     stock_minimo = serializers.IntegerField(
         min_value=0,
+        max_value=2147483647,
         error_messages={
             "required": "El stock mínimo es obligatorio.",
             "invalid": "El stock mínimo debe ser un número entero.",
@@ -73,7 +76,7 @@ class StockMinimoRepuestoSerializer(serializers.Serializer):
 
 
 class AjusteStockRepuestoSerializer(serializers.Serializer):
-    nuevo_stock = serializers.IntegerField(min_value=0)
+    nuevo_stock = serializers.IntegerField(min_value=0, max_value=2147483647)
 
     motivo = serializers.CharField(
         max_length=180,

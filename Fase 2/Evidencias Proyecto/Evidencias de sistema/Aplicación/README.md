@@ -33,7 +33,22 @@ Levantar el backend, la base de datos y el servicio de correo:
 docker compose up -d --build
 ```
 
+El backend aplica las migraciones de Django antes de iniciar el servidor; el SQL
+canónico crea las tablas de negocio al inicializar el volumen PostgreSQL.
 El portal queda disponible en `http://localhost:8000/`.
+
+En la primera instalación, crear el Administrador con un correo propio y un RUT válido:
+
+```bash
+docker compose exec web python manage.py primer_admin --email admin@ejemplo.cl --rut 12.345.678-5 --nombres Nombre --apellidos Apellido
+```
+
+Reemplazar los datos del ejemplo por los de la persona responsable. Auth0 crea
+la identidad y envía las instrucciones para definir la contraseña. Desde el
+escritorio, ese Administrador puede aprovisionar las demás cuentas. No se cargan
+usuarios ni contraseñas predeterminados.
+
+Para respaldar o recuperar la base, consultar el [procedimiento de respaldo y restauración](respaldo_y_recuperacion.md).
 
 | Acción | Comando |
 |---|---|
