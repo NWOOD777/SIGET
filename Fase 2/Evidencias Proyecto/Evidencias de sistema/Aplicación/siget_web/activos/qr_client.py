@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 MAX_BYTES = 1024 * 1024
 PATRON_CODIGO = re.compile(r"ACT-[0-9]{4,46}\Z", re.ASCII)
+_PATRON_NUMERO_SVG = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", re.ASCII)
 
 
 class ErrorGeneracionQR(Exception):
@@ -108,12 +109,22 @@ def _validar_svg(contenido: bytes, tamano: int) -> bytes:
         alto = float(raiz.attrib["height"])
         if not math.isfinite(ancho) or not 0 < ancho <= 1000000 or ancho != alto:
             raise ValueError
-        if raiz.get("viewBox") not in (None, f"0 0 {ancho:g} {alto:g}"):
-            raise ValueError
+        viewbox = raiz.get("viewBox")
+        if viewbox is None:
+            viewbox = f"0 0 {ancho:g} {alto:g}"
+        else:
+            numeros = re.split(r"(?:\s*,\s*|\s+)", viewbox.strip(), flags=re.ASCII)
+            if len(numeros) != 4 or any(_PATRON_NUMERO_SVG.fullmatch(n) is None for n in numeros):
+                raise ValueError
+            x, y, ancho_vista, alto_vista = map(float, numeros)
+            if not all(math.isfinite(n) and abs(n) <= 1000000 for n in (x, y, ancho_vista, alto_vista)):
+                raise ValueError
+            if ancho_vista <= 0 or ancho_vista != alto_vista:
+                raise ValueError
         if not any(n.tag == f"{{{SVG_NAMESPACE}}}path" and n.get("d", "").strip() for n in raiz.iter()):
             raise ValueError
-        # Mantiene las coordenadas del proveedor al ajustar el tamaño de presentación.
-        raiz.set("viewBox", f"0 0 {ancho:g} {alto:g}")
+        # El viewBox conserva las coordenadas internas al ajustar el tamaño de presentación.
+        raiz.set("viewBox", viewbox)
         raiz.set("width", str(tamano))
         raiz.set("height", str(tamano))
         return ElementTree.tostring(raiz, encoding="utf-8", xml_declaration=True)

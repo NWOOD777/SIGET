@@ -52,6 +52,34 @@ class QRServerClientTests(SimpleTestCase):
         self.assertEqual((imagen.payload, imagen.formato, imagen.tipo_contenido), ("ACT-0001", "SVG", "image/svg+xml"))
         response.__exit__.assert_called_once()
 
+    def test_conserva_viewbox_distinto_del_tamano_de_presentacion(self):
+        for viewbox in ("0 0 29 29", "0,0,29,29", "-2.5 .5 2.9e1 29.0", " 0, 0, 29, 29 "):
+            contenido = SVG.replace(b'width="406" height="406"', f'width="300" height="300" viewBox="{viewbox}"'.encode())
+            with self.subTest(viewbox=viewbox), patch("activos.qr_client.requests.post", return_value=respuesta_svg(contenido)):
+                raiz = ElementTree.fromstring(generar_qr("ACT-0001").contenido)
+                self.assertEqual(raiz.get("viewBox"), viewbox)
+                self.assertEqual((raiz.get("width"), raiz.get("height")), ("300", "300"))
+
+    def test_rechaza_viewbox_malformado_o_fuera_de_limites(self):
+        for viewbox in (
+            "", "0 0 29", "0 0 29 29 1", "0,,0,29,29", "0 0 29 29,", "0 0 2_9 29",
+            "NaN 0 29 29", "0 inf 29 29", "1e999 0 29 29", "0 0 NaN NaN", "0 0 1e999 1e999",
+            "0 0 0 0", "0 0 -29 -29", "0 0 29 30", "0 0 1000001 1000001", "-1000001 0 29 29",
+            "0 0 29px 29px", "0 0 29% 29%",
+        ):
+            contenido = SVG.replace(b'height="406"', f'height="406" viewBox="{viewbox}"'.encode(), 1)
+            with self.subTest(viewbox=viewbox), patch("activos.qr_client.requests.post", return_value=respuesta_svg(contenido)):
+                with self.assertRaises(ErrorGeneracionQR) as error:
+                    generar_qr("ACT-0001")
+                self.assertEqual(error.exception.codigo, "respuesta_invalida")
+
+    def test_ajusta_presentacion_sin_cambiar_geometria_del_viewbox(self):
+        contenido = SVG.replace(b'height="406"', b'height="406" viewBox="0 0 29 29"', 1)
+        with override_settings(QR_SERVER_SIZE=600), patch("activos.qr_client.requests.post", return_value=respuesta_svg(contenido)):
+            raiz = ElementTree.fromstring(generar_qr("ACT-0001").contenido)
+        self.assertEqual((raiz.get("width"), raiz.get("height")), ("600", "600"))
+        self.assertEqual(raiz.get("viewBox"), "0 0 29 29")
+
     def test_codigos_invalidos_no_salen_del_backend(self):
         for codigo in [
             None,

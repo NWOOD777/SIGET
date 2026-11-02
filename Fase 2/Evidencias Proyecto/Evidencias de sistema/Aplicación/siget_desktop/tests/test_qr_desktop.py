@@ -225,7 +225,7 @@ class EtiquetasDesktopTests(unittest.TestCase):
             worker.assert_not_called()
             guardar.assert_not_called()
 
-    def test_pdf_vectorial_y_escritura_atomica_ante_svg_invalido(self):
+    def test_pdf_y_escritura_atomica_ante_svg_invalido(self):
         with TemporaryDirectory() as tmp:
             salida = Path(tmp) / "etiquetas.pdf"
             guardar_pdf_etiquetas(str(salida), [etiqueta() for _ in range(25)])
@@ -239,6 +239,44 @@ class EtiquetasDesktopTests(unittest.TestCase):
                 guardar_pdf_etiquetas(str(Path(tmp) / "vacio.pdf"), [])
             self.assertFalse((Path(tmp) / "vacio.pdf").exists())
 
+
+    def test_pdf_conserva_modulos_blancos_y_negros_del_svg(self):
+        caminos = " ".join(
+            f"M {x},{y} l 1,0 0,1 -1,0 z"
+            for y in range(4, 13) for x in range(4, 13) if (x + y) % 2 == 0
+        )
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 29 29">'
+            '<rect x="0" y="0" width="29" height="29" fill="white"/>'
+            f'<path fill="black" d="{caminos}"/></svg>'
+        )
+        for cantidad in (1, 25):
+            with self.subTest(cantidad=cantidad), TemporaryDirectory() as tmp:
+                salida = Path(tmp) / "modulos.pdf"
+                guardar_pdf_etiquetas(str(salida), [{**etiqueta(pk), "svg": svg} for pk in range(1, cantidad + 1)])
+                documento = QPdfDocument()
+                documento.load(str(salida))
+                try:
+                    tamano = documento.pagePointSize(0)
+                    escala = 2
+                    imagen = documento.render(0, QSize(round(tamano.width() * escala), round(tamano.height() * escala)))
+                    area = QRectF(MARGEN, MARGEN, tamano.width() - MARGEN * 2, tamano.height() - MARGEN * 2)
+                    for rect in _paginas(cantidad, area)[0]:
+                        lado, espacio, cuerpo, codigo, marca = _medidas(rect)
+                        alto = marca * 1.5 + espacio + lado + espacio + codigo * 1.6 + cuerpo * 3
+                        x0 = rect.center().x() - lado / 2
+                        y0 = rect.top() + (rect.height() - alto) / 2 + marca * 1.5 + espacio
+                        for y in range(4, 13):
+                            for x in range(4, 13):
+                                px = round((x0 + (x + 0.5) * lado / 29) * escala)
+                                py = round((y0 + (y + 0.5) * lado / 29) * escala)
+                                luz = imagen.pixelColor(px, py).lightness()
+                                if (x + y) % 2 == 0:
+                                    self.assertLess(luz, 40, (cantidad, x, y))
+                                else:
+                                    self.assertGreater(luz, 215, (cantidad, x, y))
+                finally:
+                    documento.close()
 
     def test_un_solo_qr_aprovecha_la_hoja_a4(self):
         with TemporaryDirectory() as tmp:

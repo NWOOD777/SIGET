@@ -50,6 +50,26 @@ class EtiquetasQRPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(evento.id_registro_afectado, qr.pk)
         self.assertNotIn(self.admin.rut, evento.detalle_evento)
 
+    def test_generacion_y_reimpresion_conservan_viewbox_del_proveedor(self):
+        contenido = (
+            b'<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 29 29">'
+            b'<path d="M 4,4 l 1,0 0,1 -1,0 z"/></svg>'
+        )
+        self.proveedor.return_value = respuesta_svg(contenido)
+        primera = self.generar()
+        self.assertEqual(primera.status_code, 200, primera.data)
+        segunda = self.generar(reimprimir=True)
+        self.assertEqual(segunda.status_code, 200, segunda.data)
+        for respuesta in (primera, segunda):
+            raiz = ElementTree.fromstring(respuesta.data["svg"])
+            self.assertEqual(raiz.get("viewBox"), "0 0 29 29")
+            self.assertEqual(respuesta.data["payload_qr"], self.equipo.codigo_inventario)
+        self.assertEqual(primera.data["id_qr"], segunda.data["id_qr"])
+        self.assertEqual(CodigoQR.objects.count(), 1)
+        self.assertEqual(CodigoQR.objects.get(id_activo=self.equipo).veces_reimpreso, 1)
+        self.assertEqual(BitacoraAuditoria.objects.filter(accion="GENERAR_QR").count(), 1)
+        self.assertEqual(BitacoraAuditoria.objects.filter(accion="REIMPRIMIR_QR").count(), 1)
+
     def test_consulta_no_invoca_api_y_generacion_repetida_conserva_asociacion(self):
         cliente = self.cliente(self.admin)
         self.assertFalse(cliente.get(self.url).data["generado"])

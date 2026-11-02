@@ -76,7 +76,7 @@ distribuyen buscando el mayor tamaño posible del QR, conservando su forma
 cuadrada. Las filas incompletas se centran.
 
 Cuando no caben todos los códigos con un lado mínimo de 25 mm, el lote se reparte
-en páginas equilibradas. El QR permanece vectorial. El código de inventario se
+en páginas equilibradas. La imagen SVG se imprime a 300 ppp para conservar los módulos del QR. El código de inventario se
 muestra completo; la serie y el modelo se abrevian si exceden el espacio.
 La distribución es para papel A4 común y no requiere hojas de rótulos de medidas
 fijas.

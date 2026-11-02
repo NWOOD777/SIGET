@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QByteArray, QIODevice, QMarginsF, QRectF, QSaveFile, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPagedPaintDevice, QPageLayout, QPageSize, QPainter, QPdfWriter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetricsF, QImage, QPagedPaintDevice, QPageLayout, QPageSize, QPainter, QPdfWriter, QPen
 from PySide6.QtSvg import QSvgRenderer
 
 MM = 72 / 25.4
@@ -80,10 +80,16 @@ def _dibujar_etiqueta(painter: QPainter, etiqueta: dict[str, Any], rect: QRectF)
     painter.drawText(QRectF(x, y, ancho, marca * 1.5), Qt.AlignmentFlag.AlignCenter, "SIGET")
     y += marca * 1.5 + espacio
     imagen = QRectF(rect.center().x() - lado / 2, y, lado, lado)
-    painter.save()
-    painter.setClipRect(imagen)
-    renderer.render(painter, imagen)
-    painter.restore()
+    # La imagen a 300 ppp conserva los módulos del QR en PDF e impresión.
+    pixeles = max(1, ceil(lado * 300 / 72))
+    bitmap = QImage(pixeles, pixeles, QImage.Format.Format_RGB32)
+    bitmap.fill(Qt.GlobalColor.white)
+    dibujo = QPainter(bitmap)
+    try:
+        renderer.render(dibujo, QRectF(0, 0, pixeles, pixeles))
+    finally:
+        dibujo.end()
+    painter.drawImage(imagen, bitmap)
     y += lado + espacio
 
     texto_codigo = etiqueta["codigo_inventario"]
