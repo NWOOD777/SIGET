@@ -29,6 +29,7 @@ from siget_desktop.api.services import (
 from siget_desktop.auth.session import current_session
 from siget_desktop.ui.components import mostrar_mensaje, texto_relacion
 from siget_desktop.ui.dialogs.common import SessionDialog, confirmar_operacion
+from siget_desktop.ui.dialogs.tickets_dialogs import MensajesEnviadosTicketDialog, puede_ver_mensajes_enviados
 from siget_desktop.ui.workers import ApiWorker
 
 
@@ -108,12 +109,12 @@ class GestionarTicketDialog(SessionDialog):
         self.panel_nota = QWidget()
         nota = QVBoxLayout(self.panel_nota)
         nota.setContentsMargins(0, 0, 0, 0)
-        nota.addWidget(QLabel("Nota de atención"))
+        nota.addWidget(QLabel("Mensaje al solicitante"))
         self.input_mensaje = QTextEdit()
-        self.input_mensaje.setPlaceholderText("Describe la atención realizada.")
+        self.input_mensaje.setPlaceholderText("Escribe la actualización que recibirá el solicitante.")
         self.input_mensaje.setAcceptRichText(False)
         nota.addWidget(self.input_mensaje, 1)
-        self.btn_atencion = QPushButton("Guardar nota de atención")
+        self.btn_atencion = QPushButton("Enviar mensaje al solicitante")
         self.btn_atencion.clicked.connect(self._registrar_atencion)
         nota.addWidget(self.btn_atencion)
         atencion.addWidget(self.panel_nota, 1)
@@ -135,6 +136,10 @@ class GestionarTicketDialog(SessionDialog):
         self.btn_actualizar.setObjectName("btnSecundario")
         self.btn_actualizar.clicked.connect(self._cargar_datos)
         botones.addWidget(self.btn_actualizar)
+        self.btn_mensajes = QPushButton("Ver mis mensajes enviados")
+        self.btn_mensajes.setObjectName("btnSecundario")
+        self.btn_mensajes.clicked.connect(self._ver_mensajes)
+        botones.addWidget(self.btn_mensajes)
         botones.addStretch()
         cerrar = QPushButton("Cerrar")
         cerrar.setObjectName("btnSecundario")
@@ -152,7 +157,7 @@ class GestionarTicketDialog(SessionDialog):
 
     @staticmethod
     def _puede_atender() -> bool:
-        return current_session.is_tecnico() and current_session.has_permission("TICKET_ATENDER")
+        return puede_ver_mensajes_enviados()
 
     def _es_responsable(self) -> bool:
         return self._puede_atender() and self._ticket.get("id_tecnico_asignado") == current_session.id_usuario
@@ -181,7 +186,13 @@ class GestionarTicketDialog(SessionDialog):
         self.input_motivo_estado.setEnabled(disponible and permite_estado)
         self.btn_estado.setEnabled(disponible and permite_estado and self.combo_estado.currentIndex() >= 0)
         self.btn_actualizar.setEnabled(disponible)
+        self.btn_mensajes.setVisible(self._puede_atender())
+        self.btn_mensajes.setEnabled(disponible and bool(self._ticket))
         self.progreso.setVisible(self._ocupado)
+
+    def _ver_mensajes(self):
+        codigo = self._ticket.get("codigo_ticket", f"#{self.id_ticket}")
+        MensajesEnviadosTicketDialog(self.id_ticket, codigo, self).exec()
 
     def _cargar_datos(self):
         if self._ocupado or not current_session.is_authenticated() or self._closed:
@@ -227,13 +238,13 @@ class GestionarTicketDialog(SessionDialog):
         elif self._es_responsable() and self._estado() == "Resuelto":
             indicacion = "Selecciona Cerrado e indica el motivo para cerrar el ticket."
         elif self._es_responsable():
-            indicacion = "Puedes guardar una nota o cambiar el estado del ticket. Para resolverlo o cerrarlo, no debe haber una OT vigente."
+            indicacion = "Puedes enviar una actualización al solicitante sin cambiar el estado. Para resolver o cerrar el ticket, no debe haber una OT vigente."
         elif self._puede_atender() and not self._ticket.get("id_tecnico_asignado") and self._estado() == "Abierto":
-            indicacion = "Primero toma el ticket para asumir su atención. Después podrás registrar atenciones y cambiar su estado."
+            indicacion = "Primero toma el ticket para asumir su atención. Después podrás enviar mensajes al solicitante y cambiar el estado."
         elif self._puede_asignar():
-            indicacion = "Selecciona un Técnico activo y justifica la asignación. La atención y los cambios de estado corresponden al Técnico responsable."
+            indicacion = "Selecciona un Técnico activo y justifica la asignación. Los mensajes y los cambios de estado corresponden al Técnico responsable."
         else:
-            indicacion = "Solo el Técnico responsable puede registrar atenciones o cambiar el estado de este ticket."
+            indicacion = "Solo el Técnico responsable puede enviar mensajes o cambiar el estado de este ticket."
         self.lbl_instrucciones.setText(indicacion)
         self._actualizar_controles()
 
@@ -272,10 +283,10 @@ class GestionarTicketDialog(SessionDialog):
 
     def _registrar_atencion(self):
         if self.btn_atencion.isEnabled() and self._es_responsable():
-            mensaje = self._mensaje_obligatorio(self.input_mensaje, "Describe la atención realizada.")
+            mensaje = self._mensaje_obligatorio(self.input_mensaje, "Escribe un mensaje para el solicitante.")
             if mensaje:
                 self._ejecutar(
-                    registrar_atencion_ticket, "Guardar nota de atención",
+                    registrar_atencion_ticket, "Enviar mensaje al solicitante",
                     campo=self.input_mensaje, mensaje=mensaje,
                 )
 
@@ -303,6 +314,12 @@ class GestionarTicketDialog(SessionDialog):
         if campo is not None:
             campo.clear()
         self._cargar_datos()
+        if campo is self.input_mensaje:
+            mostrar_mensaje(
+                self.lbl_mensaje,
+                "Mensaje registrado. Puedes consultarlo en «Ver mis mensajes enviados».",
+                "success",
+            )
 
     def _on_error(self, exc: Exception):
         self._ocupado = False

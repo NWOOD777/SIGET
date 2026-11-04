@@ -43,7 +43,17 @@ Requiere ser el Técnico responsable y contar con `TICKET_ATENDER`:
 
 El mensaje es obligatorio. Se admiten atenciones en **Abierto**, **En Proceso**
 y **En Espera**. Devuelve `201` con `id_comentario`, `id_ticket`, `id_usuario`,
-`mensaje` y `fecha_registro`. Registrar una atención no cambia el estado.
+`mensaje` y `fecha_registro`. Registrar una atención notifica al solicitante y mantiene el estado del ticket.
+
+## Consultar mis mensajes enviados
+
+`GET /api/tickets/{id}/atenciones/`
+
+Requiere **Técnico de soporte** y `TICKET_ATENDER`. Devuelve `200` con los
+mensajes enviados por el técnico autenticado en ese ticket, del más reciente
+al más antiguo. Cada elemento tiene los mismos campos que la respuesta del
+`POST`. Un ticket sin mensajes propios devuelve una lista vacía. La consulta
+también funciona después de una reasignación o del cierre del ticket.
 
 ## Cambiar estado
 
@@ -95,7 +105,8 @@ se debe corregir. Las respuestas completas del ticket siguen el
 
 En **Mesa de ayuda**, el Administrador utiliza **Asignar técnico**. El Técnico
 puede **Tomar ticket** si está disponible y **Atender Ticket** cuando es su
-responsable. Desde la atención puede registrar comentarios o cambiar el estado,
-con un motivo y confirmación. **Ver detalle** permite consultar sin modificar.
+responsable. **Enviar mensaje al solicitante** registra una actualización visible
+para el solicitante. **Cambiar estado** pide un motivo aparte. Desde la gestión
+del ticket o **Ver detalle**, el técnico puede abrir **Ver mis mensajes enviados**.
 
 [Service Desk y Taller](../README.md) · [Autenticación](../../uso_general.md)

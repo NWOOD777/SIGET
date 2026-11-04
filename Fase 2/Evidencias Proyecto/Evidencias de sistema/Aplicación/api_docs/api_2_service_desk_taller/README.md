@@ -9,6 +9,7 @@ El acceso y las validaciones de cada operación se describen en sus guías.
 | GET | `/api/tickets/{id}/` | [Detalle del ticket](tickets/detalle.md) |
 | POST | `/api/tickets/{id}/asignar/` | [Asignar o reasignar](tickets/gestion.md#asignar-o-reasignar) |
 | POST | `/api/tickets/{id}/tomar/` | [Tomar un ticket](tickets/gestion.md#tomar-un-ticket-disponible) |
+| GET | `/api/tickets/{id}/atenciones/` | [Consultar mensajes enviados](tickets/gestion.md#consultar-mis-mensajes-enviados) |
 | POST | `/api/tickets/{id}/atenciones/` | [Registrar atención](tickets/gestion.md#registrar-una-atención) |
 | PATCH | `/api/tickets/{id}/estado/` | [Cambiar estado](tickets/gestion.md#cambiar-estado) |
 | GET | `/api/tickets/prioridades/` | [Prioridades](tickets/prioridades.md) |

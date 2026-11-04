@@ -718,6 +718,11 @@ def tomar_ticket(id_ticket: int) -> dict[str, Any]:
     return _objeto(api_client.post(f"/api/tickets/{id_ticket}/tomar/", json={}))
 
 
+def listar_atenciones_propias(id_ticket: int) -> list[dict[str, Any]]:
+    """Consulta los mensajes que el técnico envió en el ticket."""
+    return _lista(api_client.get(f"/api/tickets/{id_ticket}/atenciones/"))
+
+
 def registrar_atencion_ticket(id_ticket: int, mensaje: str) -> dict[str, Any]:
     """Registra una atención del Técnico responsable sin cambiar el estado."""
     return _objeto(api_client.post(f"/api/tickets/{id_ticket}/atenciones/", json={"mensaje": mensaje}))

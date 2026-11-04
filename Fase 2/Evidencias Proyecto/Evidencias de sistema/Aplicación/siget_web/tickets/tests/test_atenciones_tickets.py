@@ -13,7 +13,7 @@ from rest_framework.exceptions import PermissionDenied
 from notificaciones.models import Notificacion
 from tickets.models import ComentarioTicket, EstadoTicket
 from tickets.serializers import TicketAtencionCreateSerializer
-from tickets.services import asignar_ticket, crear_ticket, registrar_atencion_ticket
+from tickets.services import asignar_ticket, cambiar_estado_ticket, crear_ticket, registrar_atencion_ticket
 from usuarios.models import BitacoraAuditoria, Rol, RolPermiso, UsuarioRol
 from usuarios.tests.test_integracion_postgresql import PostgreSQLTestBase
 
@@ -97,6 +97,40 @@ class AtencionesPostgreSQLTests(PostgreSQLTestBase):
         self.assertEqual(Notificacion.objects.count(), self.avisos_previos + 1)
         self.assertEqual(BitacoraAuditoria.objects.count(), self.auditorias_previas + 1)
         self.http.assert_not_called()
+
+    def test_historial_devuelve_solo_mensajes_propios_incluso_tras_reasignacion_y_cierre(self):
+        self.assertEqual(self.atender(mensaje="Primera revisión").status_code, 201)
+        cambiar_estado_ticket(
+            id_ticket=self.ticket.pk, tecnico=self.tecnico,
+            id_estado_ticket=EstadoTicket.objects.get(nombre="En Proceso").pk,
+            mensaje="Motivo de cambio de estado",
+        )
+        self.assertEqual(self.atender(mensaje="Segunda revisión").status_code, 201)
+        asignar_ticket(
+            id_ticket=self.ticket.pk, administrador=self.admin,
+            id_tecnico_asignado=self.segundo.pk, motivo="Turno siguiente",
+        )
+        self.assertEqual(self.atender(self.segundo, mensaje="Mensaje del nuevo técnico").status_code, 201)
+        self.ticket.id_estado_ticket = EstadoTicket.objects.get(nombre="Cerrado")
+        self.ticket.save(update_fields=["id_estado_ticket"])
+
+        propio = self.cliente(self.tecnico).get(self.url)
+        self.assertEqual(propio.status_code, 200, propio.data)
+        self.assertEqual([item["mensaje"] for item in propio.data], ["Segunda revisión", "Primera revisión"])
+        otro = self.cliente(self.segundo).get(self.url)
+        self.assertEqual(otro.status_code, 200, otro.data)
+        self.assertEqual([item["mensaje"] for item in otro.data], ["Mensaje del nuevo técnico"])
+        self.http.assert_not_called()
+
+    def test_historial_vacio_y_acceso_restringido_a_tecnicos_autorizados(self):
+        respuesta = self.cliente(self.tecnico).get(self.url)
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertEqual(respuesta.data, [])
+        for usuario in (None, self.admin, self.solicitante):
+            with self.subTest(usuario=usuario):
+                self.assertEqual(self.cliente(usuario).get(self.url).status_code, 403)
+        RolPermiso.objects.filter(rol__nombre="Técnico de soporte", permiso__codigo="TICKET_ATENDER").delete()
+        self.assertEqual(self.cliente(self.tecnico).get(self.url).status_code, 403)
 
     def test_tecnico_no_asignado_admin_y_solicitante_rechazados(self):
         for usuario in (self.segundo, self.admin, self.solicitante):
@@ -204,9 +238,11 @@ class AtencionesPostgreSQLTests(PostgreSQLTestBase):
                                HTTP_X_CSRFTOKEN=cliente.cookies["csrftoken"].value)
         self.assertEqual(response.status_code, 201, response.data)
 
-    def test_ruta_solo_post(self):
+    def test_ruta_no_permite_modificar_ni_eliminar_atenciones(self):
         self.assertEqual(self.url, f"/api/tickets/{self.ticket.pk}/atenciones/")
-        self.assertEqual(self.cliente(self.tecnico).get(self.url).status_code, 405)
+        cliente = self.cliente(self.tecnico)
+        self.assertEqual(cliente.patch(self.url, {"mensaje": "Intento"}, format="json").status_code, 405)
+        self.assertEqual(cliente.delete(self.url).status_code, 405)
         self.sin_efectos()
 
     def ejecutar_conexion(self, operacion):

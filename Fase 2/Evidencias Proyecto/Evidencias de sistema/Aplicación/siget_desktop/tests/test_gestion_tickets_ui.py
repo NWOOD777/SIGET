@@ -8,6 +8,7 @@ from siget_desktop.api import services
 from siget_desktop.auth.session import current_session
 from siget_desktop.tests.qt_helpers import limpiar_widgets
 from siget_desktop.ui.dialogs.gestion_ticket_dialog import GestionarTicketDialog
+from siget_desktop.ui.dialogs.tickets_dialogs import DetalleTicketDialog, MensajesEnviadosTicketDialog
 from siget_desktop.ui.views.tickets_view import TicketsView
 
 APP = QApplication.instance() or QApplication([])
@@ -82,8 +83,10 @@ class GestionTicketsUiTests(unittest.TestCase):
         with patch(f"{MODULO}.confirmar_operacion", return_value=True) as confirmar:
             dialogo._registrar_atencion()
             self.worker.assert_called_once_with(services.registrar_atencion_ticket, id_ticket=1, mensaje="Pruebas realizadas.")
+            self.assertEqual(confirmar.call_args.args[1], "Enviar mensaje al solicitante")
             self.assertIn("Pruebas realizadas.", confirmar.call_args.args[2])
             dialogo._on_operacion({}, campo=dialogo.input_mensaje)
+            self.assertIn("Ver mis mensajes enviados", dialogo.lbl_mensaje.text())
             dialogo._on_datos({"ticket": dialogo._ticket, "estados": ESTADOS})
             self.assertEqual(dialogo.input_mensaje.toPlainText(), "")
             self.assertEqual(dialogo.input_motivo_estado.text(), "Equipo operativo.")
@@ -111,6 +114,32 @@ class GestionTicketsUiTests(unittest.TestCase):
         self.assertFalse(cerrado.btn_estado.isEnabled())
         self.assertFalse(cerrado.btn_atencion.isEnabled())
         self.assertTrue(cerrado.btn_tomar.isHidden())
+
+    def test_historial_accesible_en_ticket_cerrado_y_en_detalle(self):
+        dialogo = self.dialogo("Cerrado", 2)
+        self.assertTrue(dialogo.btn_mensajes.isEnabled())
+        self.assertTrue(dialogo.panel_nota.isHidden())
+        with patch(f"{MODULO}.MensajesEnviadosTicketDialog") as historial:
+            dialogo.btn_mensajes.click()
+            historial.assert_called_once_with(1, "TCK-0001", dialogo)
+        with patch("siget_desktop.ui.dialogs.tickets_dialogs.ApiWorker"):
+            detalle = DetalleTicketDialog(1)
+            self.assertFalse(detalle.btn_mensajes.isEnabled())
+            detalle._on_datos({"codigo_ticket": "TCK-0001"})
+            self.assertTrue(detalle.btn_mensajes.isEnabled())
+            with patch("siget_desktop.ui.dialogs.tickets_dialogs.MensajesEnviadosTicketDialog") as historial:
+                detalle.btn_mensajes.click()
+                historial.assert_called_once_with(1, "TCK-0001", detalle)
+
+    def test_historial_muestra_mensajes_como_texto_de_solo_lectura(self):
+        with patch("siget_desktop.ui.dialogs.tickets_dialogs.ApiWorker") as worker:
+            historial = MensajesEnviadosTicketDialog(1, "TCK-0001")
+            worker.assert_called_once_with(services.listar_atenciones_propias, id_ticket=1)
+            historial._on_datos([])
+            self.assertIn("Todavía no has enviado mensajes", historial.mensajes.toPlainText())
+            historial._on_datos([{"fecha_registro": "2026-11-03T15:00:00-03:00", "mensaje": "<b>Texto enviado</b>"}])
+            self.assertTrue(historial.mensajes.isReadOnly())
+            self.assertIn("<b>Texto enviado</b>", historial.mensajes.toPlainText())
 
     def test_otro_tecnico_no_puede_atender_ni_reasignar(self):
         dialogo = self.dialogo("En Proceso", 3)
@@ -172,6 +201,9 @@ class GestionTicketsUiTests(unittest.TestCase):
             cliente.post.return_value = cliente.patch.return_value = {"id_ticket": 1}
             services.tomar_ticket(1)
             cliente.post.assert_called_with("/api/tickets/1/tomar/", json={})
+            cliente.get.return_value = []
+            self.assertEqual(services.listar_atenciones_propias(1), [])
+            cliente.get.assert_called_with("/api/tickets/1/atenciones/")
             services.registrar_atencion_ticket(1, "Detalle")
             cliente.post.assert_called_with("/api/tickets/1/atenciones/", json={"mensaje": "Detalle"})
             services.cambiar_estado_ticket(1, 2, "Motivo")

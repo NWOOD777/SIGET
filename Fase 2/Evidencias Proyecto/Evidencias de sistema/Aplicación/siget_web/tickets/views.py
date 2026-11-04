@@ -4,7 +4,8 @@ Vistas API REST para Service Desk y Tickets de Soporte.
 from contextlib import nullcontext
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
+from django.shortcuts import get_object_or_404
 from rest_framework import exceptions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,7 +13,7 @@ from rest_framework.views import APIView
 
 from siget.db import bloquear_operacion
 from siget.http import direccion_ip_cliente
-from tickets.models import SLA, EstadoTicket, PrioridadTicket, Ticket
+from tickets.models import SLA, ComentarioTicket, EstadoTicket, PrioridadTicket, Ticket
 from tickets.permissions import (
     PuedeAsignarTickets,
     PuedeAtenderTickets,
@@ -51,6 +52,7 @@ from tickets.services import (
     registrar_evaluacion_csat,
     tomar_ticket,
 )
+from usuarios.models import BitacoraAuditoria
 from usuarios.services import ROL_TECNICO, es_administrador, usuario_tiene_rol
 
 
@@ -253,8 +255,24 @@ class TicketAsignarView(APIView):
         return Response(TicketReadSerializer(ticket).data, status=status.HTTP_200_OK)
 
 
-class TicketAtencionCreateView(APIView):
+class TicketAtencionListCreateView(APIView):
     permission_classes = [PuedeAtenderTickets]
+
+    def get(self, request: Request, pk: int):
+        tecnico = _obtener_usuario_siget(request)
+        if not tecnico:
+            raise exceptions.NotAuthenticated("Inicie sesión para consultar sus mensajes.")
+        ticket = get_object_or_404(Ticket, pk=pk)
+        evento_envio = BitacoraAuditoria.objects.filter(
+            accion="TICKET_ATENDIDO",
+            entidad_afectada="comentario_ticket",
+            id_registro_afectado=OuterRef("pk"),
+            id_usuario=tecnico,
+        )
+        atenciones = ComentarioTicket.objects.filter(
+            Exists(evento_envio), id_ticket=ticket, id_usuario=tecnico,
+        ).order_by("-fecha_registro", "-pk")
+        return Response(TicketAtencionReadSerializer(atenciones, many=True).data)
 
     def post(self, request, pk):
         serializer = TicketAtencionCreateSerializer(data=request.data)
