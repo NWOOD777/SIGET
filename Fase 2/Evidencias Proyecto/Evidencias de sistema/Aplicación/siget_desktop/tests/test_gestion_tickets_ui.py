@@ -67,15 +67,45 @@ class GestionTicketsUiTests(unittest.TestCase):
 
     def test_cambio_de_estado_se_envia_con_id_del_catalogo_y_motivo(self):
         dialogo = self.dialogo("Abierto", 2)
-        dialogo.input_mensaje.setPlainText("Comienza el diagnóstico.")
+        dialogo.combo_estado.setCurrentText("En Proceso")
+        dialogo.input_motivo_estado.setText("Comienza el diagnóstico.")
         with patch(f"{MODULO}.confirmar_operacion", return_value=True):
             dialogo._cambiar_estado()
         self.worker.assert_called_once_with(services.cambiar_estado_ticket, id_ticket=1, id_estado_ticket=2, mensaje="Comienza el diagnóstico.")
 
+    def test_guardar_nota_conserva_el_cambio_de_estado_preparado(self):
+        dialogo = self.dialogo("En Proceso", 2)
+        self.assertEqual(dialogo.combo_estado.currentIndex(), -1)
+        dialogo.combo_estado.setCurrentText("Resuelto")
+        dialogo.input_motivo_estado.setText("Equipo operativo.")
+        dialogo.input_mensaje.setPlainText("Pruebas realizadas.")
+        with patch(f"{MODULO}.confirmar_operacion", return_value=True) as confirmar:
+            dialogo._registrar_atencion()
+            self.worker.assert_called_once_with(services.registrar_atencion_ticket, id_ticket=1, mensaje="Pruebas realizadas.")
+            self.assertIn("Pruebas realizadas.", confirmar.call_args.args[2])
+            dialogo._on_operacion({}, campo=dialogo.input_mensaje)
+            dialogo._on_datos({"ticket": dialogo._ticket, "estados": ESTADOS})
+            self.assertEqual(dialogo.input_mensaje.toPlainText(), "")
+            self.assertEqual(dialogo.input_motivo_estado.text(), "Equipo operativo.")
+            self.assertEqual(dialogo.combo_estado.currentText(), "Resuelto")
+            dialogo._cambiar_estado()
+            self.worker.assert_called_with(services.cambiar_estado_ticket, id_ticket=1, id_estado_ticket=4, mensaje="Equipo operativo.")
+
+    def test_aviso_de_validacion_desaparece_al_editar_su_campo(self):
+        dialogo = self.dialogo("En Proceso", 2)
+        dialogo._registrar_atencion()
+        self.assertFalse(dialogo.lbl_mensaje.isHidden())
+        dialogo.input_motivo_estado.setText("Texto para otra acción.")
+        self.assertFalse(dialogo.lbl_mensaje.isHidden())
+        dialogo.input_mensaje.setPlainText("Se revisó el equipo.")
+        self.assertTrue(dialogo.lbl_mensaje.isHidden())
+
     def test_resuelto_solo_ofrece_cierre_y_cerrado_no_admite_escritura(self):
         dialogo = self.dialogo("Resuelto", 2)
         self.assertFalse(dialogo.btn_atencion.isEnabled())
-        self.assertEqual(dialogo.combo_estado.currentText(), "Cerrado")
+        self.assertEqual(dialogo.combo_estado.itemText(0), "Cerrado")
+        self.assertFalse(dialogo.btn_estado.isEnabled())
+        dialogo.combo_estado.setCurrentText("Cerrado")
         self.assertTrue(dialogo.btn_estado.isEnabled())
         cerrado = self.dialogo("Cerrado", 2)
         self.assertFalse(cerrado.btn_estado.isEnabled())
@@ -99,7 +129,7 @@ class GestionTicketsUiTests(unittest.TestCase):
         with patch(f"{MODULO}.confirmar_operacion", return_value=True):
             dialogo._asignar()
             self.worker.assert_not_called()
-            dialogo.input_mensaje.setPlainText("Asignación por especialidad.")
+            dialogo.input_motivo_asignacion.setText("Asignación por especialidad.")
             dialogo._asignar()
         self.worker.assert_called_once_with(services.asignar_ticket, id_ticket=1, id_tecnico_asignado=3, motivo="Asignación por especialidad.")
 
